@@ -1,0 +1,31 @@
+This testcase is for testing the correctness of the program, including the sequence (what come first, what come last), how to handle duplicates, all sorts of non-alphabetic chars
+Input:
+AaA123ZaZ aaa@#zzz000AaAa aAaA ~ ~ ~ ~ ZzZz 123zZzZ ZzZ ZzZ AaA
+Output:
+ZzZz
+ZzZ
+ZzZ
+ZaZ
+AaAa
+AaA
+AaA
+zZzZ
+zzz
+aAaA
+aaa
+
+This testcase need first modify the program, and change the thres from 1000 to 1 then test the memory copy and memory allocation function
+Input:
+AaA123ZaZ aaa@#zzz000AaAa aAaA ~ ~ ~ ~ ZzZz 123zZzZ ZzZ ZzZ AaA
+Output:
+ZzZz
+ZzZ
+ZzZ
+ZaZ
+AaAa
+AaA
+AaA
+zZzZ
+zzz
+aAaA
+aaa
