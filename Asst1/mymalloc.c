@@ -55,11 +55,15 @@ void* get_next_header(void* current_header) {
  	struct header* h = current_header;
 	if(h->is_large) {
 		struct header_lg* h_lg = current_header;
-		return current_header + sizeof(struct header_lg) + h_lg->size;
+		h = current_header + sizeof(struct header_lg) + h_lg->size;
 	} else {
 		struct header_sm* h_sm = current_header;
-		return current_header + sizeof(struct header_sm) + h_sm->size;
+		h = current_header + sizeof(struct header_sm) + h_sm->size;
 	}
+	if((char*)h > blocks + 4096)
+		return NULL;
+	else
+		return h;
 }
 
 void* malloc(int size) {
