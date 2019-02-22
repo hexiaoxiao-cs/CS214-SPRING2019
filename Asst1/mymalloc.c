@@ -22,9 +22,10 @@ struct __attribute__((__packed__)) header_lg {
 	unsigned char : 2;
 };
 
-void read_header(void* data, char* is_used, int* size) {
+void read_header(void* data, char* is_used, char* is_large, int* size) {
 	struct header* h = data;
 	*is_used = h->is_used;
+	*is_large = h->is_large;
 	if(h->is_large) {
 		struct header_lg* h_lg = data;
 		*size = h_lg->size;
@@ -71,5 +72,33 @@ void* malloc(int size) {
 }
 
 void free(void* input) {
-
+	void* cur = blocks;
+	void* next_blk;
+	char is_used, is_large;
+	int size, next_size;
+	while(cur != NULL) {
+		read_header(cur, &is_used, &is_large, &size);
+		if(cur + size == input) {
+			if(is_used)
+				break;	//Only free when it's allocated
+			else
+				return;	//exit if it is not allocated by us
+		}
+		cur = get_next_header(cur);
+	}
+	if(cur == NULL) {
+		//Unable to find a block on the designated area
+		return;
+	}
+	//Successfully found a block containing the input data
+	next_blk = get_next_header(cur);	//Get the next header
+	while(next_blk != NULL) {
+		read_header(next_blk, &is_used, &is_large, &next_size);
+		if(is_used)
+			break;
+		else
+			size += (next_size + is_large?2:1);	//increase current block's size with next block's size and next block's header size
+		next_blk = get_next_header(next_blk);
+	}
+	write_header(cur, 0, size);	//write new information to the blocks
 }

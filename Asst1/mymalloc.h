@@ -14,6 +14,7 @@ void    myfree(void* input);
 //Internal
 void    read_header( void* data,     /* IN: location for the header to read */
                     char* is_used,   /* OUT: 0 or 1 indicating whether the current block is occupied */
+		    char* is_large,   /* OUT: 0 or 1 indicating whether the current header is large or not */
                     int* size       /* OUT: current block size in bytes */
                     );
 
