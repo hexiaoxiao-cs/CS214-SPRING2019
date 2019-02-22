@@ -4,7 +4,7 @@
  * Declarations for mymalloc functions and replace system malloc
  */
 
-#define malloc(x) mymalloc(c)
+#define malloc(x) mymalloc(x)
 #define free(x) myfree(x)
 
 //Interface

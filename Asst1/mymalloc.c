@@ -13,5 +13,13 @@ void writeHeader(void* data, char isUsed, int size) {
 }
 
 void* getNextHeader(void* currentHeader) {
+	return NULL;
+}
+
+void* malloc(int size) {
+	return NULL;
+}
+
+void free(void* input) {
 
 }
