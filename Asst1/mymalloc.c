@@ -2,25 +2,37 @@
 
 #include <stdio.h>  //For debug
 
+#ifdef _WIN32
+#define PACK( __declaration__ ) __pragma( pack(push, 1) ) __declaration__ __pragma( pack(pop) )
+#else
+#define PACK( __declaration__ ) __declaration__ __attribute__((__packed__))
+#endif
+
 static char blocks[4096];   //Will be automatically initialized to 0 since it's static
 
-struct  __attribute__((__packed__)) header {
-	unsigned char is_used : 1;
-	unsigned char is_large : 1;
-};
+PACK(
+	struct header {
+		unsigned char is_used : 1;
+		unsigned char is_large : 1;
+	}
+);
 
-struct __attribute__((__packed__)) header_sm {
-	unsigned char : 1;
-	unsigned char : 1;
-	unsigned int size : 6;
-};
+PACK(
+	struct header_sm {
+		unsigned char : 1;
+		unsigned char : 1;
+		unsigned int size : 6;
+	}
+);
 
-struct __attribute__((__packed__)) header_lg {
-	unsigned char : 1;
-	unsigned char : 1;
-	unsigned int size : 12;
-	unsigned char : 2;
-};
+PACK(
+	struct header_lg {
+		unsigned char : 1;
+		unsigned char : 1;
+		unsigned int size : 12;
+		unsigned char : 2;
+	}
+);
 
 void read_header(void* data, char* is_used, char* is_large, int* size) {
 	struct header* h = data;
@@ -56,10 +68,10 @@ void* get_next_header(void* current_header) {
  	struct header* h = current_header;
 	if(h->is_large) {
 		struct header_lg* h_lg = current_header;
-		h = current_header + sizeof(struct header_lg) + h_lg->size;
+		h = (char*)current_header + sizeof(struct header_lg) + h_lg->size;
 	} else {
 		struct header_sm* h_sm = current_header;
-		h = current_header + sizeof(struct header_sm) + h_sm->size;
+		h = (char*)current_header + sizeof(struct header_sm) + h_sm->size;
 	}
 	if((char*)h > blocks + 4096)
 		return NULL;
@@ -76,9 +88,15 @@ void free(void* input) {
 	void* next_blk;
 	char is_used, is_large;
 	int size, next_size;
+	
+	//Check if input is in our range
+	if(input < blocks || input > blocks + 4096) {
+		return;	//input is not in our blocks
+	}
+
 	while(cur != NULL) {
 		read_header(cur, &is_used, &is_large, &size);
-		if(cur + size == input) {
+		if((char*)cur + size == input) {
 			if(is_used)
 				break;	//Only free when it's allocated
 			else
