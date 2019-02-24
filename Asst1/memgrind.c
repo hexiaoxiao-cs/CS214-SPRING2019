@@ -22,8 +22,7 @@ int main(int argc, char** argv) {
 	free(base);
 	for(i = 0;i < 150;i++) {
 		addr=malloc(1);
-		addr=1;
-		printf("%d\n",(int)(addr-base));
+		printf("L: %d, %d\n", __LINE__, (int)(addr-base));
 		free(addr);
 	}
 	{
@@ -31,7 +30,7 @@ int main(int argc, char** argv) {
 		void* array[50];
 		for(i = 0;i < 50;i++) {
 			array[i] = malloc(1);
-			printf("%d\n",(int)( array[i]-(void*)base));
+			printf("L: %d, %d\n", __LINE__, (int)( array[i]-(void*)base));
 		}
 		for(i = 0;i < 50;i++) {
 			free(array[i]);
@@ -47,7 +46,7 @@ int main(int argc, char** argv) {
 			if(choice == 1) {
 				array[end_idx++] = malloc(1);
 				if(end_idx-1!=0){
-				printf("%d\n",(int)(array[end_idx-1]-(void*)base));}
+				printf("L: %d, %d\n", __LINE__, (int)(array[end_idx-1]-(void*)base));}
 				counter++;
 			} else {
 				if(end_idx == 0)
@@ -69,7 +68,7 @@ int main(int argc, char** argv) {
 			if(choice == 1) {
 				array[end_idx++] = malloc(better_dice());
 				if(end_idx-1!=50){
-				printf("%d\n",(int)(array[end_idx-1]-(void*)base));}
+				printf("L: %d, %d\n", __LINE__, (int)(array[end_idx-1]-(void*)base));}
 				counter++;
 			} else {
 				if(end_idx == 0)
