@@ -9,7 +9,7 @@
 #endif
 
 static char blocks[4096];   //Will be automatically initialized to 0 since it's static
-
+int HXX_DEBUG = 1;
 PACK(
 	struct header {
 		unsigned char is_used : 1;
@@ -80,7 +80,51 @@ void* get_next_header(void* current_header) {
 }
 
 void* malloc(int size) {
-	return NULL;
+	void* cur = blocks;
+	void* next = NULL;
+	char is_used, is_large,Success=0;
+	int blk_size;
+	//Start to Malloc
+	//Check if the block is fresh
+
+	if (is_used == 0 && is_large == 0 && size == 0) { //block is fresh
+		if (size > 4095) { 
+			if (HXX_DEBUG == 1) {
+				printf("OVER_SIZE in INTIAL BLOCK!\n");
+			}return NULL; } //The block size is larger than current memory size
+		write_header(cur, 1, size);
+		if (HXX_DEBUG == 1) {
+			printf("HEADER WRITTEN in INITIAL BLOCK!\n");
+			
+		}
+		next = get_next_header(cur);
+		write_header(next, 0, 4096 - (next - cur));//write next blk
+		if (HXX_DEBUG == 1) {
+			printf("NEXT BLOCK LOCATED%d\n", (int)(next - (void*)&blocks));
+		}
+		return next-size; //return addr
+	}
+	while (Success == 0) {
+		if (cur == NULL) { return NULL; }
+		read_header(cur, &is_used, &is_large, &blk_size);
+		if (is_used == 0 && blk_size >=size) {
+			if (HXX_DEBUG == 1) {
+				printf("FOUND SPACE! %d %d %d\n", (int)is_used, (int)is_large, (int)blk_size);
+			}
+			Success = 1;
+		}
+		else
+		{
+			cur = get_next_header(cur);
+		}
+	}
+	write_header(cur, 1, size);
+	next = get_next_header(cur);
+	write_header(next, 0, blk_size - size - (size > 64 ? 2 : 1));
+	if (HXX_DEBUG == 1) {
+		printf("NEXTBLK! %d\n", (int)(next - (void*)&blocks));
+	}
+	return next-size;
 }
 
 void free(void* input) {
