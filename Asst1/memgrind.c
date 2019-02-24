@@ -22,19 +22,20 @@ int main(int argc, char** argv) {
 	free(base);
 	for(i = 0;i < 150;i++) {
 		addr=malloc(1);
-		printf("L: %d, %d\n", __LINE__, (int)(addr-base));
 		free(addr);
 	}
 	{
 		//B
 		void* array[50];
+		printf("[memgrind]: B allocating... \n");
 		for(i = 0;i < 50;i++) {
 			array[i] = malloc(1);
-			printf("L: %d, %d\n", __LINE__, (int)( array[i]-(void*)base));
 		}
+		printf("[memgrind]: B deallocating... \n");
 		for(i = 0;i < 50;i++) {
 			free(array[i]);
 		}
+		fflush(stdout);
 	}
 	{
 		//C
@@ -44,16 +45,17 @@ int main(int argc, char** argv) {
 		while(counter < 50) {
 			int choice = dice();
 			if(choice == 1) {
+				printf("[memgrind]: C allocating... \n");
 				array[end_idx++] = malloc(1);
-				if(end_idx-1!=0){
-				printf("L: %d, %d\n", __LINE__, (int)(array[end_idx-1]-(void*)base));}
 				counter++;
 			} else {
 				if(end_idx == 0)
 					continue;
+					printf("[memgrind]: C deallocating... \n");
 				free(array[--end_idx]);
 			}
 		}
+		printf("[memgrind]: C final deallocating... \n");
 		while(end_idx > 0) {
 			free(array[--end_idx]);
 		}
@@ -66,16 +68,17 @@ int main(int argc, char** argv) {
 		while(counter < 50) {
 			int choice = dice();
 			if(choice == 1) {
+				printf("[memgrind]: D allocating... \n");
 				array[end_idx++] = malloc(better_dice());
-				if(end_idx-1!=50){
-				printf("L: %d, %d\n", __LINE__, (int)(array[end_idx-1]-(void*)base));}
 				counter++;
 			} else {
 				if(end_idx == 0)
 					continue;
+					printf("[memgrind]: D deallocating... \n");
 				free(array[--end_idx]);
 			}
 		}
+		printf("[memgrind]: D final deallocating... \n");
 		while(end_idx > 0) {
 			free(array[--end_idx]);
 		}
