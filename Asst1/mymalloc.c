@@ -94,9 +94,11 @@ void free(void* input) {
 		return;	//input is not in our blocks
 	}
 
+	//Try to find the block that has the input as data
 	while(cur != NULL) {
 		read_header(cur, &is_used, &is_large, &size);
-		if((char*)cur + size == input) {
+		//Compare with input after skipping the header
+		if((char*)cur + (is_large?2:1) == input) {
 			if(is_used)
 				break;	//Only free when it's allocated
 			else
