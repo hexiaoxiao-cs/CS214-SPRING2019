@@ -86,19 +86,19 @@ void* malloc(int size) {
 	int blk_size;
 	//Start to Malloc
 	//Check if the block is fresh
-
-	if (is_used == 0 && is_large == 0 && size == 0) { //block is fresh
+	read_header(cur,&is_used,&is_large,&blk_size);
+	if (is_used == 0 && is_large == 0 && blk_size == 0) { //block is fresh
 		if (size > 4095) { 
 			if (HXX_DEBUG == 1) {
 				printf("OVER_SIZE in INTIAL BLOCK!\n");
 			}return NULL; } //The block size is larger than current memory size
-		write_header(cur, 1, size);
+		write_header(cur, 1, &size);
 		if (HXX_DEBUG == 1) {
 			printf("HEADER WRITTEN in INITIAL BLOCK!\n");
 			
 		}
 		next = get_next_header(cur);
-		write_header(next, 0, 4096 - (next - cur));//write next blk
+		write_header(next, 0, 4096 - (next - cur)-((4096-(next-cur))>65)?2:1);//write next blk
 		if (HXX_DEBUG == 1) {
 			printf("NEXT BLOCK LOCATED%d\n", (int)(next - (void*)&blocks));
 		}
@@ -120,6 +120,7 @@ void* malloc(int size) {
 	}
 	write_header(cur, 1, size);
 	next = get_next_header(cur);
+	if(next==NULL){return cur+((size>64)?2:1);}
 	write_header(next, 0, blk_size - size - (size > 64 ? 2 : 1));
 	if (HXX_DEBUG == 1) {
 		printf("NEXTBLK! %d\n", (int)(next - (void*)&blocks));
