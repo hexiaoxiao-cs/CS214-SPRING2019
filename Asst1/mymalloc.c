@@ -17,7 +17,7 @@ static char blocks[4096];   //Will be automatically initialized to 0 since it's 
  */
 
 //DEBUG TOGGLE
-#define DBG
+//#define DBG
 
 
 #ifndef DBG
@@ -147,7 +147,7 @@ void* get_next_header_position(void* current_header) {
         return h;
 }
 
-void* mymalloc(int size) {
+void* mymalloc(int size, const char* file, int line) {
     void* cur = blocks;
     void* next_header = NULL;
     char is_used, is_large,Success=0;
@@ -161,6 +161,7 @@ void* mymalloc(int size) {
     if (is_used == 0 && is_large == 0 && blk_size == 0) { //block is fresh
         if (size > 4095) {
             DLOG("Unable to allocate due to requested size is too large");
+            printf("%s[%d]: Unable to malloc\n", file, line);
             return NULL;
         }
         //Initialize block
@@ -170,6 +171,7 @@ void* mymalloc(int size) {
     while (Success == 0) {
         if (cur == NULL) {
             DLOG("Unable to allocate due to no blocks are available");
+            printf("%s[%d]: Unable to free\n", file, line);
             return NULL;
         }
         read_header(cur, &is_used, &is_large, &blk_size);
@@ -195,7 +197,7 @@ void* mymalloc(int size) {
     return get_data_pointer(cur);
 }
 
-void myfree(void* input) {
+void myfree(void* input, const char* file, int line) {
     void* cur = blocks;
     void* next_blk, *prev_blk;
     char is_used, is_large, is_large_next, is_large_prev;
@@ -208,6 +210,7 @@ void myfree(void* input) {
     //Check if input is in our range
     if((char*)input < blocks || (char*)input > &blocks[4095]) {
         DLOG("Unable to free, input is not in blocks");
+        printf("%s[%d]: Unable to free\n", file, line);
         return; //input is not in our blocks
     }
 
@@ -220,6 +223,7 @@ void myfree(void* input) {
                 break;  //Only free when it's allocated
             else {
                 DLOG("Unable to free, input is in blocks but is not used");
+                printf("%s[%d]: Unable to free\n", file, line);
                 return; //exit if it is not allocated by us
             }
         }
@@ -229,6 +233,7 @@ void myfree(void* input) {
     if(cur == NULL) {
         //Unable to find a block on the designated area
         DLOG("Unable to free, unable to find data pointers in blocks that matches input");
+        printf("%s[%d]: Unable to free\n", file, line);
         return;
     }
 

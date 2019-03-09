@@ -33,27 +33,27 @@ void xjbwrite(idx_ptr* ptrarr)
 	void* currptr;
 	for(temp=0;temp<4096;temp++)
 	{
-		if(ptrarr[temp]->ptr!=NULL){
-			currptr=ptrarr[temp]->ptr;
-			currsize=ptrarr[temp]->size;
+		if(ptrarr[temp].ptr!=NULL){
+			currptr=ptrarr[temp].ptr;
+			currsize=ptrarr[temp].allocated_size;
 			while(currsize!=0)
 			{
 				memset(currptr++,(char)rand(),1);
 				currsize--;
-				printf("!! At %x written 1 byte of data!!\n",currptr);
+				printf("!! At %p written 1 byte of data !!\n",currptr);
 			}
 		}
 	}
 }
 
-int compare_func(const idx_ptr* a, const idx_ptr* b) {
-    return a->idx < b->idx;
+int compare_func(const void* a, const void* b) {
+    return ((idx_ptr*)a)->idx < ((idx_ptr*)b)->idx;
 }
 
-void* xjbfuckmemory() {
+void xjbfuckmemory() {
     idx_ptr ptrs[4096];
     void* tmp = NULL;
-    int i, counter = 0;
+    int i = 0, counter = 0;
     int size = 0;
 
     memset(ptrs, 0, 4096 * sizeof(idx_ptr));    //Zero out memory
@@ -155,11 +155,8 @@ int main(int argc, char** argv) {
     }
     {
         //E
-        void* data = malloc(50);
-        void* data2 = malloc(50);
-        void* data3 = malloc(50);
-        free(data2);
-        free(data);
-        free(data3);
+        for(int i = 0;i < 500;i++) {
+            xjbfuckmemory();
+        }
     }
 }

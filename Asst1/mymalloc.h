@@ -4,12 +4,12 @@
  * Declarations for mymalloc functions and replace system malloc
  */
 
-#define malloc(x) mymalloc(x)
-#define free(x) myfree(x)
+#define malloc(x) mymalloc(x, __FILE__, __LINE__)
+#define free(x) myfree(x, __FILE__, __LINE__)
 
 //Interface
-void*   mymalloc(int size);
-void    myfree(void* input);
+void*   mymalloc(int size, const char*, int);
+void    myfree(void* input, const char*, int);
 
 //Internal
 
