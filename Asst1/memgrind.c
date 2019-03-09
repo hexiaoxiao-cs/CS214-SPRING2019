@@ -29,7 +29,7 @@ void xjbwrite(idx_ptr* ptrarr)
 			{
 				memset(currptr++,(char)rand(),1);
 				currsize--;
-			
+				printf("!! At %x written 1 byte of data!!\n",currptr);
 			}
 		}
 	}
