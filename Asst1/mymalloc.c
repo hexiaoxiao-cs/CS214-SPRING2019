@@ -152,6 +152,8 @@ void* mymalloc(int size) {
     void* next_header = NULL;
     char is_used, is_large,Success=0;
     int blk_size, blk_remaining_size;
+    if(size == 0)
+        return NULL;
     //Start to Malloc
     DLOG("Requesting for: %d byte(s)", size);
     //Check if the block is fresh
