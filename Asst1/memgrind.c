@@ -81,6 +81,58 @@ void xjbfuckmemory() {
     }
 }
 
+void caosimemory(){
+    idx_ptr ptrs[4096];
+    void* tmp = NULL;
+    int i = 0, counter = 0,j = 0;
+    int size = 0;
+
+    memset(ptrs, 0, 4096 * sizeof(idx_ptr));    //Zero out memory
+
+    while((size = way_better_dice(100), tmp = malloc(size)) != NULL) {
+        printf("!! Allocated ptrs[%d]: %d bytes !!\n", counter, size);
+        ptrs[counter].ptr = tmp;
+        ptrs[counter].allocated_size = size;
+        counter++;
+    }
+
+    xjbwrite(ptrs);
+    while(1){
+        for(i = 0;i<4096;i++) {
+            ptrs[i].idx = way_better_dice(5000);    //Randomly distribute index
+            printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
+        }
+
+        qsort(ptrs, 4096, sizeof(idx_ptr), compare_func);
+        j=0;
+        for(i=0;i<50;)
+        {
+            if(j>4095){return;}
+            if(ptrs[j].ptr!=NULL)
+            {
+                printf("!! Randomly free idx[%d] !!\n",i);
+                free(ptrs[i].ptr);
+                ptrs[i].ptr=NULL;
+                i++;
+            }
+            j++;
+        }
+        j=0;
+        for(i=0;i<25;)
+        {
+            if(j>4095){return;}
+            if(ptrs[j].ptr==NULL){
+                ptrs[j].allocated_size=way_better_dice(100);
+                ptrs[j].ptr=malloc(ptrs[j].allocated_size);
+                i++;
+            }
+            j++;
+        }
+
+    }
+
+}
+
 int main(int argc, char** argv) {
     unsigned int i, j;
     void *addr;
