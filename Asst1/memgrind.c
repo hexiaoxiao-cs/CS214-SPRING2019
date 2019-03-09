@@ -16,7 +16,7 @@ int dice() {
 }
 //Randomly return 0 to a specific number
 int way_better_dice(int maximum) {
-    return rand() % (maximum + 1);
+    return rand() % (maximum) + 1;
 }
 //Randomly return 1 to 64
 int better_dice() {
@@ -40,7 +40,7 @@ void xjbwrite(idx_ptr* ptrarr)
 			{
 				memset(currptr++,(char)rand(),1);
 				currsize--;
-				printf("!! At %p written 1 byte of data !!\n",currptr);
+				//printf("!! At %p written 1 byte of data !!\n",currptr);
 			}
 		}
 	}
@@ -67,96 +67,118 @@ void xjbfuckmemory() {
 
     xjbwrite(ptrs);
 
-    while(ptrs[i].ptr != NULL) {
+    for(i = 0;i<4096;i++) {
         ptrs[i].idx = way_better_dice(5000);    //Randomly distribute index
         printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
-        i++;
     }
 
     qsort(ptrs, 4096, sizeof(idx_ptr), compare_func);
 
     for(i = 0;i<4096;i++) {
-        printf("!! Randomly free idx[%d] !!\n", i);
+        if(ptrs[i].ptr != NULL)
+            printf("!! Randomly free idx[%d] !!\n", i);
         free(ptrs[i].ptr);
     }
 }
 
 int main(int argc, char** argv) {
-    unsigned int i;
+    unsigned int i, j;
+    void *addr;
+    clock_t time_stats[6];
+    clock_t begin;
+    for(i = 0;i < 5;i++) {
+        time_stats[i] = 0;  //Initialize to zero
+    }
+
     //Initialize seeds
     srand(time(NULL));
-    void *addr;
-    void *base;
-    base=malloc(1);
-    free(base);
-    for(i = 0;i < 150;i++) {
-        addr=malloc(1);
-        free(addr);
-    }
-    {
-        //B
-        void* array[50];
-        printf("[memgrind]: B allocating... \n");
-        for(i = 0;i < 50;i++) {
-            array[i] = malloc(1);
-        }
-        printf("[memgrind]: B deallocating... \n");
-        for(i = 0;i < 50;i++) {
-            free(array[i]);
-        }
-        fflush(stdout);
-    }
-    {
-        //C
-        unsigned int counter = 0;
-        void* array[50];
-        int end_idx = 0;
-        while(counter < 50) {
-            int choice = dice();
-            if(choice == 1) {
-                printf("[memgrind]: C allocating... \n");
-                array[end_idx++] = malloc(1);
-                counter++;
-            } else {
-                if(end_idx == 0)
-                    continue;
-                printf("[memgrind]: C deallocating... \n");
-                free(array[--end_idx]);
-            }
-        }
-        printf("[memgrind]: C final deallocating... \n");
-        while(end_idx > 0) {
-            free(array[--end_idx]);
-        }
-    }
-    {
-        //D
-        unsigned int counter = 0;
-        void* array[50];
-        int end_idx = 0;
-        while(counter < 50) {
-            int choice = dice();
-            if(choice == 1) {
-                printf("[memgrind]: D allocating... \n");
-                array[end_idx++] = malloc(better_dice());
-                counter++;
-            } else {
-                if(end_idx == 0)
-                    continue;
-                printf("[memgrind]: D deallocating... \n");
-                free(array[--end_idx]);
-            }
-        }
-        printf("[memgrind]: D final deallocating... \n");
-        while(end_idx > 0) {
-            free(array[--end_idx]);
-        }
 
-    }
-    {
-        //E
-        for(int i = 0;i < 500;i++) {
-            xjbfuckmemory();
+    for(j = 0;j < 100;j++) {
+        //A
+        begin = clock();
+        for(i = 0;i < 150;i++) {
+            addr=malloc(1);
+            free(addr);
         }
+        time_stats[0] += clock() - begin;
+
+        {
+            //B
+            void* array[50];
+            begin = clock();
+            printf("[memgrind]: B allocating... \n");
+            for(i = 0;i < 50;i++) {
+                array[i] = malloc(1);
+            }
+            printf("[memgrind]: B deallocating... \n");
+            for(i = 0;i < 50;i++) {
+                free(array[i]);
+            }
+            time_stats[1] += clock() - begin;
+            fflush(stdout);
+        }
+        {
+            //C
+            unsigned int counter = 0;
+            void* array[50];
+            int end_idx = 0;
+            begin = clock();
+            while(counter < 50) {
+                int choice = dice();
+                if(choice == 1) {
+                    printf("[memgrind]: C allocating... \n");
+                    array[end_idx++] = malloc(1);
+                    counter++;
+                } else {
+                    if(end_idx == 0)
+                        continue;
+                    printf("[memgrind]: C deallocating... \n");
+                    free(array[--end_idx]);
+                }
+            }
+            printf("[memgrind]: C final deallocating... \n");
+            while(end_idx > 0) {
+                free(array[--end_idx]);
+            }
+            time_stats[2] += clock() - begin;
+        }
+        {
+            //D
+            unsigned int counter = 0;
+            void* array[50];
+            int end_idx = 0;
+            begin = clock();
+
+            while(counter < 50) {
+                int choice = dice();
+                if(choice == 1) {
+                    printf("[memgrind]: D allocating... \n");
+                    array[end_idx++] = malloc(better_dice());
+                    counter++;
+                } else {
+                    if(end_idx == 0)
+                        continue;
+                    printf("[memgrind]: D deallocating... \n");
+                    free(array[--end_idx]);
+                }
+            }
+            printf("[memgrind]: D final deallocating... \n");
+            while(end_idx > 0) {
+                free(array[--end_idx]);
+            }
+            time_stats[3] += clock() - begin;
+        }
+        {
+            //E
+            begin = clock();
+            for(int i = 0;i < 2;i++) {
+                xjbfuckmemory();
+                printf("===============================\n");
+            }
+            time_stats[4] += clock() - begin;
+        }
+    }
+    for(i = 0;i < 5;i++) {
+        printf("Cost of %c: %lfs\n", 65 + i, (double)time_stats[i] / 100 / CLOCKS_PER_SEC);  //Initialize to zero
     }
 }

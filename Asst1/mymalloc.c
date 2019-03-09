@@ -171,7 +171,7 @@ void* mymalloc(int size, const char* file, int line) {
     while (Success == 0) {
         if (cur == NULL) {
             DLOG("Unable to allocate due to no blocks are available");
-            printf("%s[%d]: Unable to free\n", file, line);
+            printf("%s[%d]: Unable to malloc\n", file, line);
             return NULL;
         }
         read_header(cur, &is_used, &is_large, &blk_size);
