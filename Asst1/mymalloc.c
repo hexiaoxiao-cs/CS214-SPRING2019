@@ -21,7 +21,7 @@ static char blocks[4096];   //Will be automatically initialized to 0 since it's 
 
 
 #ifndef DBG
-#define DLOG(x) (void)0
+#define DLOG(args...) (void)0
 #else
 #define DLOG(args...) printf("%s[%d]: ", __FUNCTION_NAME__, __LINE__); printf(args); printf("\n"); fflush(stdout)
 #endif
@@ -81,10 +81,10 @@ int adjust_header_size(void* data, int new_size, char is_used) {
     struct header* h = data;
     int blk_size = get_blk_size(data);
     h->is_used = is_used;
-    DLOG("Requested to adjust size to: %d", new_size);
+    DLOG("Requested to adjust size for: %p, to: %d", data, new_size);
     if(!h->is_large) {
         //Originally is a small header
-        if(new_size > 64) {
+        if(new_size >= 64) {
             //Unable to hold the size that is Requesting
             h->is_large = 1;    //Convert to large header
             new_size--; //Reduce one byte from requesting size to accomodate header size change
@@ -95,15 +95,14 @@ int adjust_header_size(void* data, int new_size, char is_used) {
             h->is_large = 0;    //Convert to small header
         }
     }
+    DLOG("Actualy adjusted size to: %d", new_size);
     if(h->is_large) {
         struct header_lg* h_lg = data;
         h_lg->size = new_size;
-        DLOG("Actualy adjusted size to: %d", new_size);
         return blk_size - new_size - 2;
     } else {
         struct header_sm* h_sm = data;
         h_sm->size = new_size;
-        DLOG("Actually adjusted size to: %d", new_size);
         return blk_size - new_size - 1;
     }
 }
@@ -111,7 +110,7 @@ int adjust_header_size(void* data, int new_size, char is_used) {
 void write_new_header(void* data, char is_used, int blk_size) {
     struct header* h = data;
     h->is_used = is_used;
-    if(blk_size > 65) {
+    if(blk_size > 64) {
         //Use a large header
         h->is_large = 1;
         struct header_lg* h_lg = data;
@@ -129,7 +128,7 @@ void* get_previous_header(void* current_header) {
     while(prev && get_next_header_position(prev) != current_header) {
         prev = get_next_header_position(prev);
     }
-    DLOG("get_previous_header: Returning: %p", prev);
+    DLOG("Previous Header of %p: %p", current_header, prev);
     return prev;
 }
 
@@ -164,7 +163,7 @@ void* mymalloc(int size) {
         }
         //Initialize block
         write_new_header(blocks, 0, 4096);
-        DLOG("Initializing blocks");
+        DLOG("Initializing blocks... Main blocks located at: %p", blocks);
     }
     while (Success == 0) {
         if (cur == NULL) {
@@ -182,6 +181,7 @@ void* mymalloc(int size) {
             cur = get_next_header_position(cur);
         }
     }
+    DLOG("Adjusting size for current block: %p", cur);
     blk_remaining_size = adjust_header_size(cur, size, 1);
     next_header = get_next_header_position(cur);
     if(next_header == NULL) {
@@ -226,19 +226,19 @@ void myfree(void* input) {
         return;
     }
 
-    DLOG("Free Found target blk: %p, %d-%d-%d", cur, is_used, is_large, size);
+    DLOG("Found target blk: %p, %d-%d-%d", cur, is_used, is_large, size);
 
     //Successfully found a block containing the input data
 
     next_blk = get_next_header_position(cur);   //Get the next header
     if(next_blk) {
         read_header(next_blk, &is_used, &is_large_next, &next_size);
-        DLOG("Free Found Nxt blk: %p, %d-%d-%d", next_blk, is_used, is_large_next, next_size);
+        DLOG("Found Nxt blk: %p, %d-%d-%d", next_blk, is_used, is_large_next, next_size);
         if(!is_used)
             size += get_blk_size(next_blk); //increase current block's size with next block's size and next block's header size
     }
+    DLOG("Adjusting size for current block: %p", cur);
     adjust_header_size(cur, size, 0);   //Adjust current block's size
-
     prev_blk = get_previous_header(cur);
     if(prev_blk) {
         read_header(prev_blk, &is_used, &is_large_prev, &prev_size);
