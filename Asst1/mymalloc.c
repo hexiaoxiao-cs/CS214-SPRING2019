@@ -201,6 +201,10 @@ void myfree(void* input) {
     char is_used, is_large, is_large_next, is_large_prev;
     int size, next_size, prev_size;
 
+    if(input == NULL) {
+        return; //Allow to free null pointer
+    }
+
     //Check if input is in our range
     if((char*)input < blocks || (char*)input > &blocks[4095]) {
         DLOG("Unable to free, input is not in blocks");

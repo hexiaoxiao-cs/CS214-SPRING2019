@@ -1,15 +1,61 @@
 #include <stdio.h>
+#include <string.h>
 #include <time.h>   //Provide time seeds for randomization
 #include <stdlib.h> //rand()/srand()
 #include "mymalloc.h"   //Replace default malloc/free
+
+typedef struct {
+    void* ptr;
+    int allocated_size;
+    int idx;
+} idx_ptr;
 
 //Randomly return 0 or 1
 int dice() {
     return rand() % 2;
 }
+//Randomly return 0 to a specific number
+int way_better_dice(int maximum) {
+    return rand() % (maximum + 1);
+}
 //Randomly return 1 to 64
 int better_dice() {
     return rand() % 64 + 1;
+}
+
+int compare_func(const idx_ptr* a, const idx_ptr* b) {
+    return a->idx < b->idx;
+}
+
+void* xjbfuckmemory() {
+    idx_ptr ptrs[4096];
+    void* tmp = NULL;
+    int i, counter = 0;
+    int size = 0;
+
+    memset(ptrs, 0, 4096 * sizeof(idx_ptr));    //Zero out memory
+
+    while((size = way_better_dice(100), tmp = malloc(size)) != NULL) {
+        printf("!! Allocated ptrs[%d]: %d bytes !!\n", counter, size);
+        ptrs[counter].ptr = tmp;
+        ptrs[counter].allocated_size = size;
+        counter++;
+    }
+
+    xjbwrite(ptrs);
+
+    while(ptrs[i].ptr != NULL) {
+        ptrs[i].idx = way_better_dice(5000);    //Randomly distribute index
+        printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
+        i++;
+    }
+
+    qsort(ptrs, 4096, sizeof(idx_ptr), compare_func);
+
+    for(i = 0;i<4096;i++) {
+        printf("!! Randomly free idx[%d] !!\n", i);
+        free(ptrs[i].ptr);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -83,5 +129,14 @@ int main(int argc, char** argv) {
             free(array[--end_idx]);
         }
 
+    }
+    {
+        //E
+        void* data = malloc(50);
+        void* data2 = malloc(50);
+        void* data3 = malloc(50);
+        free(data2);
+        free(data);
+        free(data3);
     }
 }
