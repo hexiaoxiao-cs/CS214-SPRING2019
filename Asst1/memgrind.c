@@ -23,6 +23,29 @@ int better_dice() {
     return rand() % 64 + 1;
 }
 
+//random (xiajiba) write data into allocated place
+
+void xjbwrite(idx_ptr* ptrarr)
+{
+	int temp=0;
+	char xjb;
+	int currsize;
+	void* currptr;
+	for(temp=0;temp<4096;temp++)
+	{
+		if(ptrarr[temp]->ptr!=NULL){
+			currptr=ptrarr[temp]->ptr;
+			currsize=ptrarr[temp]->size;
+			while(currsize!=0)
+			{
+				memset(currptr++,(char)rand(),1);
+				currsize--;
+				printf("!! At %x written 1 byte of data!!\n",currptr);
+			}
+		}
+	}
+}
+
 int compare_func(const idx_ptr* a, const idx_ptr* b) {
     return a->idx < b->idx;
 }
