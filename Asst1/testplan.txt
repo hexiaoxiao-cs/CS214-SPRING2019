@@ -1,0 +1,12 @@
+Workload E:
+We randomly malloc block of size 1-100 until the memory is full, then we write random things into the block and free the block. We repeat this procedure for 500 times, and our malloc passed the test.
+This test is intended for simulating an actuall user using the memory without free. This test tests the baseline for our implementation. Including the completeness of our memory management.
+Workload F:
+We first randomly malloc block of size 1-100 until the memory is full, then we write random things into the block. After that we iterate the following instruction until the memory has been cleared:
+1.	We randomly free 50 blocks (if possible)
+2.	We randomly malloc 25 blocks with size ranging from 1-100.
+3.	Write things to 25 blocks.
+4.	Go to 1
+This will eventually free all memory and is intended to simulate all possible working scenario. This test plan is different from E because in this test plan, we will free memory between two allocated blocks, and will test the concatenating nearby unused memory space, which is essential for maximizing memory usage.
+
+Both workloads writes some data into the memory since we want to test that our jumping between memory blocks won't hit the DATA chunks, otherwise will cause errors during reading the memory.
