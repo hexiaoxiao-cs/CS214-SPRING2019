@@ -16,15 +16,6 @@ static char blocks[4096];   //Will be automatically initialized to 0 since it's 
  * Important: The following blocks only valid under C99 standard (variadic macros for debugging)
  */
 
-//DEBUG TOGGLE
-#define DBG
-
-
-#ifndef DBG
-#define DLOG(args...) (void)0
-#else
-#define DLOG(args...) printf("%s[%d]: ", __FUNCTION_NAME__, __LINE__); printf(args); printf("\n"); fflush(stdout)
-#endif
 
 PACK(
     struct header {
@@ -67,7 +58,7 @@ void* get_data_pointer(void* header) {
     char is_used, is_large;
     int size;
     read_header(header, &is_used, &is_large, &size);
-    return header + (is_large?2:1);
+    return (char*)header + (is_large?2:1);
 }
 
 int get_blk_size(void* header) {
@@ -81,7 +72,6 @@ int adjust_header_size(void* data, int new_size, char is_used) {
     struct header* h = data;
     int blk_size = get_blk_size(data);
     h->is_used = is_used;
-    DLOG("Requested to adjust size for: %p, to: %d", data, new_size);
     if(!h->is_large) {
         //Originally is a small header
         if(new_size >= 64) {
@@ -95,7 +85,6 @@ int adjust_header_size(void* data, int new_size, char is_used) {
             h->is_large = 0;    //Convert to small header
         }
     }
-    DLOG("Actualy adjusted size to: %d", new_size);
     if(h->is_large) {
         struct header_lg* h_lg = data;
         h_lg->size = new_size;
@@ -130,7 +119,6 @@ void* get_previous_header(void* current_header) {
     while(prev && get_next_header_position(prev) != current_header) {
         prev = get_next_header_position(prev);
     }
-    DLOG("Previous Header of %p: %p", current_header, prev);
     return prev;
 }
 
@@ -156,46 +144,36 @@ void* mymalloc(int size, const char* file, int line) {
     int blk_size, blk_remaining_size;
     if(size == 0)
         return NULL;
-    //Start to Malloc
-    DLOG("Requesting for: %d byte(s)", size);
     //Check if the block is fresh
     read_header(cur,&is_used,&is_large,&blk_size);
     if (is_used == 0 && is_large == 0 && blk_size == 0) { //block is fresh
         if (size > 4095) {
-            DLOG("Unable to allocate due to requested size is too large");
             printf("%s[%d]: Unable to malloc\n", file, line);
             return NULL;
         }
         //Initialize block
         write_new_header(blocks, 0, 4096);
-        DLOG("Initializing blocks... Main blocks located at: %p", blocks);
     }
     while (Success == 0) {
         if (cur == NULL) {
-            DLOG("Unable to allocate due to no blocks are available");
             printf("%s[%d]: Unable to malloc\n", file, line);
             return NULL;
         }
         read_header(cur, &is_used, &is_large, &blk_size);
         if (is_used == 0 && blk_size >=size) {
-            DLOG("Found blk[ACCPTD]: %p, %d-%d-%d", cur, is_used, is_large, blk_size);
             Success = 1;
         }
         else
         {
-            DLOG("Found blk[DISCARD]: %p, %d-%d-%d", cur, is_used, is_large, blk_size);
             cur = get_next_header_position(cur);
         }
     }
-    DLOG("Adjusting size for current block: %p", cur);
     blk_remaining_size = adjust_header_size(cur, size, 1);
     next_header = get_next_header_position(cur);
     if(next_header == NULL) {
-        DLOG("Successfully allocated to: %p", get_data_pointer(cur));
         return get_data_pointer(cur);
     }
     write_new_header(next_header, 0, blk_remaining_size);
-    DLOG("Successfully allocated to: %p", get_data_pointer(cur));
     return get_data_pointer(cur);
 }
 
@@ -211,7 +189,6 @@ void myfree(void* input, const char* file, int line) {
 
     //Check if input is in our range
     if((char*)input < blocks || (char*)input > &blocks[4095]) {
-        DLOG("Unable to free, input is not in blocks");
         printf("%s[%d]: Unable to free\n", file, line);
         return; //input is not in our blocks
     }
@@ -224,7 +201,6 @@ void myfree(void* input, const char* file, int line) {
             if(is_used)
                 break;  //Only free when it's allocated
             else {
-                DLOG("Unable to free, input is in blocks but is not used");
                 printf("%s[%d]: Unable to free\n", file, line);
                 return; //exit if it is not allocated by us
             }
@@ -234,23 +210,18 @@ void myfree(void* input, const char* file, int line) {
 
     if(cur == NULL) {
         //Unable to find a block on the designated area
-        DLOG("Unable to free, unable to find data pointers in blocks that matches input");
         printf("%s[%d]: Unable to free\n", file, line);
         return;
     }
-
-    DLOG("Found target blk: %p, %d-%d-%d", cur, is_used, is_large, size);
 
     //Successfully found a block containing the input data
 
     next_blk = get_next_header_position(cur);   //Get the next header
     if(next_blk) {
         read_header(next_blk, &is_used, &is_large_next, &next_size);
-        DLOG("Found Nxt blk: %p, %d-%d-%d", next_blk, is_used, is_large_next, next_size);
         if(!is_used)
             size += get_blk_size(next_blk); //increase current block's size with next block's size and next block's header size
     }
-    DLOG("Adjusting size for current block: %p", cur);
     adjust_header_size(cur, size, 0);   //Adjust current block's size
     prev_blk = get_previous_header(cur);
     if(prev_blk) {
@@ -258,9 +229,7 @@ void myfree(void* input, const char* file, int line) {
         if(!is_used) {
             //Squash previous empty blks with current blk [possibly with one after current blk as well]
             int prev_new_size = prev_size + get_blk_size(cur);
-            DLOG("Squashing %p with previous blk: %p, previous orig size: %d, previous new size: %d", cur, prev_blk, prev_size , prev_new_size);
             adjust_header_size(prev_blk, prev_new_size, 0);
         }
     }
-    DLOG("Free succeed on: %p", input);
 }

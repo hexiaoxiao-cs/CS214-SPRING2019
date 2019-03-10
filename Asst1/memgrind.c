@@ -30,17 +30,16 @@ void xjbwrite(idx_ptr* ptrarr)
 	int temp=0;
 	char xjb;
 	int currsize;
-	void* currptr;
+	char* currptr;
 	for(temp=0;temp<4096;temp++)
 	{
 		if(ptrarr[temp].ptr!=NULL){
-			currptr=ptrarr[temp].ptr;
+			currptr=(char*)ptrarr[temp].ptr;
 			currsize=ptrarr[temp].allocated_size;
 			while(currsize!=0)
 			{
 				memset(currptr++,(char)rand(),1);
 				currsize--;
-				//printf("!! At %p written 1 byte of data !!\n",currptr);
 			}
 		}
 	}
@@ -59,7 +58,6 @@ void xjbfuckmemory() {
     memset(ptrs, 0, 4096 * sizeof(idx_ptr));    //Zero out memory
 
     while((size = way_better_dice(100), tmp = malloc(size)) != NULL) {
-        printf("!! Allocated ptrs[%d]: %d bytes !!\n", counter, size);
         ptrs[counter].ptr = tmp;
         ptrs[counter].allocated_size = size;
         counter++;
@@ -69,14 +67,11 @@ void xjbfuckmemory() {
 
     for(i = 0;i<4096;i++) {
         ptrs[i].idx = way_better_dice(5000);    //Randomly distribute index
-        printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
     }
 
     qsort(ptrs, 4096, sizeof(idx_ptr), compare_func);
 
     for(i = 0;i<4096;i++) {
-        if(ptrs[i].ptr != NULL)
-            printf("!! Randomly free idx[%d] !!\n", i);
         free(ptrs[i].ptr);
     }
 }
@@ -90,7 +85,6 @@ void caosimemory(){
     memset(ptrs, 0, 4096 * sizeof(idx_ptr));    //Zero out memory
 
     while((size = way_better_dice(100), tmp = malloc(size)) != NULL) {
-        printf("!! Allocated ptrs[%d]: %d bytes !!\n", counter, size);
         ptrs[counter].ptr = tmp;
         ptrs[counter].allocated_size = size;
         counter++;
@@ -111,7 +105,6 @@ void caosimemory(){
             if(j>4095){return;}
             if(ptrs[j].ptr!=NULL)
             {
-                printf("!! Randomly free idx: [%p,%d] !!\n",ptrs[j].ptr, ptrs[j].allocated_size);
                 free(ptrs[j].ptr);
                 ptrs[j].ptr=NULL;
                 i++;
@@ -146,7 +139,6 @@ int main(int argc, char** argv) {
     //Initialize seeds
     srand(time(NULL));
     for(j = 0;j < 100;j++) {
-        goto F;
         //A
         begin = clock();
         for(i = 0;i < 150;i++) {
@@ -159,11 +151,9 @@ int main(int argc, char** argv) {
             //B
             void* array[50];
             begin = clock();
-            printf("[memgrind]: B allocating... \n");
             for(i = 0;i < 50;i++) {
                 array[i] = malloc(1);
             }
-            printf("[memgrind]: B deallocating... \n");
             for(i = 0;i < 50;i++) {
                 free(array[i]);
             }
@@ -179,17 +169,14 @@ int main(int argc, char** argv) {
             while(counter < 50) {
                 int choice = dice();
                 if(choice == 1) {
-                    printf("[memgrind]: C allocating... \n");
                     array[end_idx++] = malloc(1);
                     counter++;
                 } else {
                     if(end_idx == 0)
                         continue;
-                    printf("[memgrind]: C deallocating... \n");
                     free(array[--end_idx]);
                 }
             }
-            printf("[memgrind]: C final deallocating... \n");
             while(end_idx > 0) {
                 free(array[--end_idx]);
             }
@@ -205,17 +192,14 @@ int main(int argc, char** argv) {
             while(counter < 50) {
                 int choice = dice();
                 if(choice == 1) {
-                    printf("[memgrind]: D allocating... \n");
                     array[end_idx++] = malloc(better_dice());
                     counter++;
                 } else {
                     if(end_idx == 0)
                         continue;
-                    printf("[memgrind]: D deallocating... \n");
                     free(array[--end_idx]);
                 }
             }
-            printf("[memgrind]: D final deallocating... \n");
             while(end_idx > 0) {
                 free(array[--end_idx]);
             }
@@ -224,9 +208,8 @@ int main(int argc, char** argv) {
         {
             //E
             begin = clock();
-            for(int i = 0;i < 2;i++) {
+            for(i = 0;i < 2;i++) {
                 xjbfuckmemory();
-                printf("===============================\n");
             }
             time_stats[4] += clock() - begin;
         }
@@ -239,6 +222,6 @@ F:
         }
     }
     for(i = 0;i < 6;i++) {
-        printf("Cost of %c: %.17g\n", 65 + i, time_stats[i] / 100.0 / CLOCKS_PER_SEC / 1000 );  //Initialize to zero
+        printf("Cost of %c: %f seconds\n", 65 + i, time_stats[i] / 100.0 / CLOCKS_PER_SEC );  //Initialize to zero
     }
 }
