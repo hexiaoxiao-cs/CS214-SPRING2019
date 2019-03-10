@@ -148,7 +148,7 @@ void* mymalloc(int size, const char* file, int line) {
     read_header(cur,&is_used,&is_large,&blk_size);
     if (is_used == 0 && is_large == 0 && blk_size == 0) { //block is fresh
         if (size > 4095) {
-            printf("%s[%d]: Unable to malloc\n", file, line);
+            printf("%s[%d]: Unable to malloc due to requested size is too big\n", file, line);
             return NULL;
         }
         //Initialize block
@@ -156,7 +156,7 @@ void* mymalloc(int size, const char* file, int line) {
     }
     while (Success == 0) {
         if (cur == NULL) {
-            printf("%s[%d]: Unable to malloc\n", file, line);
+            printf("%s[%d]: Unable to malloc due to unable to locate an available block\n", file, line);
             return NULL;
         }
         read_header(cur, &is_used, &is_large, &blk_size);
@@ -189,7 +189,7 @@ void myfree(void* input, const char* file, int line) {
 
     //Check if input is in our range
     if((char*)input < blocks || (char*)input > &blocks[4095]) {
-        printf("%s[%d]: Unable to free\n", file, line);
+        printf("%s[%d]: Unable to free, the pointer is outside of our blocks range\n", file, line);
         return; //input is not in our blocks
     }
 
@@ -201,7 +201,7 @@ void myfree(void* input, const char* file, int line) {
             if(is_used)
                 break;  //Only free when it's allocated
             else {
-                printf("%s[%d]: Unable to free\n", file, line);
+                printf("%s[%d]: Unable to free, we didn't allocate this pointer\n", file, line);
                 return; //exit if it is not allocated by us
             }
         }
@@ -210,7 +210,7 @@ void myfree(void* input, const char* file, int line) {
 
     if(cur == NULL) {
         //Unable to find a block on the designated area
-        printf("%s[%d]: Unable to free\n", file, line);
+        printf("%s[%d]: Unable to free, unable to find that pointer inside our blocks\n", file, line);
         return;
     }
 
