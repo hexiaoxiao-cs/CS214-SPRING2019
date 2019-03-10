@@ -17,7 +17,7 @@ static char blocks[4096];   //Will be automatically initialized to 0 since it's 
  */
 
 //DEBUG TOGGLE
-//#define DBG
+#define DBG
 
 
 #ifndef DBG
@@ -108,6 +108,8 @@ int adjust_header_size(void* data, int new_size, char is_used) {
 }
 
 void write_new_header(void* data, char is_used, int blk_size) {
+    if(blk_size == 0)
+        return;
     struct header* h = data;
     h->is_used = is_used;
     if(blk_size > 64) {

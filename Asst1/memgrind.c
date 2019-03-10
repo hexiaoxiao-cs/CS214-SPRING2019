@@ -97,10 +97,11 @@ void caosimemory(){
     }
 
     xjbwrite(ptrs);
+
     while(1){
         for(i = 0;i<4096;i++) {
             ptrs[i].idx = way_better_dice(5000);    //Randomly distribute index
-            printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
+            //printf("!! Randomly distributed idx[%d]: %d !!\n", i, ptrs[i].idx);
         }
 
         qsort(ptrs, 4096, sizeof(idx_ptr), compare_func);
@@ -110,9 +111,9 @@ void caosimemory(){
             if(j>4095){return;}
             if(ptrs[j].ptr!=NULL)
             {
-                printf("!! Randomly free idx[%d] !!\n",i);
-                free(ptrs[i].ptr);
-                ptrs[i].ptr=NULL;
+                printf("!! Randomly free idx: [%p,%d] !!\n",ptrs[j].ptr, ptrs[j].allocated_size);
+                free(ptrs[j].ptr);
+                ptrs[j].ptr=NULL;
                 i++;
             }
             j++;
@@ -136,16 +137,16 @@ void caosimemory(){
 int main(int argc, char** argv) {
     unsigned int i, j;
     void *addr;
-    clock_t time_stats[6];
+    clock_t time_stats[7];
     clock_t begin;
-    for(i = 0;i < 5;i++) {
+    for(i = 0;i < 6;i++) {
         time_stats[i] = 0;  //Initialize to zero
     }
 
     //Initialize seeds
     srand(time(NULL));
-
     for(j = 0;j < 100;j++) {
+        goto F;
         //A
         begin = clock();
         for(i = 0;i < 150;i++) {
@@ -229,8 +230,15 @@ int main(int argc, char** argv) {
             }
             time_stats[4] += clock() - begin;
         }
+F:
+        {
+            //F
+            begin = clock();
+            caosimemory();
+            time_stats[5] += clock() - begin;
+        }
     }
-    for(i = 0;i < 5;i++) {
-        printf("Cost of %c: %lfs\n", 65 + i, (double)time_stats[i] / 100 / CLOCKS_PER_SEC);  //Initialize to zero
+    for(i = 0;i < 6;i++) {
+        printf("Cost of %c: %.17g\n", 65 + i, time_stats[i] / 100.0 / CLOCKS_PER_SEC / 1000 );  //Initialize to zero
     }
 }
