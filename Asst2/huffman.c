@@ -1,5 +1,12 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>	//File system
+#include <dirent.h>	//Directories
+
+
 typedef struct node{
 	int count;
 	struct node *left,*right;
@@ -11,6 +18,8 @@ typedef struct MinHeap {
 }Minheap;
 //HUFFMAN TREE
 node* tree;
+int size=0;
+
 void heapify(MinHeap *heap, int index)
 {
 	int left = index*2+1;
@@ -81,6 +90,7 @@ node** createNodeArray(char** contents,int* counts,int many)
 	node** array = (node**)malloc(sizeof(node*)*many);
 	int i=0;
 	node* temp;
+	size=many;
 	for(i=0;i<many;i++)
 	{
 		temp=(node*)malloc(sizeof(node));
@@ -118,13 +128,70 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 		insertNode(heap, temp3);
 	}
 	tree=heap->array[0];
+	free(heap);
 	return;
 }
 
-void createHuffmanFromCodeBook(char** codes, const char** words, int size) {
+void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
 	//Initialize huffman tree from codebook
+
+}
+/* Create Huffman Codebook From Huffman Tree
+	 Required:
+	 Executed createHuffmanFromFrequency
+	 tree Not NULL
+	 Return:
+	 Codes: Encoded Huffman Codes
+	 Words: The corrosponding Words
+	 size: The size of the Array
+	 Rule:
+	 prefix Traverse
+*/
+
+//DongFeng-41 is an atomic bomb for bombing the global memory -_-
+void DongFeng-41 ()
+{
+	free(tree);
+	size=0;
+}
+void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int* nowword, node* currnode)
+{
+	if(currnode->left==currnode->right==NULL){
+		words[nowword]=currnode->data;
+		codes[nowword]=curr;
+		curr[nowcode]= 
+
+	}
 }
 
-void createCodeBook(char** codes, char **words, int *size) {
+void createCodeBook(char** codes, char **words) {
+	if(tree==NULL) return; //For security, check whether there is a Huffman Tree
+	codes = (char**) malloc (sizeof(char*)*size);
+	words = (char**) malloc (sizeof(char*)*size);
 
+}
+
+//FILE SYSTEM RELATED STUFF
+//TODO:
+//1. read from codebook file
+//2. read file to count frequencies
+//3. recursively traverse directories
+//4. compress according to the code code book
+//5. decompress according to constructed tree
+
+/* HuffmanCodeBook Format
+ *
+ * <ASCII bytestring> <\t> <token> <\n>
+ * ...
+ * ...
+ * terminated with new line(\n)
+ *
+ */
+
+void createHuffmanForDecompress(const char* codebook_path) {
+	int handler = open(codebook_path, O_RDONLY);
+
+
+
+	close(handler);
 }
