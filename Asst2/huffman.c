@@ -128,6 +128,7 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 		insertNode(heap, temp3);
 	}
 	tree=heap->array[0];
+	free(heap->array);
 	free(heap);
 	return;
 }
