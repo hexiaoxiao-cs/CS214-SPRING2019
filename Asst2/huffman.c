@@ -9,7 +9,8 @@ typedef struct MinHeap {
     int size;
     struct node** array;
 }Minheap;
-
+//HUFFMAN TREE
+node* tree;
 void heapify(MinHeap *heap, int index)
 {
 	int left = index*2+1;
@@ -101,7 +102,7 @@ node** createNodeArray(char** contents,int* counts,int many)
  * Head node pointer to the huffman tree
  */
 
-node* createHuffmanTree(char** contents,int* counts,int many)
+void createHuffmanFromFrequency(char** contents,int* counts,int many)
 {
 	MinHeap heap = initMinHeap(contents,counts,many);
 	node *temp1,*temp2,*temp3;
@@ -116,7 +117,14 @@ node* createHuffmanTree(char** contents,int* counts,int many)
 		temp3->count = temp1->count+temp2->count;
 		insertNode(heap, temp3);
 	}
-	return heap->array[0];
+	tree=heap->array[0];
+	return;
 }
 
-void createCodeBook(int* code)
+void createHuffmanFromCodeBook(char** codes, const char** words, int size) {
+	//Initialize huffman tree from codebook
+}
+
+void createCodeBook(char** codes, char **words, int *size) {
+
+}
