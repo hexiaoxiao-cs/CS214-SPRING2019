@@ -260,6 +260,24 @@ void createCodeBook(char** codes, char **words) {
  *
  */
 
+//Test Driver For Xiaoxiao He's Huffman Tree
+
+void main()
+{
+	char **a,**b;
+	int i =0;
+	createHuffmanFromFrequency({"abc","def","hahaha"},{123,234,345},3);
+	createCodeBook(a,b);
+	for(i=0;i<3;i++)
+	{
+		printf("%s\t%s\n",a[i],b[i]);
+	}
+
+
+	return;
+}
+
+
 //This function allocate size + 1 bytes for data
 //Content is guaranteed zero-terminated, however there might be zero in
 //the middle of the content
