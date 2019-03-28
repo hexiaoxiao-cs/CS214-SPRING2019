@@ -134,7 +134,12 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 
 void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
 	//Initialize huffman tree from codebook
+	int temp=0;
+	node* curr=0;
+	for(temp=0;temp<many;temp++)
+	{
 
+	}
 }
 /* Create Huffman Codebook From Huffman Tree
 	 Required:
@@ -148,8 +153,8 @@ void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
 	 prefix Traverse
 */
 
-//DongFeng-41 is an atomic bomb for bombing the global memory -_-
-void DongFeng-41 ()
+//DongFeng-41KuaiDi is an atomic bomb for bombing the global memory -_-
+void DongFeng41KuaiDi ()
 {
 	free(tree);
 	size=0;
@@ -159,16 +164,41 @@ void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int
 	if(currnode->left==currnode->right==NULL){
 		words[nowword]=currnode->data;
 		codes[nowword]=curr;
-		curr[nowcode]= 
-
+		curr[nowcode]= '\0';
+		(&nowcode)--;
+		(&nowword)++;
+		return;
 	}
+	//Left Node
+	{
+		//Begin Accessing
+		(&nowcode)++;
+		curr[nowcode]='0';
+		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->left)
+		//Finished Accessing--Cleaning
+		(&nowcode)--;
+		curr[nowcode]='\0';
+	}
+	//Left Node
+	{
+		//Begin Accessing
+		(&nowcode)++;
+		curr[nowcode]='1';
+		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->right)
+		//Finished Accessing--Cleaning
+		(&nowcode)--;
+		curr[nowcode]='\0';
+	}
+	return;
 }
 
 void createCodeBook(char** codes, char **words) {
+	char* curr = (char*) malloc (sizeof(char)*size);
+	int nowcode=0,nowword=0;
 	if(tree==NULL) return; //For security, check whether there is a Huffman Tree
 	codes = (char**) malloc (sizeof(char*)*size);
 	words = (char**) malloc (sizeof(char*)*size);
-
+	TraverseTreePrefix(codes,words,curr, &nowcode,&nowword,tree);
 }
 
 //FILE SYSTEM RELATED STUFF
@@ -188,10 +218,36 @@ void createCodeBook(char** codes, char **words) {
  *
  */
 
+//This function allocate size + 1 bytes for data
+//Content is guaranteed zero-terminated, however there might be zero in
+//the middle of the content
+void readFile(const char* file_path, char** data, int* size) {
+	int handler = open(file_path, O_RDONLY);
+	//TODO: check open error status
+	//Nonblock and readAll
+	int tmp, ret;
+	int file_size = lseek(handler, 0, SEEK_END);
+	char* huge_shit = (char*)malloc(file_size + 1);
+	huge_shit[file_size] = 0;	//Zero terminated
+	tmp = 0;
+	while(tmp < file_size) {
+		ret = read(handler, huge_shit + tmp, file_size - tmp);
+		if(ret < 0) {
+			//TODO error checking
+		} else if(ret == 0) {
+			break;
+		} else {
+			//Positive interger
+			tmp += ret;
+		}
+	}
+	*data = huge_shit;
+	*size = file_size;
+}
+
 void createHuffmanForDecompress(const char* codebook_path) {
-	int handler = open(codebook_path, O_RDONLY);
+	char* codebook_data;
+	int codebook_size;
+	readFile(codebook_path, &codebook_data, &codebook_size);
 
-
-
-	close(handler);
 }
