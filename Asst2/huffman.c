@@ -15,7 +15,7 @@ typedef struct node{
 typedef struct MinHeap {
     int size;
     struct node** array;
-}Minheap;
+}MinHeap;
 //HUFFMAN TREE
 node* tree;
 int size=0;
