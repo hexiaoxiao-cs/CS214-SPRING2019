@@ -175,11 +175,19 @@ void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
 
 
 //DongFeng-41KuaiDi is an atomic bomb for bombing the global memory -_-
-void DongFeng41KuaiDi ()
+void DongFeng41KuaiDi (node* curr)
 {
-	free(tree);
-	size=0;
+	if(curr==NULL){return;}
+	DongFeng41KuaiDi(curr->left);
+	DongFeng41KuaiDi(curr->right);
+	free(curr);
 	return;
+}
+
+void LaunchDongFengDaoDan()
+{
+	DongFeng41KuaiDi(tree);
+	size=0;
 }
 void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int* nowword, node* currnode)
 {
