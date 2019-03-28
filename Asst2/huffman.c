@@ -132,35 +132,58 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 	return;
 }
 
+/*
+	createHuffmanFromCodeBook
+	Required
+	Codes ending with \0
+	words ending with \0
+*/
+
 void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
 	//Initialize huffman tree from codebook
-	int temp=0;
-	node* curr=0;
+	int temp=0,cnt=0;
+	node* root = (node*)malloc(sizeof(node));
+	root->left=root->right=NULL;
+	node* curr=root;
 	for(temp=0;temp<many;temp++)
 	{
-
+		cnt=0;
+		curr=root;
+		while(code[temp][cnt]!='\0')
+		{
+			if(code[temp][cnt]=='0'){
+				if(curr->left==NULL){
+					curr->left=(node*)malloc(sizeof(node));
+					curr->left->left=curr->left->right=NULL;
+				}
+			curr=curr->left;
+			}
+			if(code[temp][cnt]=='1'){
+				if(curr->right==NULL){
+					curr->right=(node*)malloc(sizeof(node));
+					curr->right->left=curr->right->right=NULL;
+				}
+			curr=curr->right;
+			}
+			cnt++;
+		}
+		curr->data=word[temp];
 	}
+	tree=root;
+	return;
 }
-/* Create Huffman Codebook From Huffman Tree
-	 Required:
-	 Executed createHuffmanFromFrequency
-	 tree Not NULL
-	 Return:
-	 Codes: Encoded Huffman Codes
-	 Words: The corrosponding Words
-	 size: The size of the Array
-	 Rule:
-	 prefix Traverse
-*/
+
 
 //DongFeng-41KuaiDi is an atomic bomb for bombing the global memory -_-
 void DongFeng41KuaiDi ()
 {
 	free(tree);
 	size=0;
+	return;
 }
 void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int* nowword, node* currnode)
 {
+	//At the edge which means that must be a value node
 	if(currnode->left==currnode->right==NULL){
 		words[nowword]=currnode->data;
 		codes[nowword]=curr;
@@ -179,7 +202,7 @@ void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int
 		(&nowcode)--;
 		curr[nowcode]='\0';
 	}
-	//Left Node
+	//Right Node
 	{
 		//Begin Accessing
 		(&nowcode)++;
@@ -191,7 +214,17 @@ void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int
 	}
 	return;
 }
-
+/* Create Huffman Codebook From Huffman Tree
+	 Required:
+	 Executed createHuffmanFromFrequency
+	 tree Not NULL
+	 Return:
+	 Codes: Encoded Huffman Codes
+	 Words: The corrosponding Words
+	 size: The size of the Array
+	 Rule:
+	 prefix Traverse
+*/
 void createCodeBook(char** codes, char **words) {
 	char* curr = (char*) malloc (sizeof(char)*size);
 	int nowcode=0,nowword=0;
