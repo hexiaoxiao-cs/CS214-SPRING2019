@@ -29,8 +29,8 @@ void createHuffmanFromFrequency(char** ,int* ,int);
 void createHuffmanFromCodeBook(char**,  char**, int );
 void DongFeng41KuaiDi (node*);
 void LaunchDongFengDaoDan();
-void TraverseTreePrefix(char**, char **, char* ,int *, int* , node* )
-void createCodeBook(char** , char **) 
+void TraverseTreePrefix(char**, char **, char* ,int *, int* , node* );
+void createCodeBook(char** , char **);
 void heapify(MinHeap *heap, int index)
 {
 	int left = index*2+1;
