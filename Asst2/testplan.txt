@@ -1,0 +1,4 @@
+Test Plan:
+1. Try to compress and decompress a hello world C program (compiled), then run the program see whether it is still working.
+2. Randomly repeat everything in ASCII table for 500 times and see if match the original one.
+3. Download a high-def picture and a movie and compress and decompress the picture and a movie. 

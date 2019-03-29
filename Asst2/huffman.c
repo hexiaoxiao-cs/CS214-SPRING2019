@@ -283,7 +283,7 @@ void main()
 {
 	char *a[6];
 	a[0] = "a";
-	a[1] = "dog";
+	a[1] = "\n";
 	a[2] = "cat";
 	a[3] = "button";
 	a[4] = "tall";
