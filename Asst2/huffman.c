@@ -19,7 +19,18 @@ typedef struct MinHeap {
 //HUFFMAN TREE
 node* tree;
 int size=0;
-
+//start to declear functions
+void heapify(MinHeap*,int);
+node* getMinNodeHeap(MinHeap*);
+void insertNode(MinHeap*,node*);
+MinHeap* initMinHeap(char**,int*,int);
+node** createNodeArray(char**,int*,int);
+void createHuffmanFromFrequency(char** ,int* ,int);
+void createHuffmanFromCodeBook(char**,  char**, int );
+void DongFeng41KuaiDi (node*);
+void LaunchDongFengDaoDan();
+void TraverseTreePrefix(char**, char **, char* ,int *, int* , node* )
+void createCodeBook(char** , char **) 
 void heapify(MinHeap *heap, int index)
 {
 	int left = index*2+1;
@@ -140,7 +151,7 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 	words ending with \0
 */
 
-void createHuffmanFromCodeBook(char** codes, const char** words, int many) {
+void createHuffmanFromCodeBook(char** codes, char** words, int many) {
 	//Initialize huffman tree from codebook
 	int temp=0,cnt=0;
 	node* root = (node*)malloc(sizeof(node));
