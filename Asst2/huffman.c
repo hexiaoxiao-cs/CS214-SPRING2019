@@ -125,13 +125,15 @@ node** createNodeArray(char** contents,int* counts,int many)
 
 void createHuffmanFromFrequency(char** contents,int* counts,int many)
 {
-	MinHeap heap = initMinHeap(contents,counts,many);
+	MinHeap* heap = initMinHeap(contents,counts,many);
 	node *temp1,*temp2,*temp3;
 	while(heap->size!=1)
 	{
 		//get two least element from both heap
+		
 		temp1=getMinNodeHeap(heap);
 		temp2=getMinNodeHeap(heap);
+		printf("Merging %s and %s",temp1->data,temp2->data);
 		temp3=(node*) malloc (sizeof(node));
 		temp3->left = temp1;
 		temp3->right = temp2;
@@ -147,7 +149,7 @@ void createHuffmanFromFrequency(char** contents,int* counts,int many)
 /*
 	createHuffmanFromCodeBook
 	Required
-	Codes ending with \0
+	Codes ending with \out0
 	words ending with \0
 */
 
@@ -161,16 +163,16 @@ void createHuffmanFromCodeBook(char** codes, char** words, int many) {
 	{
 		cnt=0;
 		curr=root;
-		while(code[temp][cnt]!='\0')
+		while(codes[temp][cnt]!='\0')
 		{
-			if(code[temp][cnt]=='0'){
+			if(codes[temp][cnt]=='0'){
 				if(curr->left==NULL){
 					curr->left=(node*)malloc(sizeof(node));
 					curr->left->left=curr->left->right=NULL;
 				}
 			curr=curr->left;
 			}
-			if(code[temp][cnt]=='1'){
+			if(codes[temp][cnt]=='1'){
 				if(curr->right==NULL){
 					curr->right=(node*)malloc(sizeof(node));
 					curr->right->left=curr->right->right=NULL;
@@ -179,7 +181,7 @@ void createHuffmanFromCodeBook(char** codes, char** words, int many) {
 			}
 			cnt++;
 		}
-		curr->data=word[temp];
+		curr->data=words[temp];
 	}
 	tree=root;
 	return;
@@ -205,32 +207,34 @@ void TraverseTreePrefix(char** codes, char **words, char* curr,int *nowcode, int
 {
 	//At the edge which means that must be a value node
 	if(currnode->left==currnode->right==NULL){
-		words[nowword]=currnode->data;
-		codes[nowword]=curr;
-		curr[nowcode]= '\0';
-		(&nowcode)--;
-		(&nowword)++;
+		words[*nowword]=currnode->data;
+		printf("%s\n",currnode->data);
+		printf("%s\n",codes[*nowword]);
+		codes[*nowword]=curr;
+		curr[*nowcode]= '\0';
+		(*nowcode)--;
+		(*nowword)++;
 		return;
 	}
 	//Left Node
 	{
 		//Begin Accessing
-		(&nowcode)++;
-		curr[nowcode]='0';
-		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->left)
+		(*nowcode)++;
+		curr[*nowcode]='0';
+		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->left);
 		//Finished Accessing--Cleaning
-		(&nowcode)--;
-		curr[nowcode]='\0';
+		(*nowcode)--;
+		curr[*nowcode]='\0';
 	}
 	//Right Node
 	{
 		//Begin Accessing
-		(&nowcode)++;
-		curr[nowcode]='1';
-		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->right)
+		(*nowcode)++;
+		curr[*nowcode]='1';
+		TraverseTreePrefix(codes,words,curr,nowcode,nowword,currnode->right);
 		//Finished Accessing--Cleaning
-		(&nowcode)--;
-		curr[nowcode]='\0';
+		(*nowcode)--;
+		curr[*nowcode]='\0';
 	}
 	return;
 }
@@ -275,13 +279,19 @@ void createCodeBook(char** codes, char **words) {
 
 void main()
 {
-	char **a,**b;
+	char *a[3];
+	a[0]="abc";
+	a[1]="bcd";
+	a[2]="hahaha";
 	int i =0;
-	createHuffmanFromFrequency({"abc","def","hahaha"},{123,234,345},3);
-	createCodeBook(a,b);
+	char **b,**e;
+	int c[3]={123,234,345};	
+	createHuffmanFromFrequency(a,c,3);
+	createCodeBook(b,e);
+	if(tree==NULL){printf("NULL TREE");return;}
 	for(i=0;i<3;i++)
 	{
-		printf("%s\t%s\n",a[i],b[i]);
+		printf("%s\t%s\n",b[i],e[i]);
 	}
 
 
