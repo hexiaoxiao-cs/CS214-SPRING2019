@@ -259,8 +259,8 @@ void TraverseTreePrefix(char** codes, expandable **words, char* curr, int *nowco
         words[*nowword] = currnode->data;
         printf("%s\n", currnode->data->data);
         curr[*nowcode] = '\0';
-        stuff = (char*)malloc(size * sizeof(char));
-        memcpy(stuff,curr,sizeof(char)*size);
+        stuff = (char*)malloc((size+1) * sizeof(char));
+        memcpy(stuff,curr,sizeof(char)*(size+1));
         codes[*nowword] = stuff;
         printf("%s\n", codes[*nowword]);
         (*nowword)++;
@@ -324,7 +324,7 @@ void createCodeBook(char** codes, expandable **words) {
 //	appendSequenceExpandable(words[5], "\n", 1);
 //
 //	return;
-    char* curr = (char*)malloc(sizeof(char)*size);
+    char* curr = (char*)malloc(sizeof(char)*(size+1));
     int nowcode = 0, nowword = 0;
     if (tree == NULL) return; //For security, check whether there is a Huffman Tree
     TraverseTreePrefix(codes, words, curr, &nowcode, &nowword, tree);
