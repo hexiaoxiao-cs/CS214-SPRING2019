@@ -44,7 +44,7 @@ void appendExpandable(expandable* space, char c) {
     }
 }
 
-void appendSequenceExpandable(expandable* space, char* sequence, int sequence_size) {
+void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size) {
     for(int i=0;i < sequence_size;i++) {
         appendExpandable(space, sequence[i]);
     }
@@ -78,6 +78,7 @@ void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
 void createCodeBook(char**, expandable **);
 void createHuffmanForDecompress(const char* codebook_path);
 void writeHuffmanCodeBook(const char* codebook_path, int size);
+void doShit(const char* dir);
 void heapify(MinHeap *heap, int index)
 {
     int left = index * 2 + 1;
@@ -342,32 +343,34 @@ void createCodeBook(char** codes, expandable **words) {
 
 int main()
 {
-    createHuffmanForDecompress("test.codebook");
-    writeHuffmanCodeBook("test.codebook2", 6);
-    return 0;
-    char *a[6];
-    a[0] = "a";
-    a[1] = "\n";
-    a[2] = "cat";
-    a[3] = "button";
-    a[4] = "tall";
-    a[5] = "and";
-    int i = 0;
-    char **b, **e;
-    int c[6] = { 5,9,12, 13 ,16,45 };
-    createHuffmanFromFrequency(a, c, 6);
-    size = 6;
-    b = (char**)malloc(sizeof(char*)*size);
-    e = (char**)malloc(sizeof(char*)*size);
-    createCodeBook(b, e);
-    if (tree == NULL) { printf("NULL TREE"); return; }
-    for (i = 0; i<6; i++)
-    {
-        printf("%s\t%s\n", b[i], e[i]);
-    }
-
-
-    return 0;
+	doShit("./data/");
+	return 0;
+//    createHuffmanForDecompress("test.codebook");
+//    writeHuffmanCodeBook("test.codebook2", 6);
+//    return 0;
+//    char *a[6];
+//    a[0] = "a";
+//    a[1] = "\n";
+//    a[2] = "cat";
+//    a[3] = "button";
+//    a[4] = "tall";
+//    a[5] = "and";
+//    int i = 0;
+//    char **b, **e;
+//    int c[6] = { 5,9,12, 13 ,16,45 };
+//    createHuffmanFromFrequency(a, c, 6);
+//    size = 6;
+//    b = (char**)malloc(sizeof(char*)*size);
+//    e = (char**)malloc(sizeof(char*)*size);
+//    createCodeBook(b, e);
+//    if (tree == NULL) { printf("NULL TREE"); return; }
+//    for (i = 0; i<6; i++)
+//    {
+//        printf("%s\t%s\n", b[i], e[i]);
+//    }
+//
+//
+//    return 0;
 }
 
 
@@ -424,6 +427,10 @@ void writeFile(const char* file_path, char* data, int size) {
     close(handler);	//Close file
 }
 
+int isDelim(char c) {
+	return !isalnum(c) && !ispunct(c);
+}
+
 /* HuffmanCodeBook Format
 * <valid token count>
 * <ASCII bytestring> <\t> <token> <\n>
@@ -434,11 +441,11 @@ void writeFile(const char* file_path, char* data, int size) {
 */
 
 void writeHuffmanCodeBook(const char* codebook_path, int size) {
-    char** codes = malloc(size * sizeof(char*));
-    int i;
-    char hex[3];	//character
-    expandable** words = malloc(size * sizeof(expandable*));
-    createCodeBook(codes, words);
+	int i;
+	char hex[3];	//hex buffer
+	char** codes = malloc(size * sizeof(char*));
+	expandable** words = malloc(size * sizeof(expandable*));
+	createCodeBook(codes, words);
 
     expandable* content = createExpandable();
 
@@ -450,7 +457,7 @@ void writeHuffmanCodeBook(const char* codebook_path, int size) {
         appendExpandable(content, '\t');
         if(words[i]->size == 1) {
             //Need to check possible control character
-            if(!isalnum(words[i]->data[0]) && !ispunct(words[i]->data[0])) {
+            if(isDelim(words[i]->data[0])) {
                 //blank or control codes
                 appendExpandable(content, '0');
                 //encode before append
@@ -471,7 +478,6 @@ void writeHuffmanCodeBook(const char* codebook_path, int size) {
     free(codes);
     free(words);
     writeFile(codebook_path, content->data, content->size);
-    printf("%s\n", content->data);
     destroyExpandable(content);
 }
 
@@ -521,4 +527,95 @@ void createHuffmanForDecompress(const char* codebook_path) {
     }
     free(codebook_data);
     createHuffmanFromCodeBook(codes, words, lines);
+}
+
+typedef struct {
+	expandable* token;
+	int freq;
+} __attribute__((packed)) counter_t;
+
+typedef struct {
+	counter_t* counters;
+	int in_use;
+	int counters_size;
+}counters_t;
+
+void incrementTokenFrequency(const char* token, int token_size, counters_t* counters) {
+	int i=0;
+	counter_t* tmp;
+	for(i=0;i < counters->counters_size;i++) {
+		if(counters->counters[i].token == NULL)
+			break;
+		if(token_size == counters->counters[i].token->size && memcmp(counters->counters[i].token->data, token, token_size) == 0) {
+			counters->counters[i].freq++;
+			return;
+		}
+	}
+add:
+	//cannot find an existed token inside counters
+	for(i = 0;i < counters->counters_size;i++) {
+		if(counters->counters[i].token == NULL) {
+			counters->counters[i].token = createExpandable();
+			appendSequenceExpandable(counters->counters[i].token, token, token_size);
+			counters->counters[i].freq = 1;
+			counters->in_use++;
+			return;
+		}
+	}
+	
+	//unable to find empty entries
+	tmp = realloc(counters->counters, (counters->counters_size + 100) * sizeof(counter_t));	//reallocate memory
+	if(tmp == NULL) {
+		printf("Not enough memory\n");
+		exit(1);
+	}
+	counters->counters = tmp;
+	memset((char*)(counters->counters) + counters->counters_size * sizeof(counter_t), 0, 100 * sizeof(counter_t));
+	counters->counters_size += 100;
+	goto add;
+}
+
+void counting(const char* file_data, int file_size, counters_t* counters) {
+	expandable* space = createExpandable();
+	int idx = 0;
+	for(idx = 0;idx < file_size;idx++) {
+		if(!isDelim(file_data[idx])) {
+			//not a delimeter
+			appendExpandable(space, file_data[idx]);
+		} else {
+			incrementTokenFrequency(space->data, space->size, counters);
+			space->data[0] = file_data[idx];
+			incrementTokenFrequency(space->data, 1, counters);
+			destroyExpandable(space);
+			space = createExpandable();
+		}
+	}
+	if(space->size != 0) {
+		//something is not countered yet (last part)
+		incrementTokenFrequency(space->data, space->size, counters);
+	}
+	destroyExpandable(space);
+}
+
+void doShit(const char* dir) {
+	char* command, *task_data, *line, *file_data;
+	int task_size, file_size;
+	counters_t counters;
+	counters.counters = calloc(10, sizeof(counter_t));
+	counters.counters_size = 10;
+	counters.in_use = 0;
+	
+	
+	asprintf(&command, "find %s -type f > output.tmp", dir);
+	system(command);
+	free(command);
+	readFile("output.tmp", &task_data, &task_size);
+	line = strtok(task_data, "\n");
+	while(line) {
+		readFile(line, &file_data, &file_size);
+ 		counting(file_data, file_size, &counters);
+		printf("%s\n", line);
+		line = strtok(NULL, "\n");
+	}
+	free(task_data);
 }
