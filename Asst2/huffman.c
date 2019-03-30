@@ -6,16 +6,53 @@
 #include <fcntl.h>      //File system
 #include <dirent.h>     //Directories
 
+//Dynamic array
+typedef struct {
+		char* data;
+		int size;
+		int total_size;
+} expandable;
+
+expandable* createExpandable() {
+		expandable* space = calloc(1, sizeof(expandable));
+		space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
+		space->total_size = 50;
+		return space;
+}
+
+void destroyExpandable(expandable* space) {
+		free(space->data);
+		free(space);
+}
+
+void destroyExpandableWithoutFree(expandable* space) {
+	free(space);
+}
+
+void expandExpandable(expandable* space) {
+		space->total_size = space->total_size + 50;
+		space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
+		space->data[space->total_size] = 0; //set it to null
+}
+
+void appendExpandable(expandable* space, char c) {
+		space->data[space->size++] = c;
+		if(space->size == space->total_size) {
+				expandExpandable(space);
+		}
+}
 
 typedef struct node {
 	int count;
 	struct node *left, *right;
-	char* data;
+	expandable* data;
 }node;
 typedef struct MinHeap {
 	int size;
 	struct node** array;
 }MinHeap;
+
+
 //HUFFMAN TREE
 node* tree;
 int size = 0;
@@ -23,14 +60,15 @@ int size = 0;
 void heapify(MinHeap*, int);
 node* getMinNodeHeap(MinHeap*);
 void insertNode(MinHeap*, node*);
-MinHeap* initMinHeap(char**, int*, int);
-node** createNodeArray(char**, int*, int);
-void createHuffmanFromFrequency(char**, int*, int);
-void createHuffmanFromCodeBook(char**, char**, int);
+MinHeap* initMinHeap(expandable**, int*, int);
+node** createNodeArray(expandable**, int*, int);
+void createHuffmanFromFrequency(expandable**, int*, int);
+void createHuffmanFromCodeBook(char**, expandable**, int);
 void DongFeng41KuaiDi(node*);
 void LaunchDongFengDaoDan();
-void TraverseTreePrefix(char**, char **, char*, int *, int*, node*);
-void createCodeBook(char**, char **);
+void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
+void createCodeBook(char**, expandable **);
+void createHuffmanForDecompress(const char* codebook_path);
 void heapify(MinHeap *heap, int index)
 {
 	int left = index * 2 + 1;
@@ -77,7 +115,7 @@ void insertNode(MinHeap *heap, node *toInsert)
 	return;
 }
 
-MinHeap* initMinHeap(char **contents, int* counts, int many)
+MinHeap* initMinHeap(expandable **contents, int* counts, int many)
 {
 	MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
 	toReturn->size = many;
@@ -96,7 +134,7 @@ MinHeap* initMinHeap(char **contents, int* counts, int many)
 * node* head pointer to head
 * Xiaoxiao He 3/12/2019
 */
-node** createNodeArray(char** contents, int* counts, int many)
+node** createNodeArray(expandable** contents, int* counts, int many)
 {
 	node** array = (node**)malloc(sizeof(node*)*many);
 	int i = 0;
@@ -123,7 +161,7 @@ node** createNodeArray(char** contents, int* counts, int many)
 * Head node pointer to the huffman tree
 */
 
-void createHuffmanFromFrequency(char** contents, int* counts, int many)
+void createHuffmanFromFrequency(expandable** contents, int* counts, int many)
 {
 	MinHeap* heap = initMinHeap(contents, counts, many);
 	node *temp1, *temp2, *temp3;
@@ -153,7 +191,7 @@ Codes ending with \out0
 words ending with \0
 */
 
-void createHuffmanFromCodeBook(char** codes, char** words, int many) {
+void createHuffmanFromCodeBook(char** codes, expandable** words, int many) {
 	//Initialize huffman tree from codebook
 	int temp = 0, cnt = 0;
 	node* root = (node*)malloc(sizeof(node));
@@ -203,13 +241,13 @@ void LaunchDongFengDaoDan()
 	DongFeng41KuaiDi(tree);
 	size = 0;
 }
-void TraverseTreePrefix(char** codes, char **words, char* curr, int *nowcode, int* nowword, node* currnode)
+void TraverseTreePrefix(char** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
 {
 	char *stuff;
 	//At the edge which means that must be a value node
 	if (currnode->left == NULL &&  currnode->right == NULL) {
 		words[*nowword] = currnode->data;
-		printf("%s\n", currnode->data);
+		printf("%s\n", currnode->data->data);
 		curr[*nowcode] = '\0';
 		stuff = (char*)malloc(size * sizeof(char));
 		memcpy(stuff,curr,sizeof(char)*size);
@@ -253,7 +291,7 @@ size: The size of the Array
 Rule:
 prefix Traverse
 */
-void createCodeBook(char** codes, char **words) {
+void createCodeBook(char** codes, expandable **words) {
 	char* curr = (char*)malloc(sizeof(char)*size);
 	int nowcode = 0, nowword = 0;
 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
@@ -268,19 +306,13 @@ void createCodeBook(char** codes, char **words) {
 //4. compress according to the code code book
 //5. decompress according to constructed tree
 
-/* HuffmanCodeBook Format
-*
-* <ASCII bytestring> <\t> <token> <\n>
-* ...
-* ...
-* terminated with new line(\n)
-*
-*/
-
 //Test Driver For Xiaoxiao He's Huffman Tree
 
 void main()
 {
+	createHuffmanForDecompress("test.codebook");
+
+	return;
 	char *a[6];
 	a[0] = "a";
 	a[1] = "\n";
@@ -316,6 +348,7 @@ void readFile(const char* file_path, char** data, int* size) {
 	//Nonblock and readAll
 	int tmp, ret;
 	int file_size = lseek(handler, 0, SEEK_END);
+	lseek(handler, 0, SEEK_SET);
 	char* huge_shit = (char*)malloc(file_size + 1);
 	huge_shit[file_size] = 0;       //Zero terminated
 	tmp = 0;
@@ -336,9 +369,59 @@ void readFile(const char* file_path, char** data, int* size) {
 	*size = file_size;
 }
 
+/* HuffmanCodeBook Format
+ * <valid token count>
+ * <ASCII bytestring> <\t> <token> <\n>
+ * ...
+ * ...
+ * terminated with new line(\n)
+ *
+ */
+
 void createHuffmanForDecompress(const char* codebook_path) {
 	char* codebook_data;
-	int codebook_size;
+	int codebook_size, i, counter = 0, lines, control_code;
+	expandable* space;
+
 	readFile(codebook_path, &codebook_data, &codebook_size);
 
+	sscanf(codebook_data, "%d\n%n", &lines, &counter);
+
+	char** codes = malloc(lines * sizeof(char*));
+	expandable** words = malloc(lines * sizeof(expandable*));
+
+	for(i = 0;i < lines;i++) {
+		space = createExpandable();
+
+		//Read strings until we hit a tab
+		while(codebook_data[counter] != '\t') {
+			appendExpandable(space, codebook_data[counter++]);
+		}
+		//byte string created
+		codes[i] = space->data;
+		destroyExpandableWithoutFree(space);
+
+		//this is a tab
+		counter++;
+
+		space = createExpandable();
+		//first byte of token determine the type of token
+		if(codebook_data[counter++] == '1') {
+			//normal token
+			while(codebook_data[counter] != '\n') {
+				appendExpandable(space, codebook_data[counter++]);
+			}
+			words[i] = space;
+		} else {
+			//control code token
+			sscanf(codebook_data + counter, "%02X", &control_code);
+			space->data[0] = (char)control_code;
+			space->size = 1;
+			counter += 2; //2 bytes for codes
+			words[i] = space;
+		}
+		counter += 1; //consume newline
+	}
+	free(codebook_data);
+	createHuffmanFromCodeBook(codes, words, lines);
 }
