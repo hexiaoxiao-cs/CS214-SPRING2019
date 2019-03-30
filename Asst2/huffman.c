@@ -302,27 +302,27 @@ prefix Traverse
 */
 void createCodeBook(char** codes, expandable **words) {
 	//DEBUG
-	codes[0] = "0";
-	codes[1] = "100";
-	codes[2] = "101";
-	codes[3] = "1100";
-	codes[4] = "1101";
-	codes[5] = "111";
-
-	words[0] = createExpandable();
-	appendSequenceExpandable(words[0], "and", 3);
-	words[1] = createExpandable();
-	appendSequenceExpandable(words[1], "cat", 3);
-	words[2] = createExpandable();
-	appendSequenceExpandable(words[2], "button", 6);
-	words[3] = createExpandable();
-	appendSequenceExpandable(words[3], "a", 1);
-	words[4] = createExpandable();
-	appendSequenceExpandable(words[4], "dog", 3);
-	words[5] = createExpandable();
-	appendSequenceExpandable(words[5], "\n", 1);
-
-	return;
+//	codes[0] = "0";
+//	codes[1] = "100";
+//	codes[2] = "101";
+//	codes[3] = "1100";
+//	codes[4] = "1101";
+//	codes[5] = "111";
+//
+//	words[0] = createExpandable();
+//	appendSequenceExpandable(words[0], "and", 3);
+//	words[1] = createExpandable();
+//	appendSequenceExpandable(words[1], "cat", 3);
+//	words[2] = createExpandable();
+//	appendSequenceExpandable(words[2], "button", 6);
+//	words[3] = createExpandable();
+//	appendSequenceExpandable(words[3], "a", 1);
+//	words[4] = createExpandable();
+//	appendSequenceExpandable(words[4], "dog", 3);
+//	words[5] = createExpandable();
+//	appendSequenceExpandable(words[5], "\n", 1);
+//
+//	return;
 	char* curr = (char*)malloc(sizeof(char)*size);
 	int nowcode = 0, nowword = 0;
 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
@@ -341,8 +341,8 @@ void createCodeBook(char** codes, expandable **words) {
 
 int main()
 {
-	//createHuffmanForDecompress("test.codebook");
-	writeHuffmanCodeBook("test.codebook", 6);
+	createHuffmanForDecompress("test.codebook");
+	writeHuffmanCodeBook("test.codebook2", 6);
 	return 0;
 	char *a[6];
 	a[0] = "a";
@@ -470,6 +470,7 @@ void writeHuffmanCodeBook(const char* codebook_path, int size) {
 	free(codes);
 	free(words);
 	writeFile(codebook_path, content->data, content->size);
+	printf("%s\n", content->data);
 	destroyExpandable(content);
 }
 
