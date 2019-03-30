@@ -82,10 +82,11 @@ void DongFeng41KuaiDi(node*);
 void LaunchDongFengDaoDan();
 void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
 void fillCodeBookFromTree(char**, expandable **);
-void buildHuffmanTreeFromCodebook(const char* codebook_path);
+void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
 void dumpCodeBookToFileRaw(const char* codebook_path, const char** codes, expandable** words, int size);
 void doShits(const char* dir, int has_codebook, const char* codebook_path);
-void undoShitDbg(const char* file);
+void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path);
+void undoSingleShit(const char* file, const char* codebook_path);
 void heapify(MinHeap *heap, int index)
 {
 	int left = index * 2 + 1;
@@ -351,8 +352,7 @@ void fillCodeBookFromTree(char** codes, expandable **words) {
 
 int main()
 {
-	buildHuffmanTreeFromCodebook("./data/out.book");
-	undoShitDbg("./data/huffman2.hcz");
+	undoSingleShit("./data/test.hcz", "./data/HuffmanCodebook");
 	//doShit("./data/");
 	return 0;
 	//    createHuffmanForDecompress("test.codebook");
@@ -537,7 +537,7 @@ int loadCodeBookFromFile(const char* codebook_path, char*** codes_out, expandabl
 	return lines;
 }
 
-void buildHuffmanTreeFromCodebook(const char* codebook_path) {
+void buildHuffmanTreeFromCodebookFile(const char* codebook_path) {
 	int i;
 	char** codes;
 	expandable** words;
@@ -681,17 +681,6 @@ void decompress(expandable* buffer, char* file_data, int file_size, node* tree) 
 	destroyExpandable(tmp);
 }
 
-void undoShitDbg(const char* file) {
-	expandable* buffer = createExpandable();
-	char* file_data;
-	int file_size;
-	readFile(file, &file_data, &file_size);
-	decompress(buffer, file_data, file_size, tree);
-	writeFile("out.txt", buffer->data, buffer->size);
-	destroyExpandable(buffer);
-	free(file_data);
-}
-
 void buildHuffmanTreeFromCounters(counters_t* counters) {
 	//sort counters
 	int i;
@@ -722,12 +711,54 @@ void loadCodeBookFromTree(char*** codes, expandable*** words, int items_count) {
 	fillCodeBookFromTree(*codes, *words);
 }
 
-void compressFile(const char* original_file, expandable* path_buffer, expandable* buffer, char* file_data, int file_size, char** codes, expandable** words, int items_count) {
+void useTmpFolderForFile(expandable* path_buffer, const char* original_file) {
+	char* original_filename;
+	char* original_file_dup = strdup(original_file);
+	char* original_path = dirname(original_file_dup);
+	appendSequenceExpandable(path_buffer, original_path, strlen(original_path));
+	free(original_file_dup);
+
+	appendSequenceExpandable(path_buffer, "/.tmp/", 6);
+
+	original_file_dup = strdup(original_file);
+	original_filename = basename(original_file_dup);
+	appendSequenceExpandable(path_buffer, original_filename, strlen(original_filename));
+	free(original_file_dup);
+}
+
+void compressFile(const char* original_file, expandable* path_buffer,
+	expandable* buffer, char* file_data, int file_size,
+	char** codes, expandable** words, int items_count, int move_to_tmp_folder) {
 	compress(buffer, file_data, file_size, codes, words, items_count);
-	appendSequenceExpandable(path_buffer, original_file, strlen(original_file));
+	if(move_to_tmp_folder) {
+		//need to use better file name
+		useTmpFolderForFile(path_buffer, original_file);
+	} else {
+		appendSequenceExpandable(path_buffer, original_file, strlen(original_file));
+	}
 	appendSequenceExpandable(path_buffer, ".hcz", 4);
 	zeroUnusedExpandable(path_buffer);
-	writeFile(path_buffer->data, path_buffer->data, path_buffer->size);
+	writeFile(path_buffer->data, buffer->data, buffer->size);
+	path_buffer->size = 0;
+	buffer->size = 0;
+}
+
+void decompressFile(const char* original_file, expandable* path_buffer,
+	expandable* buffer, char* file_data, int file_size, node* tree,
+	int move_to_tmp_folder) {
+	decompress(buffer, file_data, file_size, tree);
+	char* new_file_path = strdup(original_file);
+	new_file_path[strlen(new_file_path) - 4] = 0;
+	if(move_to_tmp_folder) {
+		useTmpFolderForFile(path_buffer, new_file_path);
+	} else {
+		appendSequenceExpandable(path_buffer, new_file_path, strlen(new_file_path));
+	}
+	zeroUnusedExpandable(path_buffer);
+	writeFile(path_buffer->data, buffer->data, buffer->size);
+	free(new_file_path);
+	path_buffer->size = 0;
+	buffer->size = 0;
 }
 
 void cleanHalfCodeBooks(char** codes, expandable** words, int items_count) {
@@ -739,11 +770,24 @@ void cleanHalfCodeBooks(char** codes, expandable** words, int items_count) {
 	free(words);
 }
 
+void undoSingleShit(const char* file, const char* codebook_path) {
+	buildHuffmanTreeFromCodebookFile(codebook_path);
+	expandable* buffer = createExpandable();
+	expandable* path_buffer = createExpandable();
+	char* file_data;
+	int file_size;
+	readFile(file, &file_data, &file_size);
+	decompressFile(file, path_buffer, buffer, file_data, file_size, tree, 0);	//do not use tmp folder
+	destroyExpandable(buffer);
+	destroyExpandable(path_buffer);
+	free(file_data);
+}
+
 void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path) {
 	char* file_data;
 	char** codes;
 	expandable** words;
-	int file_size, i;
+	int file_size;
 	int items_count;
 
 	readFile(filepath, &file_data, &file_size);
@@ -771,7 +815,7 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 	expandable* output_buffer = createExpandable();
 	expandable* output_path = createExpandable();
 
-	compressFile(filepath, output_path, output_buffer, file_data, file_size, codes, words, items_count);
+	compressFile(filepath, output_path, output_buffer, file_data, file_size, codes, words, items_count, 0);
 	free(file_data);
 
 	cleanHalfCodeBooks(codes, words, items_count);
@@ -781,7 +825,7 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 
 void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 	char* command, *task_data, *line, *file_data;
-	int task_size, file_size, i, items_count;
+	int task_size, file_size, items_count;
 
 	char** codes;
 	expandable** words;
@@ -832,7 +876,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 	while(line) {
 		printf("C: %s.hcz\n", line);
 		readFile(line, &file_data, &file_size);
-		compressFile(line, output_path, output_buffer, file_data, file_size, codes, words, items_count);
+		compressFile(line, output_path, output_buffer, file_data, file_size, codes, words, items_count, 1);
 		free(file_data);
 		line = strtok(NULL, "\n");
 	}
