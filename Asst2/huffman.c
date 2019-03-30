@@ -7,6 +7,7 @@
 #include <fcntl.h>      //File system
 #include <dirent.h>     //Directories
 #include <unistd.h>
+#include <libgen.h>
 
 //Dynamic array
 typedef struct {
@@ -45,6 +46,7 @@ void appendExpandable(expandable* space, char c) {
 }
 
 void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size) {
+	//TODO: performance can be improved in here
 	for(int i=0;i < sequence_size;i++) {
 		appendExpandable(space, sequence[i]);
 	}
@@ -82,7 +84,7 @@ void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
 void createCodeBook(char**, expandable **);
 void createHuffmanForDecompress(const char* codebook_path);
 void writeHuffmanCodeBook(const char* codebook_path, const char** codes, expandable** words, int size);
-void doShit(const char* dir);
+void doShits(const char* dir, int has_codebook, const char* codebook_path);
 void undoShitDbg(const char* file);
 void heapify(MinHeap *heap, int index)
 {
@@ -679,13 +681,53 @@ void undoShitDbg(const char* file) {
 	free(file_data);
 }
 
-void doShit(const char* dir) {
+void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path) {
+	char* file_data;
+	char** codes;
+	expandable** words;
+	int file_size, i;
+	int items_count;
+	if(!has_codebook) {
+		counters_t counters;
+		readFile(filepath, &file_data, &file_size);
+		counting(file_data, file_size, &counters);
+		
+		//sort counters
+		qsort(counters.counters, counters.in_use, sizeof(counter_t), qsort_cmp);
+		int* frequencies = malloc(sizeof(int) * counters.counters_size);
+		expandable** tokens = malloc(sizeof(expandable*) * counters.counters_size);
+		for(i = 0;i < counters.in_use;i++) {
+			frequencies[i] = counters.counters[i].freq;
+			tokens[i] = counters.counters[i].token;
+		}
+		createHuffmanFromFrequency(tokens, frequencies, counters.in_use);
+		free(tokens);
+		free(frequencies);
+		
+		items_count = counters.in_use;
+	} else {
+		char* filepath_dup = strdup(filepath);
+		char* dir = dirname(filepath_dup);
+		//use existed codebook
+		createHuffmanForDecompress(codebook_path);
+		items_count = size;
+		
+		expandable* codebook_path = createExpandable();
+		appendSequenceExpandable(codebook_path, dir, strlen(dir));
+		appendExpandable(codebook_path, '/');
+		appendSequenceExpandable(codebook_path, "HuffmanCodebook", 15);
+		writeHuffmanCodeBook(codebook_path->data, codes, words, items_count);
+		destroyExpandable(codebook_path);
+		free(filepath_dup);
+	}
+}
+
+void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 	char* command, *task_data, *line, *file_data;
-	int task_size, file_size, i;
-	counters_t counters;
-	counters.counters = calloc(10, sizeof(counter_t));
-	counters.counters_size = 10;
-	counters.in_use = 0;
+	int task_size, file_size, i, items_count;
+	
+	char** codes;
+	expandable** words;
 
 
 	asprintf(&command, "find %s -type f > output.tmp", dir);
@@ -693,43 +735,62 @@ void doShit(const char* dir) {
 	free(command);
 	readFile("output.tmp", &task_data, &task_size);
 
-	char* task_data_dup = malloc(task_size + 1);
-	memcpy(task_data_dup, task_data, task_size + 1);
+	if(!has_codebook) {
+		//need to count and build tree first
+		counters_t counters;
+		counters.counters = calloc(10, sizeof(counter_t));
+		counters.counters_size = 10;
+		counters.in_use = 0;
+		
+		char* task_data_dup = strdup(task_data);
+		line = strtok(task_data_dup, "\n");
+		while(line) {
+			printf("B: %s\n", line);
+			readFile(line, &file_data, &file_size);
+			counting(file_data, file_size, &counters);
+			free(file_data);
+			line = strtok(NULL, "\n");
+		}
+
+		free(task_data_dup);
+
+		//create huffman tree
+		//sort counters
+		qsort(counters.counters, counters.in_use, sizeof(counter_t), qsort_cmp);
+		int* frequencies = malloc(sizeof(int) * counters.counters_size);
+		expandable** tokens = malloc(sizeof(expandable*) * counters.counters_size);
+		for(i = 0;i < counters.in_use;i++) {
+			frequencies[i] = counters.counters[i].freq;
+			tokens[i] = counters.counters[i].token;
+		}
+		createHuffmanFromFrequency(tokens, frequencies, counters.in_use);
+		free(tokens);
+		free(frequencies);
+		
+		expandable* codebook_path = createExpandable();
+		appendSequenceExpandable(codebook_path, dir, strlen(dir));
+		appendExpandable(codebook_path, '/');
+		appendSequenceExpandable(codebook_path, "HuffmanCodebook", 15);
+		writeHuffmanCodeBook(codebook_path->data, codes, words, items_count);	//TODO: change it to the correct codebook location
+		destroyExpandable(codebook_path);
+		items_count = counters.in_use;
+		
+	} else {
+		//use existed codebook
+		createHuffmanForDecompress(codebook_path);
+		items_count = size;
+	}
+	
+	codes = malloc(sizeof(char*) * items_count);
+	words = malloc(sizeof(expandable*) * items_count);
+	
+	if(!has_codebook) {
+		createCodeBook(codes, words);
+		
+	}
+	
+
 	line = strtok(task_data, "\n");
-	while(line) {
-		printf("B: %s\n", line);
-		readFile(line, &file_data, &file_size);
-		counting(file_data, file_size, &counters);
-		free(file_data);
-		line = strtok(NULL, "\n");
-	}
-
-	//DEBUG
-	for(int j=0;j < counters.in_use;j++) {
-		printf("Freq: %d\n", counters.counters[j].freq);
-	}
-
-	free(task_data);
-
-	//create huffman tree
-	//sort counters
-	qsort(counters.counters, counters.in_use, sizeof(counter_t), qsort_cmp);
-	int* frequencies = malloc(sizeof(int) * counters.counters_size);
-	expandable** tokens = malloc(sizeof(expandable*) * counters.counters_size);
-	for(i = 0;i < counters.in_use;i++) {
-		frequencies[i] = counters.counters[i].freq;
-		tokens[i] = counters.counters[i].token;
-	}
-	createHuffmanFromFrequency(tokens, frequencies, counters.in_use);
-	free(tokens);
-	free(frequencies);
-	char** codes = malloc(sizeof(char*) * counters.in_use);
-	expandable** words = malloc(sizeof(expandable*) * counters.in_use);
-	createCodeBook(codes, words);
-
-	writeHuffmanCodeBook("./data/out.book", codes, words, counters.in_use);	//TODO: change it to the correct codebook location
-
-	line = strtok(task_data_dup, "\n");
 
 	expandable* output_buffer = createExpandable();
 	expandable* output_path = createExpandable();
@@ -747,11 +808,10 @@ void doShit(const char* dir) {
 		line = strtok(NULL, "\n");
 	}
 
-	//TODO: free codes internal
 	for(i = 0; i < counters.in_use;i++) {
 		free(codes[i]);
 	}
-	free(task_data_dup);
+	free(task_data);
 	free(codes);
 	free(words);
 	destroyExpandable(output_path);
