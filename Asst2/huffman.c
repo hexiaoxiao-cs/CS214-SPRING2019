@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,24 +6,25 @@
 #include <sys/stat.h>
 #include <fcntl.h>      //File system
 #include <dirent.h>     //Directories
+#include <unistd.h>
 
 //Dynamic array
 typedef struct {
-		char* data;
-		int size;
-		int total_size;
+	char* data;
+	int size;
+	int total_size;
 } expandable;
 
 expandable* createExpandable() {
-		expandable* space = calloc(1, sizeof(expandable));
-		space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
-		space->total_size = 50;
-		return space;
+	expandable* space = calloc(1, sizeof(expandable));
+	space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
+	space->total_size = 50;
+	return space;
 }
 
 void destroyExpandable(expandable* space) {
-		free(space->data);
-		free(space);
+	free(space->data);
+	free(space);
 }
 
 void destroyExpandableWithoutFree(expandable* space) {
@@ -30,16 +32,22 @@ void destroyExpandableWithoutFree(expandable* space) {
 }
 
 void expandExpandable(expandable* space) {
-		space->total_size = space->total_size + 50;
-		space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
-		space->data[space->total_size] = 0; //set it to null
+	space->total_size = space->total_size + 50;
+	space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
+	space->data[space->total_size] = 0; //set it to null
 }
 
 void appendExpandable(expandable* space, char c) {
-		space->data[space->size++] = c;
-		if(space->size == space->total_size) {
-				expandExpandable(space);
-		}
+	space->data[space->size++] = c;
+	if(space->size == space->total_size) {
+		expandExpandable(space);
+	}
+}
+
+void appendSequenceExpandable(expandable* space, char* sequence, int sequence_size) {
+	for(int i=0;i < sequence_size;i++) {
+		appendExpandable(space, sequence[i]);
+	}
 }
 
 typedef struct node {
@@ -69,6 +77,7 @@ void LaunchDongFengDaoDan();
 void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
 void createCodeBook(char**, expandable **);
 void createHuffmanForDecompress(const char* codebook_path);
+void writeHuffmanCodeBook(const char* codebook_path, int size);
 void heapify(MinHeap *heap, int index)
 {
 	int left = index * 2 + 1;
@@ -292,6 +301,28 @@ Rule:
 prefix Traverse
 */
 void createCodeBook(char** codes, expandable **words) {
+	//DEBUG
+	codes[0] = "0";
+	codes[1] = "100";
+	codes[2] = "101";
+	codes[3] = "1100";
+	codes[4] = "1101";
+	codes[5] = "111";
+
+	words[0] = createExpandable();
+	appendSequenceExpandable(words[0], "and", 3);
+	words[1] = createExpandable();
+	appendSequenceExpandable(words[1], "cat", 3);
+	words[2] = createExpandable();
+	appendSequenceExpandable(words[2], "button", 6);
+	words[3] = createExpandable();
+	appendSequenceExpandable(words[3], "a", 1);
+	words[4] = createExpandable();
+	appendSequenceExpandable(words[4], "dog", 3);
+	words[5] = createExpandable();
+	appendSequenceExpandable(words[5], "\n", 1);
+
+	return;
 	char* curr = (char*)malloc(sizeof(char)*size);
 	int nowcode = 0, nowword = 0;
 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
@@ -308,11 +339,11 @@ void createCodeBook(char** codes, expandable **words) {
 
 //Test Driver For Xiaoxiao He's Huffman Tree
 
-void main()
+int main()
 {
-	createHuffmanForDecompress("test.codebook");
-
-	return;
+	//createHuffmanForDecompress("test.codebook");
+	writeHuffmanCodeBook("test.codebook", 6);
+	return 0;
 	char *a[6];
 	a[0] = "a";
 	a[1] = "\n";
@@ -335,7 +366,7 @@ void main()
 	}
 
 
-	return;
+	return 0;
 }
 
 
@@ -345,7 +376,7 @@ void main()
 void readFile(const char* file_path, char** data, int* size) {
 	int handler = open(file_path, O_RDONLY);
 	//TODO: check open error status
-	//Nonblock and readAll
+	//Blocking and readAll
 	int tmp, ret;
 	int file_size = lseek(handler, 0, SEEK_END);
 	lseek(handler, 0, SEEK_SET);
@@ -367,16 +398,80 @@ void readFile(const char* file_path, char** data, int* size) {
 	}
 	*data = huge_shit;
 	*size = file_size;
+	close(handler);	//Close file
+}
+
+void writeFile(const char* file_path, char* data, int size) {
+	int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC);
+	//TODO: check open error status
+	//Blocking and writeAll
+	int tmp, ret;
+	tmp = 0;
+	while (tmp < size) {
+		ret = write(handler, data + tmp, size - tmp);
+		if (ret < 0) {
+			//TODO error checking
+		}
+		else if (ret == 0) {
+			break;
+		}
+		else {
+			//Positive interger
+			tmp += ret;
+		}
+	}
+	close(handler);	//Close file
 }
 
 /* HuffmanCodeBook Format
- * <valid token count>
- * <ASCII bytestring> <\t> <token> <\n>
- * ...
- * ...
- * terminated with new line(\n)
- *
- */
+* <valid token count>
+* <ASCII bytestring> <\t> <token> <\n>
+* ...
+* ...
+* terminated with new line(\n)
+*
+*/
+
+void writeHuffmanCodeBook(const char* codebook_path, int size) {
+	char** codes = malloc(size * sizeof(char*));
+	int i;
+	char hex[3];	//character
+	expandable** words = malloc(size * sizeof(expandable*));
+	createCodeBook(codes, words);
+
+	expandable* content = createExpandable();
+
+	content->size += sprintf(content->data, "%d\n", size);	//WARNING: this relies on the assumption that 49 bytes can hold the size
+
+	for(i = 0;i < size;i++) {
+		appendSequenceExpandable(content, codes[i], strlen(codes[i]));
+		free(codes[i]);
+		appendExpandable(content, '\t');
+		if(words[i]->size == 1) {
+			//Need to check possible control character
+			if(!isalnum(words[i]->data[0]) && !ispunct(words[i]->data[0])) {
+				//blank or control codes
+				appendExpandable(content, '0');
+				//encode before append
+				sprintf(hex, "%02X", words[i]->data[0]);
+				appendSequenceExpandable(content, hex, 2);
+			} else
+				goto normal;
+		} else {
+		normal:
+			//normal sequence
+			appendExpandable(content, '1');
+			appendSequenceExpandable(content, words[i]->data, words[i]->size);
+		}
+		appendExpandable(content, '\n');
+	}
+
+	//free stuffs
+	free(codes);
+	free(words);
+	writeFile(codebook_path, content->data, content->size);
+	destroyExpandable(content);
+}
 
 void createHuffmanForDecompress(const char* codebook_path) {
 	char* codebook_data;
