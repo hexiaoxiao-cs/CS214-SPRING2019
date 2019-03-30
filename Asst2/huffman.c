@@ -10,44 +10,44 @@
 
 //Dynamic array
 typedef struct {
-		char* data;
-		int size;
-		int total_size;
+	char* data;
+	int size;
+	int total_size;
 } expandable;
 
 expandable* createExpandable() {
-		expandable* space = calloc(1, sizeof(expandable));
-		space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
-		space->total_size = 50;
-		return space;
+	expandable* space = calloc(1, sizeof(expandable));
+	space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
+	space->total_size = 50;
+	return space;
 }
 
 void destroyExpandable(expandable* space) {
-		free(space->data);
-		free(space);
+	free(space->data);
+	free(space);
 }
 
 void destroyExpandableWithoutFree(expandable* space) {
-		free(space);
+	free(space);
 }
 
 void expandExpandable(expandable* space) {
-		space->total_size = space->total_size + 50;
-		space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
-		space->data[space->total_size] = 0; //set it to null
+	space->total_size = space->total_size + 50;
+	space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
+	space->data[space->total_size] = 0; //set it to null
 }
 
 void appendExpandable(expandable* space, char c) {
-		space->data[space->size++] = c;
-		if(space->size == space->total_size) {
-				expandExpandable(space);
-		}
+	space->data[space->size++] = c;
+	if(space->size == space->total_size) {
+		expandExpandable(space);
+	}
 }
 
 void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size) {
-		for(int i=0;i < sequence_size;i++) {
-				appendExpandable(space, sequence[i]);
-		}
+	for(int i=0;i < sequence_size;i++) {
+		appendExpandable(space, sequence[i]);
+	}
 }
 
 void zeroUnusedExpandable(expandable* space) {
@@ -55,13 +55,13 @@ void zeroUnusedExpandable(expandable* space) {
 }
 
 typedef struct node {
-		int count;
-		struct node *left, *right;
-		expandable* data;
+	int count;
+	struct node *left, *right;
+	expandable* data;
 }node;
 typedef struct MinHeap {
-		int size;
-		struct node** array;
+	int size;
+	struct node** array;
 }MinHeap;
 
 
@@ -86,56 +86,56 @@ void doShit(const char* dir);
 void undoShitDbg(const char* file);
 void heapify(MinHeap *heap, int index)
 {
-		int left = index * 2 + 1;
-		int right = index * 2 + 2;
-		node* temp;
-		if (left<heap->size && heap->array[left]->count < heap->array[index]->count)
-		{
-				//swap the left to the index
-				temp = heap->array[index];
-				heap->array[index] = heap->array[left];
-				heap->array[left] = temp;
-				heapify(heap, left);
-		}
-		if (right<heap->size && heap->array[right]->count < heap->array[index]->count)
-		{
-				//swap the right to the index
-				temp = heap->array[index];
-				heap->array[index] = heap->array[right];
-				heap->array[right] = temp;
-				heapify(heap, right);
-		}
-		return;
+	int left = index * 2 + 1;
+	int right = index * 2 + 2;
+	node* temp;
+	if (left<heap->size && heap->array[left]->count < heap->array[index]->count)
+	{
+		//swap the left to the index
+		temp = heap->array[index];
+		heap->array[index] = heap->array[left];
+		heap->array[left] = temp;
+		heapify(heap, left);
+	}
+	if (right<heap->size && heap->array[right]->count < heap->array[index]->count)
+	{
+		//swap the right to the index
+		temp = heap->array[index];
+		heap->array[index] = heap->array[right];
+		heap->array[right] = temp;
+		heapify(heap, right);
+	}
+	return;
 }
 
 node* getMinNodeHeap(MinHeap *heap)
 {
-		node *toReturn = heap->array[0];
-		heap->array[0] = heap->array[heap->size - 1];
-		heap->size--;
-		heapify(heap, 0);
-		return toReturn;
+	node *toReturn = heap->array[0];
+	heap->array[0] = heap->array[heap->size - 1];
+	heap->size--;
+	heapify(heap, 0);
+	return toReturn;
 }
 
 void insertNode(MinHeap *heap, node *toInsert)
 {
-		int curr = heap->size;
-		while (curr != 0 && toInsert->count < heap->array[(curr - 1) / 2]->count)
-		{
-				heap->array[curr] = heap->array[(curr - 1) / 2];
-				curr = (curr - 1) / 2;
-		}
-		heap->array[curr] = toInsert;
-		heap->size++;
-		return;
+	int curr = heap->size;
+	while (curr != 0 && toInsert->count < heap->array[(curr - 1) / 2]->count)
+	{
+		heap->array[curr] = heap->array[(curr - 1) / 2];
+		curr = (curr - 1) / 2;
+	}
+	heap->array[curr] = toInsert;
+	heap->size++;
+	return;
 }
 
 MinHeap* initMinHeap(expandable **contents, int* counts, int many)
 {
-		MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
-		toReturn->size = many;
-		toReturn->array = createNodeArray(contents, counts, many);
-		return toReturn;
+	MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
+	toReturn->size = many;
+	toReturn->array = createNodeArray(contents, counts, many);
+	return toReturn;
 }
 
 /* Creating Node Array
@@ -151,19 +151,19 @@ MinHeap* initMinHeap(expandable **contents, int* counts, int many)
 */
 node** createNodeArray(expandable** contents, int* counts, int many)
 {
-		node** array = (node**)malloc(sizeof(node*)*many);
-		int i = 0;
-		node* temp;
-		size = many;
-		for (i = 0; i<many; i++)
-		{
-				temp = (node*)malloc(sizeof(node));
-				temp->count = counts[i];
-				temp->data = contents[i];
-				temp->left = temp->right = NULL;
-				array[i] = temp;
-		}
-		return array;
+	node** array = (node**)malloc(sizeof(node*)*many);
+	int i = 0;
+	node* temp;
+	size = many;
+	for (i = 0; i<many; i++)
+	{
+		temp = (node*)malloc(sizeof(node));
+		temp->count = counts[i];
+		temp->data = contents[i];
+		temp->left = temp->right = NULL;
+		array[i] = temp;
+	}
+	return array;
 }
 
 /* Create Huffman Tree Structure
@@ -178,25 +178,25 @@ node** createNodeArray(expandable** contents, int* counts, int many)
 
 void createHuffmanFromFrequency(expandable** contents, int* counts, int many)
 {
-		MinHeap* heap = initMinHeap(contents, counts, many);
-		node *temp1, *temp2, *temp3;
-		while (heap->size != 1)
-		{
-				//get two least element from both heap
+	MinHeap* heap = initMinHeap(contents, counts, many);
+	node *temp1, *temp2, *temp3;
+	while (heap->size != 1)
+	{
+		//get two least element from both heap
 
-				temp1 = getMinNodeHeap(heap);
-				temp2 = getMinNodeHeap(heap);
-				//printf("Merging %s and %s", temp1->data, temp2->data);
-				temp3 = (node*)malloc(sizeof(node));
-				temp3->left = temp1;
-				temp3->right = temp2;
-				temp3->count = temp1->count + temp2->count;
-				insertNode(heap, temp3);
-		}
-		tree = heap->array[0];
-		free(heap->array);
-		free(heap);
-		return;
+		temp1 = getMinNodeHeap(heap);
+		temp2 = getMinNodeHeap(heap);
+		//printf("Merging %s and %s", temp1->data, temp2->data);
+		temp3 = (node*)malloc(sizeof(node));
+		temp3->left = temp1;
+		temp3->right = temp2;
+		temp3->count = temp1->count + temp2->count;
+		insertNode(heap, temp3);
+	}
+	tree = heap->array[0];
+	free(heap->array);
+	free(heap);
+	return;
 }
 
 /*
@@ -207,94 +207,95 @@ words ending with \0
 */
 
 void createHuffmanFromCodeBook(char** codes, expandable** words, int many) {
-		//Initialize huffman tree from codebook
-		int temp = 0, cnt = 0;
-		node* root = (node*)malloc(sizeof(node));
-		root->left = root->right = NULL;
-		node* curr = root;
-		for (temp = 0; temp<many; temp++)
+	//Initialize huffman tree from codebook
+	int temp = 0, cnt = 0;
+	node* root = (node*)malloc(sizeof(node));
+	root->left = root->right = NULL;
+	node* curr = root;
+	for (temp = 0; temp<many; temp++)
+	{
+		cnt = 0;
+		curr = root;
+		while (codes[temp][cnt] != '\0')
 		{
-				cnt = 0;
-				curr = root;
-				while (codes[temp][cnt] != '\0')
-				{
-						if (codes[temp][cnt] == '0') {
-								if (curr->left == NULL) {
-										curr->left = (node*)malloc(sizeof(node));
-										curr->left->left = curr->left->right = NULL;
-								}
-								curr = curr->left;
-						}
-						if (codes[temp][cnt] == '1') {
-								if (curr->right == NULL) {
-										curr->right = (node*)malloc(sizeof(node));
-										curr->right->left = curr->right->right = NULL;
-								}
-								curr = curr->right;
-						}
-						cnt++;
+			if (codes[temp][cnt] == '0') {
+				if (curr->left == NULL) {
+					curr->left = (node*)malloc(sizeof(node));
+					curr->left->left = curr->left->right = NULL;
 				}
-				curr->data = words[temp];
+				curr = curr->left;
+			}
+			if (codes[temp][cnt] == '1') {
+				if (curr->right == NULL) {
+					curr->right = (node*)malloc(sizeof(node));
+					curr->right->left = curr->right->right = NULL;
+				}
+				curr = curr->right;
+			}
+			cnt++;
 		}
-		tree = root;
-		size=many;
-		return;
+		curr->data = words[temp];
+	}
+	tree = root;
+	size=many;
+	return;
 }
 
 
 //DongFeng-41KuaiDi is an atomic bomb for bombing the global memory -_-
 void DongFeng41KuaiDi(node* curr)
 {
-		if (curr == NULL) { return; }
-		DongFeng41KuaiDi(curr->left);
-		DongFeng41KuaiDi(curr->right);
-		free(curr);
-		return;
+	if (curr == NULL) { return; }
+	DongFeng41KuaiDi(curr->left);
+	DongFeng41KuaiDi(curr->right);
+	destroyExpandable(curr->data);
+	free(curr);
+	return;
 }
 
 void LaunchDongFengDaoDan()
 {
-		DongFeng41KuaiDi(tree);
-		size = 0;
+	DongFeng41KuaiDi(tree);
+	size = 0;
 }
 void TraverseTreePrefix(char** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
 {
-		char *stuff;
-		//At the edge which means that must be a value node
-		if (currnode->left == NULL &&  currnode->right == NULL) {
-				words[*nowword] = currnode->data;
-				//printf("%s\n", currnode->data->data);
-				curr[*nowcode] = '\0';
-				stuff = (char*)malloc((size+1) * sizeof(char));
-				memcpy(stuff,curr,sizeof(char)*(size+1));
-				codes[*nowword] = stuff;
-				//printf("%s\n", codes[*nowword]);
-				(*nowword)++;
-				return;
-		}
-		//Left Node
-		{
-				//Begin Accessing
-
-				curr[*nowcode] = '0';
-				(*nowcode)++;
-				TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->left);
-				//Finished Accessing--Cleaning
-				(*nowcode)--;
-				curr[*nowcode] = '\0';
-		}
-		//Right Node
-		{
-				//Begin Accessing
-
-				curr[*nowcode] = '1';
-				(*nowcode)++;
-				TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->right);
-				//Finished Accessing--Cleaning
-				(*nowcode)--;
-				curr[*nowcode] = '\0';
-		}
+	char *stuff;
+	//At the edge which means that must be a value node
+	if (currnode->left == NULL &&  currnode->right == NULL) {
+		words[*nowword] = currnode->data;
+		//printf("%s\n", currnode->data->data);
+		curr[*nowcode] = '\0';
+		stuff = (char*)malloc((size+1) * sizeof(char));
+		memcpy(stuff,curr,sizeof(char)*(size+1));
+		codes[*nowword] = stuff;
+		//printf("%s\n", codes[*nowword]);
+		(*nowword)++;
 		return;
+	}
+	//Left Node
+	{
+		//Begin Accessing
+
+		curr[*nowcode] = '0';
+		(*nowcode)++;
+		TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->left);
+		//Finished Accessing--Cleaning
+		(*nowcode)--;
+		curr[*nowcode] = '\0';
+	}
+	//Right Node
+	{
+		//Begin Accessing
+
+		curr[*nowcode] = '1';
+		(*nowcode)++;
+		TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->right);
+		//Finished Accessing--Cleaning
+		(*nowcode)--;
+		curr[*nowcode] = '\0';
+	}
+	return;
 }
 /* Create Huffman Codebook From Huffman Tree
 Required:
@@ -308,32 +309,32 @@ Rule:
 prefix Traverse
 */
 void createCodeBook(char** codes, expandable **words) {
-		//DEBUG
-//	codes[0] = "0";
-//	codes[1] = "100";
-//	codes[2] = "101";
-//	codes[3] = "1100";
-//	codes[4] = "1101";
-//	codes[5] = "111";
-//
-//	words[0] = createExpandable();
-//	appendSequenceExpandable(words[0], "and", 3);
-//	words[1] = createExpandable();
-//	appendSequenceExpandable(words[1], "cat", 3);
-//	words[2] = createExpandable();
-//	appendSequenceExpandable(words[2], "button", 6);
-//	words[3] = createExpandable();
-//	appendSequenceExpandable(words[3], "a", 1);
-//	words[4] = createExpandable();
-//	appendSequenceExpandable(words[4], "dog", 3);
-//	words[5] = createExpandable();
-//	appendSequenceExpandable(words[5], "\n", 1);
-//
-//	return;
-		char* curr = (char*)malloc(sizeof(char)*(size+1));
-		int nowcode = 0, nowword = 0;
-		if (tree == NULL) return; //For security, check whether there is a Huffman Tree
-		TraverseTreePrefix(codes, words, curr, &nowcode, &nowword, tree);
+	//DEBUG
+	//	codes[0] = "0";
+	//	codes[1] = "100";
+	//	codes[2] = "101";
+	//	codes[3] = "1100";
+	//	codes[4] = "1101";
+	//	codes[5] = "111";
+	//
+	//	words[0] = createExpandable();
+	//	appendSequenceExpandable(words[0], "and", 3);
+	//	words[1] = createExpandable();
+	//	appendSequenceExpandable(words[1], "cat", 3);
+	//	words[2] = createExpandable();
+	//	appendSequenceExpandable(words[2], "button", 6);
+	//	words[3] = createExpandable();
+	//	appendSequenceExpandable(words[3], "a", 1);
+	//	words[4] = createExpandable();
+	//	appendSequenceExpandable(words[4], "dog", 3);
+	//	words[5] = createExpandable();
+	//	appendSequenceExpandable(words[5], "\n", 1);
+	//
+	//	return;
+	char* curr = (char*)malloc(sizeof(char)*(size+1));
+	int nowcode = 0, nowword = 0;
+	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
+	TraverseTreePrefix(codes, words, curr, &nowcode, &nowword, tree);
 }
 
 //FILE SYSTEM RELATED STUFF
@@ -352,32 +353,32 @@ int main()
 	undoShitDbg("./data/huffman2.hcz");
 	//doShit("./data/");
 	return 0;
-//    createHuffmanForDecompress("test.codebook");
-//    writeHuffmanCodeBook("test.codebook2", 6);
-//    return 0;
-//    char *a[6];
-//    a[0] = "a";
-//    a[1] = "\n";
-//    a[2] = "cat";
-//    a[3] = "button";
-//    a[4] = "tall";
-//    a[5] = "and";
-//    int i = 0;
-//    char **b, **e;
-//    int c[6] = { 5,9,12, 13 ,16,45 };
-//    createHuffmanFromFrequency(a, c, 6);
-//    size = 6;
-//    b = (char**)malloc(sizeof(char*)*size);
-//    e = (char**)malloc(sizeof(char*)*size);
-//    createCodeBook(b, e);
-//    if (tree == NULL) { printf("NULL TREE"); return; }
-//    for (i = 0; i<6; i++)
-//    {
-//        printf("%s\t%s\n", b[i], e[i]);
-//    }
-//
-//
-//    return 0;
+	//    createHuffmanForDecompress("test.codebook");
+	//    writeHuffmanCodeBook("test.codebook2", 6);
+	//    return 0;
+	//    char *a[6];
+	//    a[0] = "a";
+	//    a[1] = "\n";
+	//    a[2] = "cat";
+	//    a[3] = "button";
+	//    a[4] = "tall";
+	//    a[5] = "and";
+	//    int i = 0;
+	//    char **b, **e;
+	//    int c[6] = { 5,9,12, 13 ,16,45 };
+	//    createHuffmanFromFrequency(a, c, 6);
+	//    size = 6;
+	//    b = (char**)malloc(sizeof(char*)*size);
+	//    e = (char**)malloc(sizeof(char*)*size);
+	//    createCodeBook(b, e);
+	//    if (tree == NULL) { printf("NULL TREE"); return; }
+	//    for (i = 0; i<6; i++)
+	//    {
+	//        printf("%s\t%s\n", b[i], e[i]);
+	//    }
+	//
+	//
+	//    return 0;
 }
 
 
@@ -385,53 +386,53 @@ int main()
 //Content is guaranteed zero-terminated, however there might be zero in
 //the middle of the content
 void readFile(const char* file_path, char** data, int* size) {
-		int handler = open(file_path, O_RDONLY);
-		//TODO: check open error status
-		//Blocking and readAll
-		int tmp, ret;
-		int file_size = lseek(handler, 0, SEEK_END);
-		lseek(handler, 0, SEEK_SET);
-		char* huge_shit = (char*)malloc(file_size + 1);
-		huge_shit[file_size] = 0;       //Zero terminated
-		tmp = 0;
-		while (tmp < file_size) {
-				ret = read(handler, huge_shit + tmp, file_size - tmp);
-				if (ret < 0) {
-						//TODO error checking
-				}
-				else if (ret == 0) {
-						break;
-				}
-				else {
-						//Positive interger
-						tmp += ret;
-				}
+	int handler = open(file_path, O_RDONLY);
+	//TODO: check open error status
+	//Blocking and readAll
+	int tmp, ret;
+	int file_size = lseek(handler, 0, SEEK_END);
+	lseek(handler, 0, SEEK_SET);
+	char* huge_shit = (char*)malloc(file_size + 1);
+	huge_shit[file_size] = 0;       //Zero terminated
+	tmp = 0;
+	while (tmp < file_size) {
+		ret = read(handler, huge_shit + tmp, file_size - tmp);
+		if (ret < 0) {
+			//TODO error checking
 		}
-		*data = huge_shit;
-		*size = file_size;
-		close(handler);	//Close file
+		else if (ret == 0) {
+			break;
+		}
+		else {
+			//Positive interger
+			tmp += ret;
+		}
+	}
+	*data = huge_shit;
+	*size = file_size;
+	close(handler);	//Close file
 }
 
 void writeFile(const char* file_path, char* data, int size) {
-		int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
-		//TODO: check open error status
-		//Blocking and writeAll
-		int tmp, ret;
-		tmp = 0;
-		while (tmp < size) {
-				ret = write(handler, data + tmp, size - tmp);
-				if (ret < 0) {
-						//TODO error checking
-				}
-				else if (ret == 0) {
-						break;
-				}
-				else {
-						//Positive interger
-						tmp += ret;
-				}
+	int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
+	//TODO: check open error status
+	//Blocking and writeAll
+	int tmp, ret;
+	tmp = 0;
+	while (tmp < size) {
+		ret = write(handler, data + tmp, size - tmp);
+		if (ret < 0) {
+			//TODO error checking
 		}
-		close(handler);	//Close file
+		else if (ret == 0) {
+			break;
+		}
+		else {
+			//Positive interger
+			tmp += ret;
+		}
+	}
+	close(handler);	//Close file
 }
 
 int isDelim(char c) {
@@ -452,83 +453,88 @@ void writeHuffmanCodeBook(const char* codebook_path, const char** codes, expanda
 	char hex[3];	//hex buffer
 	hex[2] = 0;
 
-		expandable* content = createExpandable();
+	expandable* content = createExpandable();
 
-		content->size += sprintf(content->data, "%d\n", size);	//WARNING: this relies on the assumption that 49 bytes can hold the size
+	content->size += sprintf(content->data, "%d\n", size);	//WARNING: this relies on the assumption that 49 bytes can hold the size
 
-		for(i = 0;i < size;i++) {
-				appendSequenceExpandable(content, codes[i], strlen(codes[i]));
-				appendExpandable(content, '\t');
-				if(words[i]->size == 1) {
-						//Need to check possible control character
-						if(isDelim(words[i]->data[0])) {
-								//blank or control codes
-								appendExpandable(content, '0');
-								//encode before append
-								sprintf(hex, "%02X", (unsigned char)(words[i]->data[0]));
-								appendSequenceExpandable(content, hex, 2);
-						} else
-								goto normal;
-				} else {
-						normal:
-						//normal sequence
-						appendExpandable(content, '1');
-						appendSequenceExpandable(content, words[i]->data, words[i]->size);
-				}
-				appendExpandable(content, '\n');
+	for(i = 0;i < size;i++) {
+		appendSequenceExpandable(content, codes[i], strlen(codes[i]));
+		appendExpandable(content, '\t');
+		if(words[i]->size == 1) {
+			//Need to check possible control character
+			if(isDelim(words[i]->data[0])) {
+				//blank or control codes
+				appendExpandable(content, '0');
+				//encode before append
+				sprintf(hex, "%02X", (unsigned char)(words[i]->data[0]));
+				appendSequenceExpandable(content, hex, 2);
+			} else
+			goto normal;
+		} else {
+			normal:
+			//normal sequence
+			appendExpandable(content, '1');
+			appendSequenceExpandable(content, words[i]->data, words[i]->size);
 		}
+		appendExpandable(content, '\n');
+	}
 
-		//free stuffs
-		writeFile(codebook_path, content->data, content->size);
-		destroyExpandable(content);
+	//free stuffs
+	writeFile(codebook_path, content->data, content->size);
+	destroyExpandable(content);
 }
 
 void createHuffmanForDecompress(const char* codebook_path) {
-		char* codebook_data;
-		int codebook_size, i, counter = 0, lines, control_code;
-		expandable* space;
+	char* codebook_data;
+	int codebook_size, i, counter = 0, lines, control_code;
+	expandable* space;
 
-		readFile(codebook_path, &codebook_data, &codebook_size);
+	readFile(codebook_path, &codebook_data, &codebook_size);
 
-		sscanf(codebook_data, "%d\n%n", &lines, &counter);
+	sscanf(codebook_data, "%d\n%n", &lines, &counter);
 
-		char** codes = malloc(lines * sizeof(char*));
-		expandable** words = malloc(lines * sizeof(expandable*));
+	char** codes = malloc(lines * sizeof(char*));
+	expandable** words = malloc(lines * sizeof(expandable*));
 
-		for(i = 0;i < lines;i++) {
-				space = createExpandable();
+	for(i = 0;i < lines;i++) {
+		space = createExpandable();
 
-				//Read strings until we hit a tab
-				while(codebook_data[counter] != '\t') {
-						appendExpandable(space, codebook_data[counter++]);
-				}
-				//byte string created
-				codes[i] = space->data;
-				destroyExpandableWithoutFree(space);
-
-				//this is a tab
-				counter++;
-
-				space = createExpandable();
-				//first byte of token determine the type of token
-				if(codebook_data[counter++] == '1') {
-						//normal token
-						while(codebook_data[counter] != '\n') {
-								appendExpandable(space, codebook_data[counter++]);
-						}
-						words[i] = space;
-				} else {
-						//control code token
-						sscanf(codebook_data + counter, "%02X", &control_code);
-						space->data[0] = (char)control_code;
-						space->size = 1;
-						counter += 2; //2 bytes for codes
-						words[i] = space;
-				}
-				counter += 1; //consume newline
+		//Read strings until we hit a tab
+		while(codebook_data[counter] != '\t') {
+			appendExpandable(space, codebook_data[counter++]);
 		}
-		free(codebook_data);
-		createHuffmanFromCodeBook(codes, words, lines);
+		//byte string created
+		codes[i] = space->data;
+		destroyExpandableWithoutFree(space);
+
+		//this is a tab
+		counter++;
+
+		space = createExpandable();
+		//first byte of token determine the type of token
+		if(codebook_data[counter++] == '1') {
+			//normal token
+			while(codebook_data[counter] != '\n') {
+				appendExpandable(space, codebook_data[counter++]);
+			}
+			words[i] = space;
+		} else {
+			//control code token
+			sscanf(codebook_data + counter, "%02X", &control_code);
+			space->data[0] = (char)control_code;
+			space->size = 1;
+			counter += 2; //2 bytes for codes
+			words[i] = space;
+		}
+		counter += 1; //consume newline
+	}
+	free(codebook_data);
+	createHuffmanFromCodeBook(codes, words, lines);
+	for(i = 0;i < lines;i++) {
+		free(codes[i]);
+	}
+	free(codes);
+	free(words);	//cannot free the individual expandable as it need to remain valid in the tree, but we can free the array
 }
 
 typedef struct {
@@ -547,13 +553,13 @@ void incrementTokenFrequency(const char* token, int token_size, counters_t* coun
 	counter_t* tmp;
 	for(i=0;i < counters->counters_size;i++) {
 		if(counters->counters[i].token == NULL)
-			break;
+		break;
 		if(token_size == counters->counters[i].token->size && memcmp(counters->counters[i].token->data, token, token_size) == 0) {
 			counters->counters[i].freq++;
 			return;
 		}
 	}
-add:
+	add:
 	//cannot find an existed token inside counters
 	for(i = 0;i < counters->counters_size;i++) {
 		if(counters->counters[i].token == NULL) {
@@ -578,12 +584,12 @@ add:
 }
 
 /*
- * 1: token loaded
- * 0: no more token available
- */
+* 1: token loaded
+* 0: no more token available
+*/
 int nextToken(expandable* buffer, const char* file_data, int file_size, int* idx) {
 	if(*idx == file_size)
-		return 0;
+	return 0;
 	if(isDelim(file_data[*idx])) {
 		appendExpandable(buffer, file_data[*idx]);
 		(*idx)++;
@@ -615,11 +621,11 @@ int qsort_cmp(const void* a, const void* b) {
 	int freq_a = ((counter_t*)a)->freq;
 	int freq_b = ((counter_t*)b)->freq;
 	if(freq_a < freq_b)
-		return -1;
+	return -1;
 	else if(freq_a > freq_b)
-		return 1;
+	return 1;
 	else
-		return 0;
+	return 0;
 }
 
 void compress(expandable* buffer, char* file_data, int file_size, char** codes, expandable** words, int book_size) {
@@ -635,7 +641,7 @@ void compress(expandable* buffer, char* file_data, int file_size, char** codes, 
 		}
 		printf("Possible memory corruption detected, unable to find match in codebook!\n");
 		exit(1);
-	nextone:
+		nextone:
 		tmp->size = 0;
 	}
 	destroyExpandable(tmp);
@@ -670,6 +676,7 @@ void undoShitDbg(const char* file) {
 	decompress(buffer, file_data, file_size, tree);
 	writeFile("out.txt", buffer->data, buffer->size);
 	destroyExpandable(buffer);
+	free(file_data);
 }
 
 void doShit(const char* dir) {
@@ -685,7 +692,7 @@ void doShit(const char* dir) {
 	system(command);
 	free(command);
 	readFile("output.tmp", &task_data, &task_size);
-	
+
 	char* task_data_dup = malloc(task_size + 1);
 	memcpy(task_data_dup, task_data, task_size + 1);
 	line = strtok(task_data, "\n");
@@ -696,14 +703,14 @@ void doShit(const char* dir) {
 		free(file_data);
 		line = strtok(NULL, "\n");
 	}
-	
+
 	//DEBUG
 	for(int j=0;j < counters.in_use;j++) {
 		printf("Freq: %d\n", counters.counters[j].freq);
 	}
-	
+
 	free(task_data);
-	
+
 	//create huffman tree
 	//sort counters
 	qsort(counters.counters, counters.in_use, sizeof(counter_t), qsort_cmp);
@@ -719,11 +726,11 @@ void doShit(const char* dir) {
 	char** codes = malloc(sizeof(char*) * counters.in_use);
 	expandable** words = malloc(sizeof(expandable*) * counters.in_use);
 	createCodeBook(codes, words);
-	
-	writeHuffmanCodeBook("./data/out.book", codes, words, counters.in_use);
-	
+
+	writeHuffmanCodeBook("./data/out.book", codes, words, counters.in_use);	//TODO: change it to the correct codebook location
+
 	line = strtok(task_data_dup, "\n");
-	
+
 	expandable* output_buffer = createExpandable();
 	expandable* output_path = createExpandable();
 	while(line) {
@@ -739,8 +746,11 @@ void doShit(const char* dir) {
 		output_buffer->size = 0;	//reset output buffer
 		line = strtok(NULL, "\n");
 	}
-	
+
 	//TODO: free codes internal
+	for(i = 0; i < counters.in_use;i++) {
+		free(codes[i]);
+	}
 	free(task_data_dup);
 	free(codes);
 	free(words);
