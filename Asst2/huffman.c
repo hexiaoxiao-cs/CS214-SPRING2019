@@ -148,7 +148,7 @@ size: The size of the Array
 Rule:
 prefix Traverse
 */
-void fillCodeBookFromTree(char** codes, expandable **words) {
+void fillCodeBookFromTree(expandable** codes, expandable **words) {
 	//DEBUG
 	//	codes[0] = "0";
 	//	codes[1] = "100";
@@ -514,7 +514,7 @@ void dumpCodeBookToPathRaw(const char* dir, char** codes, expandable** words, in
 }
 
 void loadCodeBookFromTree(char*** codes, expandable*** words, int items_count) {
-	*codes = malloc(sizeof(char*) * items_count);
+	*codes = malloc(sizeof(expandable*) * items_count);
 	*words = malloc(sizeof(expandable*) * items_count);
 	fillCodeBookFromTree(*codes, *words);
 }

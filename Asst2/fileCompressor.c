@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	regex_t regex;
 	reti=regcomp(&regex,"*.hcz",0);
 	if(reti){printf("regex ERROR");}
-	while ((c = getopt(argc, argv, "bcd:R:")) != -1) {
+	while ((c = getopt(argc, argv, "bcdR")) != -1) {
 	    switch(c) {
 	        case 'b':
 		        buildCodeBook=1;

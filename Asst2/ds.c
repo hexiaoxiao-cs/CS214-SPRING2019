@@ -126,16 +126,16 @@ node** createNodeArray(expandable** contents, int* counts, int many)
 }
 
 
-void TraverseTreePrefix(char** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
+void TraverseTreePrefix(expandable** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
 {
-	char *stuff;
+	expandable *stuff;
 	//At the edge which means that must be a value node
 	if (currnode->left == NULL &&  currnode->right == NULL) {
 		words[*nowword] = currnode->data;
 		//printf("%s\n", currnode->data->data);
 		curr[*nowcode] = '\0';
-		stuff = (char*)malloc((size+1) * sizeof(char));
-		memcpy(stuff,curr,sizeof(char)*(size+1));
+		stuff=createExpandable();
+		stuff = appendSequenceExpandable(stuff,curr,(*nowcode));
 		codes[*nowword] = stuff;
 		//printf("%s\n", codes[*nowword]);
 		(*nowword)++;
