@@ -9,7 +9,7 @@
 
 //tnode->codes will be NULL when passed in
 void buildHuffmanTreeFromNodesArray(node** nodes, int size); // sort and call buildHuffmanTreeFromFrequencies
-
+void exportCodeFromHuffmanTree(expandable** codes, expandable **words);
 void loadBSTFromCodeBookFile(const char* codebook_path, void** BSTree);
 void counting(const char* file_data, int file_size, void* BSTree);
 void compress(expandable* buffer, char* file_data, int file_size, void* BSTree);
