@@ -54,9 +54,9 @@ void cleanAllCodeBooks(char** codes, expandable** words, int items_count) {
 * Head node pointer to the huffman tree
 */
 
-void buildHuffmanTreeFromFrequencies(expandable** contents, int* counts, int many)
+void buildHuffmanTreeFromNodesArray(node** nodes, int size)
 {
-	MinHeap* heap = initMinHeap(contents, counts, many);
+	MinHeap* heap = initMinHeap(nodes, many);
 	node *temp1, *temp2, *temp3;
 	while (heap->size != 1)
 	{
@@ -148,7 +148,7 @@ size: The size of the Array
 Rule:
 prefix Traverse
 */
-void fillCodeBookFromTree(expandable** codes, expandable **words) {
+void exportCodeFromHuffmanTree(expandable** codes, expandable **words) {
 	//DEBUG
 	//	codes[0] = "0";
 	//	codes[1] = "100";
@@ -176,6 +176,15 @@ void fillCodeBookFromTree(expandable** codes, expandable **words) {
 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
 	TraverseTreePrefix(codes, words, curr, &nowcode, &nowword, tree);
 }
+
+//FillCodebookToNodes
+//
+// void fillCodebookToTree () {
+// 	char* curr = (char*)malloc(sizeof(char)*(size+1));
+// 	int nowcode = 0, nowword = 0;
+// 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
+// 	TraverseTreePrefixInternally(curr, &nowcode, &nowword, tree);
+// }
 
 //FILE SYSTEM RELATED STUFF
 

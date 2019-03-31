@@ -129,11 +129,11 @@ void insertNode(MinHeap *heap, node *toInsert)
 	return;
 }
 
-MinHeap* initMinHeap(expandable **contents, int* counts, int many)
+MinHeap* initMinHeap(nodes** nodearray, int many)
 {
 	MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
 	toReturn->size = many;
-	toReturn->array = createNodeArray(contents, counts, many);
+	toReturn->array = nodearray;
 	return toReturn;
 }
 
@@ -148,23 +148,61 @@ MinHeap* initMinHeap(expandable **contents, int* counts, int many)
 * node* head pointer to head
 * Xiaoxiao He 3/12/2019
 */
-node** createNodeArray(expandable** contents, int* counts, int many)
-{
-	node** array = (node**)malloc(sizeof(node*)*many);
-	int i = 0;
-	node* temp;
-	size = many;
-	for (i = 0; i<many; i++)
-	{
-		temp = (node*)malloc(sizeof(node));
-		temp->count = counts[i];
-		temp->data = contents[i];
-		temp->left = temp->right = NULL;
-		array[i] = temp;
-	}
-	return array;
-}
+// node** createNodeArray(expandable** contents, int* counts, int many)
+// {
+// 	node** array = (node**)malloc(sizeof(node*)*many);
+// 	int i = 0;
+// 	node* temp;
+// 	size = many;
+// 	for (i = 0; i<many; i++)
+// 	{
+// 		temp = (node*)malloc(sizeof(node));
+// 		temp->count = counts[i];
+// 		temp->data = contents[i];
+// 		temp->left = temp->right = NULL;
+// 		array[i] = temp;
+// 	}
+// 	return array;
+// }
 
+// void TraverseTreePrefixInternally(char* curr, int *nowcode, int* nowword, node* currnode)
+// {
+// 	expandable *stuff;
+// 	//At the edge which means that must be a value node
+// 	if (currnode->left == NULL &&  currnode->right == NULL) {
+// 		//printf("%s\n", currnode->data->data);
+// 		curr[*nowcode] = '\0';
+// 		stuff=createExpandable();
+// 		stuff = appendSequenceExpandable(stuff,curr,(*nowcode));
+// 		currnode->codes = stuff;
+// 		//printf("%s\n", codes[*nowword]);
+// 		(*nowword)++;
+// 		return;
+// 	}
+// 	//Left Node
+// 	{
+// 		//Begin Accessing
+//
+// 		curr[*nowcode] = '0';
+// 		(*nowcode)++;
+// 		TraverseTreePrefixInternally(curr, nowcode, nowword, currnode->left);
+// 		//Finished Accessing--Cleaning
+// 		(*nowcode)--;
+// 		curr[*nowcode] = '\0';
+// 	}
+// 	//Right Node
+// 	{
+// 		//Begin Accessing
+//
+// 		curr[*nowcode] = '1';
+// 		(*nowcode)++;
+// 		TraverseTreePrefixInternally( curr, nowcode, nowword, currnode->right);
+// 		//Finished Accessing--Cleaning
+// 		(*nowcode)--;
+// 		curr[*nowcode] = '\0';
+// 	}
+// 	return;
+// }
 
 void TraverseTreePrefix(expandable** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
 {
@@ -177,6 +215,7 @@ void TraverseTreePrefix(expandable** codes, expandable **words, char* curr, int 
 		stuff=createExpandable();
 		stuff = appendSequenceExpandable(stuff,curr,(*nowcode));
 		codes[*nowword] = stuff;
+		currnode->codes = stuff;
 		//printf("%s\n", codes[*nowword]);
 		(*nowword)++;
 		return;
