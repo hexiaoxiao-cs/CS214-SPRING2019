@@ -5,7 +5,7 @@
 #include<dirent.h>
 #include<errno.h>
 #include<sys/types.h>
-#include<interface.h>
+#include"interface.h"
 
 int isFile(const char* name)
 {
