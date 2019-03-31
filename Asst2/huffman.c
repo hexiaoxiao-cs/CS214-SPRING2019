@@ -644,7 +644,7 @@ void undoShits(const char* dir, const char* codebook_path) {
 	while(line) {
 		printf("U: %s\n", line);
 		readFile(line, &file_data, &file_size);
-		decompressFile(line, path_buffer, buffer, file_data, file_size, BSTree, 1);
+		decompressFile(line, path_buffer, buffer, file_data, file_size, BSTree, 0);
 		free(file_data);
 		line = strtok(NULL, "\n");
 	}
@@ -740,7 +740,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path, int g
 	char* command, *task_data, *line, *file_data;
 	int task_size, file_size, items_count;
 
-	void* BSTree;
+	void* BSTree = NULL;
 
 	expandable** codes;
 	expandable** words;
@@ -795,7 +795,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path, int g
 	while(line) {
 		printf("C: %s.hcz\n", line);
 		readFile(line, &file_data, &file_size);
-		compressFile(line, output_path, output_buffer, file_data, file_size, &BSTree, 1);
+		compressFile(line, output_path, output_buffer, file_data, file_size, &BSTree, 0);
 		free(file_data);
 		line = strtok(NULL, "\n");
 	}
