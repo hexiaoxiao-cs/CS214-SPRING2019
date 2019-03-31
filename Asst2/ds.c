@@ -61,17 +61,16 @@ void destroyExpandablePtrWithoutFree(expandablePtr* space) {
 void expandExpandablePtr(expandablePtr* space) {
 	space->total_size = space->total_size + 50;
 	space->data = realloc(space->data, space->total_size *sizeof(void*));  //null terminator (reserved for codes)
-	space->data[space->total_size] = NULL; //set it to null
 }
 
-void appendExpandablePtr(expandablePtr* space, void* c) {
+void appendExpandablePtr(expandablePtr* space, const void* c) {
 	space->data[space->size++] = c;
 	if(space->size == space->total_size) {
 		expandExpandablePtr(space);
 	}
 }
 
-void appendSequenceExpandablePtr(expandablePtr* space, const void* sequence, int sequence_size) {
+void appendSequenceExpandablePtr(expandablePtr* space, void* const * sequence, int sequence_size) {
 	//TODO: performance can be improved in here
 	for(int i=0;i < sequence_size;i++) {
 		appendExpandablePtr(space, sequence[i]);
@@ -129,7 +128,7 @@ void insertNode(MinHeap *heap, node *toInsert)
 	return;
 }
 
-MinHeap* initMinHeap(nodes** nodearray, int many)
+MinHeap* initMinHeap(node** nodearray, int many)
 {
 	MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
 	toReturn->size = many;
@@ -203,18 +202,22 @@ MinHeap* initMinHeap(nodes** nodearray, int many)
 // 	}
 // 	return;
 // }
+#include <stdio.h>
 
 void TraverseTreePrefix(expandable** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
 {
 	expandable *stuff;
 	//At the edge which means that must be a value node
 	if (currnode->left == NULL &&  currnode->right == NULL) {
-		words[*nowword] = currnode->data;
+
 		//printf("%s\n", currnode->data->data);
+		//printf("%d\n",currnode->count);
 		curr[*nowcode] = '\0';
-		stuff=createExpandable();
-		stuff = appendSequenceExpandable(stuff,curr,(*nowcode));
-		codes[*nowword] = stuff;
+		stuff = createExpandable();
+		appendSequenceExpandable(stuff,curr,(*nowcode));
+		if(words!=NULL||codes!=NULL){
+		words[*nowword] = currnode->data;
+		codes[*nowword] = stuff;}
 		currnode->codes = stuff;
 		//printf("%s\n", codes[*nowword]);
 		(*nowword)++;

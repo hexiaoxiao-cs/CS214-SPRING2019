@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	extern int optind, optopt, opterr;
 	int reti;
 	regex_t regex;
-	reti=regcomp(&regex,"*.hcz",0);
+	reti=regcomp(&regex,".*\\.hcz",0);
 	if(reti){printf("regex ERROR");}
 	while ((c = getopt(argc, argv, "bcdR")) != -1) {
 	    switch(c) {
