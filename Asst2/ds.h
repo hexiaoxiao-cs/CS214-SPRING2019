@@ -9,6 +9,7 @@ typedef struct node {
 	int count;
 	struct node *left, *right;
 	expandable* data;
+	expandable* codes;
 } node;
 
 typedef struct MinHeap {
