@@ -8,7 +8,7 @@
 //Following functions create BST files
 
 //tnode->codes will be NULL when passed in
-void buildHuffmanTreeFromTNodesArray(node** nodes, int size); // sort and call buildHuffmanTreeFromFrequencies
+void buildHuffmanTreeFromNodesArray(node** nodes, int size); // sort and call buildHuffmanTreeFromFrequencies
 
 void loadBSTFromCodeBookFile(const char* codebook_path, void** BSTree);
 void counting(const char* file_data, int file_size, void* BSTree);
