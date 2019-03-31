@@ -10,167 +10,20 @@
 #include <libgen.h>
 #include <errno.h>
 
-//Dynamic array
-typedef struct {
-	char* data;
-	int size;
-	int total_size;
-} expandable;
+#include "ds.h"
 
-expandable* createExpandable() {
-	expandable* space = calloc(1, sizeof(expandable));
-	space->data = calloc(1, 50 + 1);  //50 bytes + 1 null terminator(reserved for codes)
-	space->total_size = 50;
-	return space;
-}
-
-void destroyExpandable(expandable* space) {
-	free(space->data);
-	free(space);
-}
-
-void destroyExpandableWithoutFree(expandable* space) {
-	free(space);
-}
-
-void expandExpandable(expandable* space) {
-	space->total_size = space->total_size + 50;
-	space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
-	space->data[space->total_size] = 0; //set it to null
-}
-
-void appendExpandable(expandable* space, char c) {
-	space->data[space->size++] = c;
-	if(space->size == space->total_size) {
-		expandExpandable(space);
-	}
-}
-
-void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size) {
-	//TODO: performance can be improved in here
-	for(int i=0;i < sequence_size;i++) {
-		appendExpandable(space, sequence[i]);
-	}
-}
-
-void zeroUnusedExpandable(expandable* space) {
-	memset(space->data + space->size, 0, space->total_size - space->size);
-}
-
-typedef struct node {
-	int count;
-	struct node *left, *right;
-	expandable* data;
-}node;
-typedef struct MinHeap {
-	int size;
-	struct node** array;
-}MinHeap;
-
-
-//HUFFMAN TREE
-node* tree;
 int size = 0;
+node* tree = NULL;
+
+
+
 //start to declear functions
-void heapify(MinHeap*, int);
-node* getMinNodeHeap(MinHeap*);
-void insertNode(MinHeap*, node*);
-MinHeap* initMinHeap(expandable**, int*, int);
-node** createNodeArray(expandable**, int*, int);
-void buildHuffmanTreeFromFrequencies(expandable**, int*, int);
-void buildHuffmanTreeFromRaw(char**, expandable**, int);
-void DongFeng41KuaiDi(node*);
-void LaunchDongFengDaoDan();
-void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
-void fillCodeBookFromTree(char**, expandable **);
-void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
-void dumpCodeBookToFileRaw(const char* codebook_path, const char** codes, expandable** words, int size);
-void doShits(const char* dir, int has_codebook, const char* codebook_path, int generate_only);
-void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path, int generate_only);
-void undoShits(const char* dir, const char* codebook_path);
-void undoSingleShit(const char* file, const char* codebook_path);
-void heapify(MinHeap *heap, int index)
-{
-	int left = index * 2 + 1;
-	int right = index * 2 + 2;
-	node* temp;
-	if (left<heap->size && heap->array[left]->count < heap->array[index]->count)
-	{
-		//swap the left to the index
-		temp = heap->array[index];
-		heap->array[index] = heap->array[left];
-		heap->array[left] = temp;
-		heapify(heap, left);
-	}
-	if (right<heap->size && heap->array[right]->count < heap->array[index]->count)
-	{
-		//swap the right to the index
-		temp = heap->array[index];
-		heap->array[index] = heap->array[right];
-		heap->array[right] = temp;
-		heapify(heap, right);
-	}
-	return;
-}
 
-node* getMinNodeHeap(MinHeap *heap)
-{
-	node *toReturn = heap->array[0];
-	heap->array[0] = heap->array[heap->size - 1];
-	heap->size--;
-	heapify(heap, 0);
-	return toReturn;
-}
 
-void insertNode(MinHeap *heap, node *toInsert)
-{
-	int curr = heap->size;
-	while (curr != 0 && toInsert->count < heap->array[(curr - 1) / 2]->count)
-	{
-		heap->array[curr] = heap->array[(curr - 1) / 2];
-		curr = (curr - 1) / 2;
-	}
-	heap->array[curr] = toInsert;
-	heap->size++;
-	return;
-}
-
-MinHeap* initMinHeap(expandable **contents, int* counts, int many)
-{
-	MinHeap *toReturn = (MinHeap*)malloc(sizeof(MinHeap));
-	toReturn->size = many;
-	toReturn->array = createNodeArray(contents, counts, many);
-	return toReturn;
-}
-
-/* Creating Node Array
-* Required:
-* Inputs:
-* Char* contents
-* int* counts
-* int many how many entries
-* Sequence: 0 -> inf => least freq -> most freq
-* Outputs:
-* node* head pointer to head
-* Xiaoxiao He 3/12/2019
-*/
-node** createNodeArray(expandable** contents, int* counts, int many)
-{
-	node** array = (node**)malloc(sizeof(node*)*many);
-	int i = 0;
-	node* temp;
-	size = many;
-	for (i = 0; i<many; i++)
-	{
-		temp = (node*)malloc(sizeof(node));
-		temp->count = counts[i];
-		temp->data = contents[i];
-		temp->left = temp->right = NULL;
-		array[i] = temp;
-	}
-	return array;
-}
-
+//void buildHuffmanTreeFromFrequencies(expandable**, int*, int);
+//void buildHuffmanTreeFromRaw(char**, expandable**, int);
+//void fillCodeBookFromTree(char**, expandable **);
+//void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
 
 void cleanHalfCodeBooks(char** codes, expandable** words, int items_count) {
 	int i;
@@ -283,45 +136,7 @@ void LaunchDongFengDaoDan()
 	DongFeng41KuaiDi(tree);
 	size = 0;
 }
-void TraverseTreePrefix(char** codes, expandable **words, char* curr, int *nowcode, int* nowword, node* currnode)
-{
-	char *stuff;
-	//At the edge which means that must be a value node
-	if (currnode->left == NULL &&  currnode->right == NULL) {
-		words[*nowword] = currnode->data;
-		//printf("%s\n", currnode->data->data);
-		curr[*nowcode] = '\0';
-		stuff = (char*)malloc((size+1) * sizeof(char));
-		memcpy(stuff,curr,sizeof(char)*(size+1));
-		codes[*nowword] = stuff;
-		//printf("%s\n", codes[*nowword]);
-		(*nowword)++;
-		return;
-	}
-	//Left Node
-	{
-		//Begin Accessing
 
-		curr[*nowcode] = '0';
-		(*nowcode)++;
-		TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->left);
-		//Finished Accessing--Cleaning
-		(*nowcode)--;
-		curr[*nowcode] = '\0';
-	}
-	//Right Node
-	{
-		//Begin Accessing
-
-		curr[*nowcode] = '1';
-		(*nowcode)++;
-		TraverseTreePrefix(codes, words, curr, nowcode, nowword, currnode->right);
-		//Finished Accessing--Cleaning
-		(*nowcode)--;
-		curr[*nowcode] = '\0';
-	}
-	return;
-}
 /* Create Huffman Codebook From Huffman Tree
 Required:
 Executed createHuffmanFromFrequency
@@ -366,46 +181,13 @@ void fillCodeBookFromTree(char** codes, expandable **words) {
 
 //Test Driver For Xiaoxiao He's Huffman Tree
 
-int main()
-{
-	//undoSingleShit("./data/test.hcz", "./data/HuffmanCodebook");
-	undoShits("./data/", "./HuffmanCodeBook");
-	return 0;
-	//    createHuffmanForDecompress("test.codebook");
-	//    writeHuffmanCodeBook("test.codebook2", 6);
-	//    return 0;
-	//    char *a[6];
-	//    a[0] = "a";
-	//    a[1] = "\n";
-	//    a[2] = "cat";
-	//    a[3] = "button";
-	//    a[4] = "tall";
-	//    a[5] = "and";
-	//    int i = 0;
-	//    char **b, **e;
-	//    int c[6] = { 5,9,12, 13 ,16,45 };
-	//    createHuffmanFromFrequency(a, c, 6);
-	//    size = 6;
-	//    b = (char**)malloc(sizeof(char*)*size);
-	//    e = (char**)malloc(sizeof(char*)*size);
-	//    createCodeBook(b, e);
-	//    if (tree == NULL) { printf("NULL TREE"); return; }
-	//    for (i = 0; i<6; i++)
-	//    {
-	//        printf("%s\t%s\n", b[i], e[i]);
-	//    }
-	//
-	//
-	//    return 0;
-}
-
 void panic(const char* module, const char* reason, const char* extra) {
 	if(extra) {
 		printf("Error: %s (%s) [%s]\n", module, reason, extra);
 	} else {
 		printf("Error: %s (%s)\n", module, reason);
 	}
-	
+
 	exit(1);
 }
 
@@ -481,7 +263,7 @@ int isDelim(char c) {
 *
 */
 
-void dumpCodeBookToFileRaw(const char* codebook_path, const const char** codes, expandable** words, int size) {
+void dumpCodeBookToFileRaw(const char* codebook_path, const char* const * codes, expandable** words, int size) {
 	int i;
 	char hex[3];	//hex buffer
 	hex[2] = 0;
@@ -569,7 +351,6 @@ int loadCodeBookFromFile(const char* codebook_path, char*** codes_out, expandabl
 }
 
 void buildHuffmanTreeFromCodebookFile(const char* codebook_path) {
-	int i;
 	char** codes;
 	expandable** words;
 	int lines = loadCodeBookFromFile(codebook_path, &codes, &words);
@@ -852,7 +633,7 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 
 		//dump codebook if we dont have one yet
 		dumpCodeBookToPathRaw("./", codes, words, items_count);
-		
+
 		//build codebook only
 		if(generate_only) {
 			cleanAllCodeBooks(codes, words, items_count);
@@ -913,7 +694,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path, int g
 		items_count = counters.in_use;
 
 		dumpCodeBookToPathRaw("./", codes, words, items_count);
-		
+
 		//build codebook only
 		if(generate_only) {
 			cleanAllCodeBooks(codes, words, items_count);
