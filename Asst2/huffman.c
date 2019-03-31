@@ -8,6 +8,7 @@
 #include <dirent.h>     //Directories
 #include <unistd.h>
 #include <libgen.h>
+#include <errno.h>
 
 //Dynamic array
 typedef struct {
@@ -84,8 +85,8 @@ void TraverseTreePrefix(char**, expandable **, char*, int *, int*, node*);
 void fillCodeBookFromTree(char**, expandable **);
 void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
 void dumpCodeBookToFileRaw(const char* codebook_path, const char** codes, expandable** words, int size);
-void doShits(const char* dir, int has_codebook, const char* codebook_path);
-void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path);
+void doShits(const char* dir, int has_codebook, const char* codebook_path, int generate_only);
+void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path, int generate_only);
 void undoShits(const char* dir, const char* codebook_path);
 void undoSingleShit(const char* file, const char* codebook_path);
 void heapify(MinHeap *heap, int index)
@@ -168,6 +169,26 @@ node** createNodeArray(expandable** contents, int* counts, int many)
 		array[i] = temp;
 	}
 	return array;
+}
+
+
+void cleanHalfCodeBooks(char** codes, expandable** words, int items_count) {
+	int i;
+	for(i = 0; i < items_count;i++) {
+		free(codes[i]);
+	}
+	free(codes);
+	free(words);
+}
+
+void cleanAllCodeBooks(char** codes, expandable** words, int items_count) {
+	int i;
+	for(i = 0; i < items_count;i++) {
+		free(codes[i]);
+		destroyExpandable(words[i]);
+	}
+	free(codes);
+	free(words);
 }
 
 /* Create Huffman Tree Structure
@@ -342,12 +363,6 @@ void fillCodeBookFromTree(char** codes, expandable **words) {
 }
 
 //FILE SYSTEM RELATED STUFF
-//TODO:
-//1. read from codebook file
-//2. read file to count frequencies
-//3. recursively traverse directories
-//4. compress according to the code code book
-//5. decompress according to constructed tree
 
 //Test Driver For Xiaoxiao He's Huffman Tree
 
@@ -384,13 +399,25 @@ int main()
 	//    return 0;
 }
 
+void panic(const char* module, const char* reason, const char* extra) {
+	if(extra) {
+		printf("Error: %s (%s) [%s]\n", module, reason, extra);
+	} else {
+		printf("Error: %s (%s)\n", module, reason);
+	}
+	
+	exit(1);
+}
 
 //This function allocate size + 1 bytes for data
 //Content is guaranteed zero-terminated, however there might be zero in
 //the middle of the content
 void readFile(const char* file_path, char** data, int* size) {
 	int handler = open(file_path, O_RDONLY);
-	//TODO: check open error status
+	if(handler < 0) {
+		//Unable to open specific files
+		panic("Unable to open file", strerror(errno), file_path);
+	}
 	//Blocking and readAll
 	int tmp, ret;
 	int file_size = lseek(handler, 0, SEEK_END);
@@ -401,7 +428,7 @@ void readFile(const char* file_path, char** data, int* size) {
 	while (tmp < file_size) {
 		ret = read(handler, huge_shit + tmp, file_size - tmp);
 		if (ret < 0) {
-			//TODO error checking
+			panic("Error reading file", strerror(errno), file_path);
 		}
 		else if (ret == 0) {
 			break;
@@ -418,14 +445,17 @@ void readFile(const char* file_path, char** data, int* size) {
 
 void writeFile(const char* file_path, char* data, int size) {
 	int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
-	//TODO: check open error status
+	if(handler < 0) {
+		//Unable to open specific files
+		panic("Unable to open file", strerror(errno), file_path);
+	}
 	//Blocking and writeAll
 	int tmp, ret;
 	tmp = 0;
 	while (tmp < size) {
 		ret = write(handler, data + tmp, size - tmp);
 		if (ret < 0) {
-			//TODO error checking
+			panic("Error when writing file", strerror(errno), file_path);
 		}
 		else if (ret == 0) {
 			break;
@@ -451,7 +481,7 @@ int isDelim(char c) {
 *
 */
 
-void dumpCodeBookToFileRaw(const char* codebook_path, const char** codes, expandable** words, int size) {
+void dumpCodeBookToFileRaw(const char* codebook_path, const const char** codes, expandable** words, int size) {
 	int i;
 	char hex[3];	//hex buffer
 	hex[2] = 0;
@@ -544,11 +574,7 @@ void buildHuffmanTreeFromCodebookFile(const char* codebook_path) {
 	expandable** words;
 	int lines = loadCodeBookFromFile(codebook_path, &codes, &words);
 	buildHuffmanTreeFromRaw(codes, words, lines);
-	for(i = 0;i < lines;i++) {
-		free(codes[i]);
-	}
-	free(codes);
-	free(words);	//cannot free the individual expandable as it need to remain valid in the tree, but we can free the array
+	cleanHalfCodeBooks(codes, words, lines);	//cannot free the individual expandable as it need to remain valid in the tree, but we can free the array
 }
 
 typedef struct {
@@ -762,15 +788,6 @@ void decompressFile(const char* original_file, expandable* path_buffer,
 	buffer->size = 0;
 }
 
-void cleanHalfCodeBooks(char** codes, expandable** words, int items_count) {
-	int i;
-	for(i = 0; i < items_count;i++) {
-		free(codes[i]);
-	}
-	free(codes);
-	free(words);
-}
-
 void undoSingleShit(const char* file, const char* codebook_path) {
 	buildHuffmanTreeFromCodebookFile(codebook_path);
 	expandable* buffer = createExpandable();
@@ -814,7 +831,7 @@ void undoShits(const char* dir, const char* codebook_path) {
 	free(task_data);
 }
 
-void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path) {
+void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path, int generate_only) {
 	char* file_data;
 	char** codes;
 	expandable** words;
@@ -835,6 +852,12 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 
 		//dump codebook if we dont have one yet
 		dumpCodeBookToPathRaw("./", codes, words, items_count);
+		
+		//build codebook only
+		if(generate_only) {
+			cleanAllCodeBooks(codes, words, items_count);
+			return;
+		}
 	} else {
 		//use existed codebook
 		items_count = loadCodeBookFromFile(codebook_path, &codes, &words);
@@ -851,7 +874,7 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 	destroyExpandable(output_buffer);
 }
 
-void doShits(const char* dir, int has_codebook, const char* codebook_path) {
+void doShits(const char* dir, int has_codebook, const char* codebook_path, int generate_only) {
 	char* command, *task_data, *line, *file_data;
 	int task_size, file_size, items_count;
 
@@ -890,7 +913,12 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 		items_count = counters.in_use;
 
 		dumpCodeBookToPathRaw("./", codes, words, items_count);
-
+		
+		//build codebook only
+		if(generate_only) {
+			cleanAllCodeBooks(codes, words, items_count);
+			return;
+		}
 	} else {
 		//use existed codebook
 		loadCodeBookFromFile(codebook_path, &codes, &words);
