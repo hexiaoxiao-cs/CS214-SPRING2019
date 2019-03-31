@@ -1,2 +1,2 @@
 project(huffman)
-add_executable(huffman huffman.c ds.c ds.h interface.h)
+add_executable(huffman fileCompressor.c huffman.c ds.c ds.h interface.h)
