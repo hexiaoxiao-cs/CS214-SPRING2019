@@ -82,35 +82,46 @@ Codes ending with \out0
 words ending with \0
 */
 
-void buildHuffmanTreeFromRaw(char** codes, expandable** words, int many) {
+void buildHuffmanTreeFromCodes(node **nodearray, int many) {
 	//Initialize huffman tree from codebook
 	int temp = 0, cnt = 0;
 	node* root = (node*)malloc(sizeof(node));
 	root->left = root->right = NULL;
 	node* curr = root;
+	node* prev = root;
 	for (temp = 0; temp<many; temp++)
 	{
 		cnt = 0;
 		curr = root;
-		while (codes[temp][cnt] != '\0')
+		prev=root;
+		while (nodearray[temp]->codes->data[cnt] != '\0')
 		{
-			if (codes[temp][cnt] == '0') {
+			if (nodearray[temp]->codes->data[cnt] == '0') {
 				if (curr->left == NULL) {
 					curr->left = (node*)malloc(sizeof(node));
 					curr->left->left = curr->left->right = NULL;
 				}
+				prev=curr;
 				curr = curr->left;
 			}
-			if (codes[temp][cnt] == '1') {
+			if (nodearray[temp]->codes->data[cnt] == '1') {
 				if (curr->right == NULL) {
 					curr->right = (node*)malloc(sizeof(node));
 					curr->right->left = curr->right->right = NULL;
 				}
+				prev=curr;
 				curr = curr->right;
 			}
 			cnt++;
 		}
-		curr->data = words[temp];
+		if(prev->left==curr){
+		    free(curr);
+		    prev->left=nodearray[temp];
+		}
+		if(prev->right==curr){
+		    free(curr);
+		    prev->right=nodearray[temp];
+		}
 	}
 	tree = root;
 	size=many;
@@ -460,7 +471,7 @@ void counting(const char* file_data, int file_size, void** BSTree) {
 	destroyExpandable(space);
 }
 
-int qsort_cmp(const void** a, const void** b) {
+int qsort_cmp(const void* a, const void* b) {
 	int freq_a = (*((node**)a))->count;
 	int freq_b = (*((node**)b))->count;
 	if(freq_a < freq_b)
@@ -663,7 +674,11 @@ void buildHuffmanTreeFromBSTree(void** BSTree) {
 	nodes = createExpandablePtr();
 	twalk(*BSTree, bst_dumper);
 	qsort(nodes->data, (unsigned int)(nodes->size), sizeof(node*), qsort_cmp);
-	buildHuffmanTreeFromNodesArray((node**)(nodes->data), nodes->size);
+	if(((node*)(nodes->data[0]))->codes != NULL) {
+	    buildHuffmanTreeFromCodes((node**)(nodes->data), nodes->size);
+	} else {
+        buildHuffmanTreeFromNodesArray((node **) (nodes->data), nodes->size);
+    }
 	destroyExpandablePtrWithoutFree(nodes);
 	//
 	// int i;
