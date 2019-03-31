@@ -5,6 +5,13 @@ typedef struct {
 	int total_size;
 } expandable;
 
+typedef struct {
+	void* data;
+	int size;
+	int total_size;
+} expandablePtr;
+
+
 typedef struct node {
 	int count;
 	struct node *left, *right;
@@ -36,6 +43,14 @@ void expandExpandable(expandable* space);
 void appendExpandable(expandable* space, char c);
 void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size);
 void zeroUnusedExpandable(expandable* space);
+
+expandablePtr* createExpandablePtr();
+void destroyExpandablePtr(expandablePtr* space);
+void destroyExpandablePtrWithoutFree(expandablePtr* space);
+void expandExpandablePtr(expandablePtr* space);
+void appendExpandablePtr(expandablePtr* space, char c);
+void appendSequenceExpandablePtr(expandablePtr* space, const char* sequence, int sequence_size);
+void zeroUnusedExpandablePtr(expandablePtr* space);
 
 void DongFeng41KuaiDi(node*);
 void LaunchDongFengDaoDan();

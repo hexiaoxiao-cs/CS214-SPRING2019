@@ -42,6 +42,46 @@ void zeroUnusedExpandable(expandable* space) {
 	memset(space->data + space->size, 0, space->total_size - space->size);
 }
 
+expandablePtr* createExpandablePtr() {
+	expandablePtr* space = calloc(1, sizeof(expandablePtr));
+	space->data = calloc(1, sizeof(void*)*50);  //50 void pointers
+	space->total_size = 50; //50 void pointers
+	return space;
+}
+
+void destroyExpandablePtr(expandablePtr* space) {
+	free(space->data);
+	free(space);
+}
+
+void destroyExpandablePtrWithoutFree(expandablePtr* space) {
+	free(space);
+}
+
+void expandExpandablePtr(expandablePtr* space) {
+	space->total_size = space->total_size + 50;
+	space->data = realloc(space->data, space->total_size *sizeof(void*));  //null terminator (reserved for codes)
+	space->data[space->total_size] = NULL; //set it to null
+}
+
+void appendExpandablePtr(expandablePtr* space, void* c) {
+	space->data[space->size++] = c;
+	if(space->size == space->total_size) {
+		expandExpandablePtr(space);
+	}
+}
+
+void appendSequenceExpandablePtr(expandablePtr* space, const void* sequence, int sequence_size) {
+	//TODO: performance can be improved in here
+	for(int i=0;i < sequence_size;i++) {
+		appendExpandablePtr(space, sequence[i]);
+	}
+}
+
+void zeroUnusedExpandablePtr(expandablePtr* space) {
+	memset(space->data + space->size, 0, (space->total_size - space->size)*sizeof(void*));
+}
+
 
 void heapify(MinHeap *heap, int index)
 {
