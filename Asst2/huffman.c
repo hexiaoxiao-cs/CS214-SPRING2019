@@ -86,6 +86,7 @@ void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
 void dumpCodeBookToFileRaw(const char* codebook_path, const char** codes, expandable** words, int size);
 void doShits(const char* dir, int has_codebook, const char* codebook_path);
 void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path);
+void undoShits(const char* dir, const char* codebook_path);
 void undoSingleShit(const char* file, const char* codebook_path);
 void heapify(MinHeap *heap, int index)
 {
@@ -352,8 +353,8 @@ void fillCodeBookFromTree(char** codes, expandable **words) {
 
 int main()
 {
-	undoSingleShit("./data/test.hcz", "./data/HuffmanCodebook");
-	//doShit("./data/");
+	//undoSingleShit("./data/test.hcz", "./data/HuffmanCodebook");
+	undoShits("./data/", "./HuffmanCodeBook");
 	return 0;
 	//    createHuffmanForDecompress("test.codebook");
 	//    writeHuffmanCodeBook("test.codebook2", 6);
@@ -783,6 +784,36 @@ void undoSingleShit(const char* file, const char* codebook_path) {
 	free(file_data);
 }
 
+void undoShits(const char* dir, const char* codebook_path) {
+	char* command, *task_data, *line, *file_data;
+	int task_size, file_size;
+
+	expandable* path_buffer = createExpandable();
+	expandable* buffer = createExpandable();
+
+	buildHuffmanTreeFromCodebookFile(codebook_path);
+
+
+	asprintf(&command, "find %s -type f -name \"*.hcz\" > output.tmp", dir);
+	system(command);
+	free(command);
+	readFile("output.tmp", &task_data, &task_size);
+
+	line = strtok(task_data, "\n");
+
+	while(line) {
+		printf("U: %s\n", line);
+		readFile(line, &file_data, &file_size);
+		decompressFile(line, path_buffer, buffer, file_data, file_size, tree, 1);
+		free(file_data);
+		line = strtok(NULL, "\n");
+	}
+
+	destroyExpandable(path_buffer);
+	destroyExpandable(buffer);
+	free(task_data);
+}
+
 void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path) {
 	char* file_data;
 	char** codes;
@@ -803,10 +834,7 @@ void doSingleShit(const char* filepath, int has_codebook, const char* codebook_p
 		items_count = counters.in_use;
 
 		//dump codebook if we dont have one yet
-		char* filepath_dup = strdup(filepath);
-		char* dir = dirname(filepath_dup);
-		dumpCodeBookToPathRaw(dir, codes, words, items_count);
-		free(filepath_dup);
+		dumpCodeBookToPathRaw("./", codes, words, items_count);
 	} else {
 		//use existed codebook
 		items_count = loadCodeBookFromFile(codebook_path, &codes, &words);
@@ -831,7 +859,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 	expandable** words;
 
 
-	asprintf(&command, "find %s -type f > output.tmp", dir);
+	asprintf(&command, "find %s -type f -name \"*.txt\" > output.tmp", dir);
 	system(command);
 	free(command);
 	readFile("output.tmp", &task_data, &task_size);
@@ -861,7 +889,7 @@ void doShits(const char* dir, int has_codebook, const char* codebook_path) {
 		loadCodeBookFromTree(&codes, &words, counters.in_use);
 		items_count = counters.in_use;
 
-		dumpCodeBookToPathRaw(codebook_path, codes, words, items_count);
+		dumpCodeBookToPathRaw("./", codes, words, items_count);
 
 	} else {
 		//use existed codebook
