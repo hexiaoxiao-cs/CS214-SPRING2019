@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 		hascodebook=1;
 	}
 	else{codebook="./HuffmanCodebook";
-		printf("Using Default Codebook in ./HuffmanCodebook\n");
+		printf("Using Default Codebook path in ./HuffmanCodebook\n");
 		
 		if(isFile(codebook)!=1&&decompress==1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
 	}
