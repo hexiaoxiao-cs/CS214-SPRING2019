@@ -35,12 +35,6 @@ void appendSequenceExpandable(expandable* space, const char* sequence, int seque
 	int available = space->total_size - space->size;
 	if(available < sequence_size) {
 		expandExpandable(space, sequence_size - available + 50);
-=======
-	int i;
-	//TODO: performance can be improved in here
-	for(i=0;i < sequence_size;i++) {
-		appendExpandable(space, sequence[i]);
->>>>>>> f5ce070... Conform to C99
 	}
 
 	memcpy(space->data + space->size, sequence, sequence_size);
