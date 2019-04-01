@@ -20,8 +20,7 @@ void destroyExpandableWithoutFree(expandable *space) {
 
 void expandExpandable(expandable *space, int size) {
     space->total_size = space->total_size + size;
-    space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
-    space->data[space->total_size] = 0; //set it to null
+    space->data = realloc(space->data, space->total_size + 1);
 }
 
 void appendExpandable(expandable *space, char c) {
@@ -32,6 +31,7 @@ void appendExpandable(expandable *space, char c) {
         else
             expandExpandable(space, space->size);
     }
+    space->data[space->size] = 0;   //set the next byte to be 0
 }
 
 void appendSequenceExpandable(expandable *space, const char *sequence, int sequence_size) {
