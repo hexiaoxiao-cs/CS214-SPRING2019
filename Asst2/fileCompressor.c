@@ -59,6 +59,7 @@ int main(int argc, char* argv[])
 			return 2;
 		}
 	}
+	if(buildCodeBook==0&&compress==0&&decompress==0){printf("Need Flags\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;}
 	if(argv[optind]==NULL){printf("Missing Target\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;}
 	filename=argv[optind];
 	reti=regexec(&regex,filename,0,NULL,0);
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
 		printf("Using Default Codebook path in ./HuffmanCodebook\n");
 	}
 	//printf("%d",hascodebook);
-	if(isFile(codebook)!=1&&decompress==1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
+	if(decompress==1&&isFile(codebook)!=1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
 	if(buildCodeBook==1){
 		if(recursive==1){doShits(filename,0,NULL,1);
 		}
