@@ -39,6 +39,7 @@ void appendSequenceExpandable(expandable* space, const char* sequence, int seque
 
 	memcpy(space->data + space->size, sequence, sequence_size);
 	space->size += sequence_size;
+	space->data[space->size] = 0;
 //	//TODO: performance can be improved in here
 //	for(int i=0;i < sequence_size;i++) {
 //		appendExpandable(space, sequence[i]);
