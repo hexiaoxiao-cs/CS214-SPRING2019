@@ -17,15 +17,6 @@
 int size = 0;
 node* tree = NULL;
 
-
-
-//start to declear functions
-
-
-//void buildHuffmanTreeFromFrequencies(expandable**, int*, int);
-//void buildHuffmanTreeFromRaw(char**, expandable**, int);
-//void fillCodeBookFromTree(char**, expandable **);
-//void buildHuffmanTreeFromCodebookFile(const char* codebook_path);
 void cleanHalfCodeBooks(expandable** codes, expandable** words, int items_count) {
 	free(codes);
 	free(words);
@@ -158,42 +149,12 @@ Rule:
 prefix Traverse
 */
 void exportCodeFromHuffmanTree(expandable** codes, expandable **words) {
-	//DEBUG
-	//	codes[0] = "0";
-	//	codes[1] = "100";
-	//	codes[2] = "101";
-	//	codes[3] = "1100";
-	//	codes[4] = "1101";
-	//	codes[5] = "111";
-	//
-	//	words[0] = createExpandable();
-	//	appendSequenceExpandable(words[0], "and", 3);
-	//	words[1] = createExpandable();
-	//	appendSequenceExpandable(words[1], "cat", 3);
-	//	words[2] = createExpandable();
-	//	appendSequenceExpandable(words[2], "button", 6);
-	//	words[3] = createExpandable();
-	//	appendSequenceExpandable(words[3], "a", 1);
-	//	words[4] = createExpandable();
-	//	appendSequenceExpandable(words[4], "dog", 3);
-	//	words[5] = createExpandable();
-	//	appendSequenceExpandable(words[5], "\n", 1);
-	//
-	//	return;
 	char* curr = (char*)malloc(sizeof(char)*(size+1));
 	int nowcode = 0, nowword = 0;
 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
 	TraverseTreePrefix(codes, words, curr, &nowcode, &nowword, tree);
+	free(curr);
 }
-
-//FillCodebookToNodes
-//
-// void fillCodebookToTree () {
-// 	char* curr = (char*)malloc(sizeof(char)*(size+1));
-// 	int nowcode = 0, nowword = 0;
-// 	if (tree == NULL) return; //For security, check whether there is a Huffman Tree
-// 	TraverseTreePrefixInternally(curr, &nowcode, &nowword, tree);
-// }
 
 //FILE SYSTEM RELATED STUFF
 
@@ -281,7 +242,7 @@ int isDelim(char c) {
 *
 */
 
-void dumpCodeBookToFileRaw(const char* codebook_path, const expandable* const * codes, expandable** words, int size) {
+void dumpCodeBookToFileRaw(const char* codebook_path, expandable** const codes, expandable** words, int size) {
 	int i;
 	char hex[3];	//hex buffer
 	hex[2] = 0;
@@ -366,33 +327,11 @@ void loadBSTFromCodeBookFile(const char* codebook_path, void** BSTree) {
 	free(codebook_data);
 }
 
-// void buildHuffmanTreeFromCodebookFile(const char* codebook_path) {
-// 	char** codes;
-// 	expandable** words;
-// 	int lines = loadCodeBookFromFile(codebook_path, &codes, &words);
-// 	buildHuffmanTreeFromRaw(codes, words, lines);
-// 	cleanHalfCodeBooks(codes, words, lines);	//cannot free the individual expandable as it need to remain valid in the tree, but we can free the array
-// }
-
-// typedef struct {
-// 	expandable* token;
-// 	int freq;
-// } __attribute__((packed)) counter_t;
-//
-// typedef struct {
-// 	counter_t* counters;
-// 	int in_use;
-// 	int counters_size;
-// }counters_t;
-
 //1->inserted	(should not free token)
 //0->existed	(should free token);
-int incrementTokenFrequency(expandable* token, void** BSTree) {
-	node* newNode = calloc(1, sizeof(node));
-	node* returnedNode;
-	newNode->data = token;
-	newNode->count = 1;
-	if((returnedNode = *((node**)tsearch(newNode, BSTree, bst_compare))) == newNode) {
+int incrementTokenFrequency(node* token_node, void** BSTree) {
+    node* returnedNode;
+	if((returnedNode = *((node**)tsearch(token_node, BSTree, bst_compare))) == token_node) {
 		//newly inserted
 		return 1;
 	} else {
@@ -400,38 +339,6 @@ int incrementTokenFrequency(expandable* token, void** BSTree) {
 		returnedNode->count++;
 		return 0;
 	}
-	// int i=0;
-	// counter_t* tmp;
-	// for(i=0;i < counters->counters_size;i++) {
-	// 	if(counters->counters[i].token == NULL)
-	// 	break;
-	// 	if(token_size == counters->counters[i].token->size && memcmp(counters->counters[i].token->data, token, token_size) == 0) {
-	// 		counters->counters[i].freq++;
-	// 		return;
-	// 	}
-	// }
-	// add:
-	// //cannot find an existed token inside counters
-	// for(i = 0;i < counters->counters_size;i++) {
-	// 	if(counters->counters[i].token == NULL) {
-	// 		counters->counters[i].token = createExpandable();
-	// 		appendSequenceExpandable(counters->counters[i].token, token, token_size);
-	// 		counters->counters[i].freq = 1;
-	// 		counters->in_use++;
-	// 		return;
-	// 	}
-	// }
-	//
-	// //unable to find empty entries
-	// tmp = realloc(counters->counters, (counters->counters_size + 100) * sizeof(counter_t));	//reallocate memory
-	// if(tmp == NULL) {
-	// 	printf("Not enough memory\n");
-	// 	exit(1);
-	// }
-	// counters->counters = tmp;
-	// memset((char*)(counters->counters) + counters->counters_size * sizeof(counter_t), 0, 100 * sizeof(counter_t));
-	// counters->counters_size += 100;
-	// goto add;
 }
 
 /*
@@ -460,10 +367,16 @@ int nextToken(expandable* buffer, const char* file_data, int file_size, int* idx
 
 void counting(const char* file_data, int file_size, void** BSTree) {
 	expandable* space = createExpandable();
+    node* newNode = calloc(1, sizeof(node));
 	int offset = 0;
+
+    newNode->count = 1;
 	while(nextToken(space, file_data, file_size, &offset) > 0) {
-		if(incrementTokenFrequency(space, BSTree) == 1) {
+        newNode->data = space;
+		if(incrementTokenFrequency(newNode, BSTree) == 1) {
 			space = createExpandable();	//original space ownership has been taken by BST
+			newNode = calloc(1, sizeof(node));
+			newNode->count = 1;
 		} else {
 			space->size = 0;  //reset expandable
 		}
@@ -496,14 +409,6 @@ void compress(expandable* buffer, char* file_data, int file_size, void** BSTree)
 			exit(1);
 		}
 		appendSequenceExpandable(buffer, found->codes->data, found->codes->size);
-		// for(i = 0;i < book_size;i++) {
-		// 	if(words[i]->size == tmp->size && memcmp(words[i]->data, tmp->data, tmp->size) == 0) {
-		// 		//found a match in the book
-		// 		appendSequenceExpandable(buffer, codes[i], strlen(codes[i]));
-		// 		goto nextone;
-		// 	}
-		// }
-		//nextone:
 		tmp->size = 0;	//reuse tmp
 	}
 	destroyExpandable(tmp);
@@ -529,22 +434,7 @@ void decompress(expandable* buffer, char* file_data, int file_size, node* huffma
 	}
 }
 
-//void buildHuffmanTreeFromCounters(counters_t* counters) {
-//	//sort counters
-//	int i;
-//	qsort(counters->counters, counters->in_use, sizeof(counter_t), qsort_cmp);
-//	int* frequencies = malloc(sizeof(int) * counters->counters_size);
-//	expandable** tokens = malloc(sizeof(expandable*) * counters->counters_size);
-//	for(i = 0;i < counters->in_use;i++) {
-//		frequencies[i] = counters->counters[i].freq;
-//		tokens[i] = counters->counters[i].token;
-//	}
-//	buildHuffmanTreeFromFrequencies(tokens, frequencies, counters->in_use);
-//	free(tokens);
-//	free(frequencies);
-//}
-
-void dumpCodeBookToPathRaw(const char* dir, const expandable* const * codes, expandable** words, int items_count) {
+void dumpCodeBookToPathRaw(const char* dir, expandable ** const codes, expandable** words, int items_count) {
 	expandable* codebook_path = createExpandable();
 	appendSequenceExpandable(codebook_path, dir, (int)strlen(dir));
 	appendExpandable(codebook_path, '/');
@@ -681,17 +571,6 @@ void buildHuffmanTreeFromBSTree(void** BSTree) {
         buildHuffmanTreeFromNodesArray((node **) (nodes->data), nodes->size);
     }
 	destroyExpandablePtrWithoutFree(nodes);
-	//
-	// int i;
-	// int* frequencies = malloc(sizeof(int) * counters->counters_size);
-	// expandable** tokens = malloc(sizeof(expandable*) * counters->counters_size);
-	// for(i = 0;i < counters->in_use;i++) {
-	// 	frequencies[i] = counters->counters[i].freq;
-	// 	tokens[i] = counters->counters[i].token;
-	// }
-	// buildHuffmanTreeFromFrequencies(tokens, frequencies, counters->in_use);
-	// free(tokens);
-	// free(frequencies);
 }
 
 void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path, int generate_only) {

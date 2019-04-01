@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 		codebook=argv[optind+1];
 		hascodebook=1;
 	}
-	else{codebook==NULL;}
+	else{codebook=NULL;}
 	if(buildCodeBook==1){
 		if(recursive==1){doShits(filename,0,NULL,1);
 		}

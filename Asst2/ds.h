@@ -49,8 +49,5 @@ void destroyExpandablePtr(expandablePtr* space);
 void destroyExpandablePtrWithoutFree(expandablePtr* space);
 void expandExpandablePtr(expandablePtr* space);
 void appendExpandablePtr(expandablePtr* space, const void* c);
-void appendSequenceExpandablePtr(expandablePtr* space, void* const * sequence, int sequence_size);
-void zeroUnusedExpandablePtr(expandablePtr* space);
-
 void DongFeng41KuaiDi(node*);
 void LaunchDongFengDaoDan();
