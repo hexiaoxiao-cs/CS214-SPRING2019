@@ -567,7 +567,7 @@ void undoSingleShit(const char *file, const char *codebook_path) {
     
     printf("Finished loading codebook\n");
     readFile(file, &file_data, &file_size);
-    printf("Compressing %s.hcz\n", file);
+    printf("Decompressing: %s\n", file);
     decompressFile(file, path_buffer, buffer, file_data, file_size, tree, 0);    //do not use tmp folder
     
     destroyExpandable(buffer);
@@ -638,7 +638,7 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
     expandable *output_buffer = createExpandable();
     expandable *output_path = createExpandable();
     while (line) {
-        printf("Compressing: %s.hcz\n", line);
+        printf("Compressing: %s\n", line);
         readFile(line, &file_data, &file_size);
         compressFile(line, output_path, output_buffer, file_data, file_size, &BSTree, 0);
         free(file_data);
@@ -688,7 +688,7 @@ void doSingleShit(const char *filepath, int has_codebook, const char *codebook_p
     expandable *output_buffer = createExpandable();
     expandable *output_path = createExpandable();
 
-    printf("Compressing: %s.hcz\n", filepath);
+    printf("Compressing: %s\n", filepath);
     compressFile(filepath, output_path, output_buffer, file_data, file_size, &BSTree, 0);
     free(file_data);
 
