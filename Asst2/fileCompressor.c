@@ -71,10 +71,9 @@ int main(int argc, char* argv[])
 	}
 	else{codebook="./HuffmanCodebook";
 		printf("Using Default Codebook path in ./HuffmanCodebook\n");
-		
-		if(isFile(codebook)!=1&&decompress==1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
 	}
 	//printf("%d",hascodebook);
+	if(isFile(codebook)!=1&&decompress==1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
 	if(buildCodeBook==1){
 		if(recursive==1){doShits(filename,0,NULL,1);
 		}
@@ -90,6 +89,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	if(decompress==1){
+		//printf("DECOMPRESS\n");
 		if(recursive==1){undoShits(filename,codebook);}
 		else{
 			undoSingleShit(filename,codebook);}
