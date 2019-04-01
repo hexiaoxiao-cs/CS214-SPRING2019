@@ -5,8 +5,8 @@
 
 expandable *createExpandable() {
     expandable *space = calloc(1, sizeof(expandable));
-    space->data = calloc(1, 5 + 1);  //5 bytes + 1 null terminator(reserved for codes)
-    space->total_size = 5;
+    space->data = calloc(1, 50 + 1);  //5 bytes + 1 null terminator(reserved for codes)
+    space->total_size = 50;
     return space;
 }
 
