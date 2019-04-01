@@ -615,7 +615,7 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
         loadCodeBookFromTree(&codes, &words, size);
         items_count = size;
 
-        dumpCodeBookToPathRaw("./", codes, words, items_count);
+        dumpCodeBookToFileRaw(codebook_path, codes, words, items_count);
 
         //build codebook only
         if (generate_only) {
@@ -667,7 +667,7 @@ void doSingleShit(const char *filepath, int has_codebook, const char *codebook_p
         items_count = size;
 
         //dump codebook if we dont have one yet
-        dumpCodeBookToPathRaw("./", codes, words, items_count);
+        dumpCodeBookToFileRaw(codebook_path, codes, words, items_count);
 
         //build codebook only
         if (generate_only) {
