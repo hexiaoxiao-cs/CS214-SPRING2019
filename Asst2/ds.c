@@ -24,7 +24,7 @@ void expandExpandable(expandable *space, size_t size) {
     void *tmp = realloc(space->data, space->total_size + 1);
     if(tmp == NULL) {
         printf("Unable to allocate %ld bytes of memory\n", space->total_size + 1);
-	panic("Unable to allocate enough memory");
+        exit(1);
     }
     space->data = tmp;
 }

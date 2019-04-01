@@ -167,15 +167,15 @@ void panic(const char *module, const char *reason, const char *extra) {
 //This function allocate size + 1 bytes for data
 //Content is guaranteed zero-terminated, however there might be zero in
 //the middle of the content
-void readFile(const char *file_path, char **data, int *size) {
+void readFile(const char *file_path, char **data, size_t *size) {
     int handler = open(file_path, O_RDONLY);
     if (handler < 0) {
         //Unable to open specific files
         panic("Unable to open file", strerror(errno), file_path);
     }
     //Blocking and readAll
-    int tmp, ret;
-    int file_size = lseek(handler, 0, SEEK_END);
+    size_t tmp, ret;
+    size_t file_size = lseek(handler, 0, SEEK_END);
     lseek(handler, 0, SEEK_SET);
     char *huge_shit = (char *) malloc(file_size + 1);
     huge_shit[file_size] = 0;       //Zero terminated
@@ -196,14 +196,14 @@ void readFile(const char *file_path, char **data, int *size) {
     close(handler);    //Close file
 }
 
-void writeFile(const char *file_path, char *data, int size) {
+void writeFile(const char *file_path, char *data, size_t size) {
     int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
     if (handler < 0) {
         //Unable to open specific files
         panic("Unable to open file", strerror(errno), file_path);
     }
     //Blocking and writeAll
-    int tmp, ret;
+    size_t tmp, ret;
     tmp = 0;
     while (tmp < size) {
         ret = write(handler, data + tmp, size - tmp);
@@ -275,7 +275,8 @@ void addNodeToBST(void **tree, node *node) {
 
 void loadBSTFromCodeBookFile(const char *codebook_path, void **BSTree) {
     char *codebook_data;
-    int codebook_size, i, counter = 0, lines, control_code;
+    size_t codebook_size, i;
+    int control_code, lines, counter = 0;
     expandable *space;
 
     readFile(codebook_path, &codebook_data, &codebook_size);
@@ -336,7 +337,7 @@ int incrementTokenFrequency(node *token_node, void **BSTree) {
 * 1: token loaded
 * 0: no more token available
 */
-int nextToken(expandable *buffer, const char *file_data, int file_size, int *idx) {
+int nextToken(expandable *buffer, const char *file_data, size_t file_size, size_t *idx) {
     if (*idx == file_size)
         return 0;
     if (isDelim(file_data[*idx])) {
@@ -356,10 +357,10 @@ int nextToken(expandable *buffer, const char *file_data, int file_size, int *idx
     return 3; //this should be the last token
 }
 
-void counting(const char *file_data, int file_size, void **BSTree) {
+void counting(const char *file_data, size_t file_size, void **BSTree) {
     expandable *space = createExpandable();
     node *newNode = calloc(1, sizeof(node));
-    int offset = 0;
+    size_t offset = 0;
 
     newNode->count = 1;
     while (nextToken(space, file_data, file_size, &offset) > 0) {
@@ -387,9 +388,9 @@ int qsort_cmp(const void *a, const void *b) {
         return 0;
 }
 
-void compress(expandable *buffer, char *file_data, int file_size, void **BSTree) {
+void compress(expandable *buffer, char *file_data, size_t file_size, void **BSTree) {
     expandable *tmp = createExpandable();
-    int idx = 0, dbg;
+    size_t idx = 0, dbg;
     node dummy;
     node *found;
 
@@ -406,9 +407,9 @@ void compress(expandable *buffer, char *file_data, int file_size, void **BSTree)
     destroyExpandable(tmp);
 }
 
-void decompress(expandable *buffer, char *file_data, int file_size, node *huffman_tree) {
+void decompress(expandable *buffer, char *file_data, size_t file_size, node *huffman_tree) {
     node *star = tree;
-    int i;
+    size_t i;
     for (i = 0; i < file_size; i++) {
         if (file_data[i] == '0') {
             star = star->left;
@@ -457,7 +458,7 @@ void useTmpFolderForFile(expandable *path_buffer, const char *original_file) {
 }
 
 void compressFile(const char *original_file, expandable *path_buffer,
-                  expandable *buffer, char *file_data, int file_size,
+                  expandable *buffer, char *file_data, size_t file_size,
                   void **BSTree, int move_to_tmp_folder) {
     compress(buffer, file_data, file_size, BSTree);
     if (move_to_tmp_folder) {
@@ -474,7 +475,7 @@ void compressFile(const char *original_file, expandable *path_buffer,
 }
 
 void decompressFile(const char *original_file, expandable *path_buffer,
-                    expandable *buffer, char *file_data, int file_size, node *huffman_tree,
+                    expandable *buffer, char *file_data, size_t file_size, node *huffman_tree,
                     int move_to_tmp_folder) {
     decompress(buffer, file_data, file_size, huffman_tree);
     char *new_file_path = strdup(original_file);
@@ -522,7 +523,7 @@ void buildHuffmanTreeFromBSTree(void **BSTree) {
 
 void undoShits(const char *dir, const char *codebook_path) {
     char *command, *task_data, *line, *file_data;
-    int task_size, file_size;
+    size_t task_size, file_size;
     void *BSTree = NULL;
     
     expandable *path_buffer = createExpandable();
@@ -560,7 +561,7 @@ void undoSingleShit(const char *file, const char *codebook_path) {
     expandable *buffer = createExpandable();
     expandable *path_buffer = createExpandable();
     char *file_data;
-    int file_size;
+    size_t file_size;
     
     loadBSTFromCodeBookFile(codebook_path, &BSTree);
     buildHuffmanTreeFromBSTree(&BSTree);
@@ -577,7 +578,7 @@ void undoSingleShit(const char *file, const char *codebook_path) {
 
 void doShits(const char *dir, int has_codebook, const char *codebook_path, int generate_only) {
     char *command, *task_data, *line, *file_data;
-    int task_size, file_size, items_count;
+    size_t task_size, file_size, items_count;
 
     void *BSTree = NULL;
 
@@ -654,7 +655,7 @@ void doSingleShit(const char *filepath, int has_codebook, const char *codebook_p
     char *file_data;
     expandable **codes;
     expandable **words;
-    int file_size;
+    size_t file_size;
     int items_count;
     void *BSTree = NULL;
     readFile(filepath, &file_data, &file_size);
