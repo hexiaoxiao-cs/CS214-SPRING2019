@@ -38,7 +38,7 @@ void appendSequenceExpandable(expandable *space, const char *sequence, int seque
     int available = space->total_size - space->size;
     if (available < sequence_size) {
         if (space->size + sequence_size > 1024) {
-            expandExpandable(space, (sequence_size - available) + 1024000);
+            expandExpandable(space, (sequence_size - available) + 4096000);
         } else {
             expandExpandable(space, sequence_size - available + 10);
         }
