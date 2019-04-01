@@ -532,13 +532,16 @@ void undoShits(const char *dir, const char *codebook_path) {
     buildHuffmanTreeFromBSTree(&BSTree);
     printf("Finished loading codebook\n");
     
-    asprintf(&command, "find %s -type f -name \"*.hcz\" > output.tmp", dir);
+    asprintf(&command, "find \"%s\" -type f -name \"*.hcz\" > output.tmp", dir);
     system(command);
     free(command);
     readFile("output.tmp", &task_data, &task_size);
     
     line = strtok(task_data, "\n");
-    
+    if(!line) {
+        printf("Requested directory is empty\n");
+        return;
+    }
     while (line) {
         printf("Decompressing: %s\n", line);
         readFile(line, &file_data, &file_size);
@@ -553,20 +556,23 @@ void undoShits(const char *dir, const char *codebook_path) {
 }
 
 void undoSingleShit(const char *file, const char *codebook_path) {
-    undoShits(file, codebook_path);
-    return;
-//    void *BSTree = NULL;
-//    loadBSTFromCodeBookFile(codebook_path, &BSTree);
-//    buildHuffmanTreeFromBSTree(&BSTree);
-//    expandable *buffer = createExpandable();
-//    expandable *path_buffer = createExpandable();
-//    char *file_data;
-//    int file_size;
-//    readFile(file, &file_data, &file_size);
-//    decompressFile(file, path_buffer, buffer, file_data, file_size, tree, 0);    //do not use tmp folder
-//    destroyExpandable(buffer);
-//    destroyExpandable(path_buffer);
-//    free(file_data);
+    void *BSTree = NULL;
+    expandable *buffer = createExpandable();
+    expandable *path_buffer = createExpandable();
+    char *file_data;
+    int file_size;
+    
+    loadBSTFromCodeBookFile(codebook_path, &BSTree);
+    buildHuffmanTreeFromBSTree(&BSTree);
+    
+    printf("Finished loading codebook\n");
+    readFile(file, &file_data, &file_size);
+    printf("Compressing %s.hcz\n", file);
+    decompressFile(file, path_buffer, buffer, file_data, file_size, tree, 0);    //do not use tmp folder
+    
+    destroyExpandable(buffer);
+    destroyExpandable(path_buffer);
+    free(file_data);
 }
 
 void doShits(const char *dir, int has_codebook, const char *codebook_path, int generate_only) {
@@ -579,7 +585,7 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
     expandable **words;
 
 
-    asprintf(&command, "find %s -type f -name \"*.txt\" > output.tmp", dir);
+    asprintf(&command, "find \"%s\" -type f -name \"*.txt\" > output.tmp", dir);
     system(command);
     free(command);
     readFile("output.tmp", &task_data, &task_size);
@@ -588,6 +594,10 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
         //need to count and build tree first
         char *task_data_dup = strdup(task_data);
         line = strtok(task_data_dup, "\n");
+        if(!line) {
+            printf("Requested directory is empty\n");
+            return;
+        }
         while (line) {
             printf("Building: %s\n", line);
             readFile(line, &file_data, &file_size);
@@ -641,48 +651,47 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
 }
 
 void doSingleShit(const char *filepath, int has_codebook, const char *codebook_path, int generate_only) {
+    char *file_data;
+    expandable **codes;
+    expandable **words;
+    int file_size;
+    int items_count;
+    void *BSTree = NULL;
+    readFile(filepath, &file_data, &file_size);
+    if (!has_codebook) {
+        counting(file_data, file_size, &BSTree);
+        buildHuffmanTreeFromBSTree(&BSTree);
+        // buildHuffmanTreeFromCounters(&counters);
+        loadCodeBookFromTree(&codes, &words, size);
+        items_count = size;
+
+        //dump codebook if we dont have one yet
+        dumpCodeBookToPathRaw("./", codes, words, items_count);
+
+        //build codebook only
+        if (generate_only) {
+            cleanHalfCodeBooks(codes, words, items_count);
+            return;
+        } else {
+            cleanHalfCodeBooks(codes, words, items_count);
+        }
+    } else {
+        //use existed codebook
+        loadBSTFromCodeBookFile(codebook_path, &BSTree);
+        //buildHuffmanTreeFromBSTree(&BSTree);
+        //exportCodeFromHuffmanTree(NULL, NULL);    //fill codes into tree
+        items_count = size;
+    }
     
-    doShits(filepath, has_codebook, codebook_path, generate_only);
-    return;
-    
-//    char *file_data;
-//    expandable **codes;
-//    expandable **words;
-//    int file_size;
-//    int items_count;
-//    void *BSTree = NULL;
-//    readFile(filepath, &file_data, &file_size);
-//    if (!has_codebook) {
-//        counting(file_data, file_size, &BSTree);
-//        buildHuffmanTreeFromBSTree(&BSTree);
-//        // buildHuffmanTreeFromCounters(&counters);
-//        loadCodeBookFromTree(&codes, &words, size);
-//        items_count = size;
-//
-//        //dump codebook if we dont have one yet
-//        dumpCodeBookToPathRaw("./", codes, words, items_count);
-//
-//        //build codebook only
-//        if (generate_only) {
-//            cleanHalfCodeBooks(codes, words, items_count);
-//            return;
-//        } else {
-//            cleanHalfCodeBooks(codes, words, items_count);
-//        }
-//    } else {
-//        //use existed codebook
-//        loadBSTFromCodeBookFile(codebook_path, &BSTree);
-//        //buildHuffmanTreeFromBSTree(&BSTree);
-//        //exportCodeFromHuffmanTree(NULL, NULL);    //fill codes into tree
-//        items_count = size;
-//    }
-//
-//    expandable *output_buffer = createExpandable();
-//    expandable *output_path = createExpandable();
-//
-//    compressFile(filepath, output_path, output_buffer, file_data, file_size, &BSTree, 0);
-//    free(file_data);
-//
-//    destroyExpandable(output_path);
-//    destroyExpandable(output_buffer);
+    printf("Finished loading codebook\n");
+
+    expandable *output_buffer = createExpandable();
+    expandable *output_path = createExpandable();
+
+    printf("Compressing: %s.hcz\n", filepath);
+    compressFile(filepath, output_path, output_buffer, file_data, file_size, &BSTree, 0);
+    free(file_data);
+
+    destroyExpandable(output_path);
+    destroyExpandable(output_buffer);
 }
