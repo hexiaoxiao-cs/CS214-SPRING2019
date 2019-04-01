@@ -18,8 +18,8 @@ void destroyExpandableWithoutFree(expandable* space) {
 	free(space);
 }
 
-void expandExpandable(expandable* space) {
-	space->total_size = space->total_size + 50;
+void expandExpandable(expandable* space, int size) {
+	space->total_size = space->total_size + size;
 	space->data = realloc(space->data, space->total_size + 1);  //null terminator (reserved for codes)
 	space->data[space->total_size] = 0; //set it to null
 }
@@ -27,15 +27,28 @@ void expandExpandable(expandable* space) {
 void appendExpandable(expandable* space, char c) {
 	space->data[space->size++] = c;
 	if(space->size == space->total_size) {
-		expandExpandable(space);
+		expandExpandable(space, 50);
 	}
 }
 
 void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size) {
+	int available = space->total_size - space->size;
+	if(available < sequence_size) {
+		expandExpandable(space, sequence_size - available + 50);
+=======
+	int i;
 	//TODO: performance can be improved in here
-	for(int i=0;i < sequence_size;i++) {
+	for(i=0;i < sequence_size;i++) {
 		appendExpandable(space, sequence[i]);
+>>>>>>> f5ce070... Conform to C99
 	}
+
+	memcpy(space->data + space->size, sequence, sequence_size);
+	space->size += sequence_size;
+//	//TODO: performance can be improved in here
+//	for(int i=0;i < sequence_size;i++) {
+//		appendExpandable(space, sequence[i]);
+//	}
 }
 
 void zeroUnusedExpandable(expandable* space) {
@@ -71,8 +84,9 @@ void appendExpandablePtr(expandablePtr* space, const void* c) {
 }
 
 void appendSequenceExpandablePtr(expandablePtr* space, void* const * sequence, int sequence_size) {
+	int i;
 	//TODO: performance can be improved in here
-	for(int i=0;i < sequence_size;i++) {
+	for(i=0;i < sequence_size;i++) {
 		appendExpandablePtr(space, sequence[i]);
 	}
 }
