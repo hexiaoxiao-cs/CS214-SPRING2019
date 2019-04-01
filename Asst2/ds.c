@@ -1,6 +1,7 @@
 #include "ds.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 expandable *createExpandable() {
     expandable *space = calloc(1, sizeof(expandable));
@@ -18,9 +19,14 @@ void destroyExpandableWithoutFree(expandable *space) {
     free(space);
 }
 
-void expandExpandable(expandable *space, int size) {
+void expandExpandable(expandable *space, size_t size) {
     space->total_size = space->total_size + size;
-    space->data = realloc(space->data, space->total_size + 1);
+    void *tmp = realloc(space->data, space->total_size + 1);
+    if(tmp == NULL) {
+        printf("Unable to allocate %ld bytes of memory\n", space->total_size + 1);
+	panic("Unable to allocate enough memory");
+    }
+    space->data = tmp;
 }
 
 void appendExpandable(expandable *space, char c) {
@@ -34,8 +40,8 @@ void appendExpandable(expandable *space, char c) {
     space->data[space->size] = 0;   //set the next byte to be 0
 }
 
-void appendSequenceExpandable(expandable *space, const char *sequence, int sequence_size) {
-    int available = space->total_size - space->size;
+void appendSequenceExpandable(expandable *space, const char *sequence, size_t sequence_size) {
+    size_t available = space->total_size - space->size;
     if (available < sequence_size) {
         if (space->size + sequence_size > 1024) {
             expandExpandable(space, (sequence_size - available) + 4096000);

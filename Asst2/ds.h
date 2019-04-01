@@ -1,14 +1,15 @@
+#include <stddef.h>
 //Dynamic array
 typedef struct {
 	char* data;
-	int size;
-	int total_size;
+	size_t size;
+	size_t total_size;
 } expandable;
 
 typedef struct {
 	void** data;
-	int size;
-	int total_size;
+	size_t size;
+	size_t total_size;
 } expandablePtr;
 
 
@@ -39,9 +40,9 @@ void TraverseTreePrefix(expandable** codes, expandable **words, char* curr, int 
 expandable* createExpandable();
 void destroyExpandable(expandable* space);
 void destroyExpandableWithoutFree(expandable* space);
-void expandExpandable(expandable* space, int size);
+void expandExpandable(expandable* space, size_t size);
 void appendExpandable(expandable* space, char c);
-void appendSequenceExpandable(expandable* space, const char* sequence, int sequence_size);
+void appendSequenceExpandable(expandable* space, const char* sequence, size_t sequence_size);
 void zeroUnusedExpandable(expandable* space);
 
 expandablePtr* createExpandablePtr();
