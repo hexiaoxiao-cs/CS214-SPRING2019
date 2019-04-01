@@ -69,7 +69,12 @@ int main(int argc, char* argv[])
 		codebook=argv[optind+1];
 		hascodebook=1;
 	}
-	else{codebook=NULL;}
+	else{codebook="./HuffmanCodebook";
+		printf("Using Default Codebook in ./HuffmanCodebook\n");
+		
+		if(isFile(codebook)!=1&&decompress==1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
+	}
+	//printf("%d",hascodebook);
 	if(buildCodeBook==1){
 		if(recursive==1){doShits(filename,0,NULL,1);
 		}
