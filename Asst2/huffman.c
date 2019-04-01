@@ -511,7 +511,8 @@ void compress(expandable* buffer, char* file_data, int file_size, void** BSTree)
 
 void decompress(expandable* buffer, char* file_data, int file_size, node* huffman_tree) {
 	node* star = tree;
-	for(int i=0;i < file_size;i++) {
+	int i;
+	for(i=0;i < file_size;i++) {
 		if(file_data[i] == '0') {
 			star = star->left;
 		} else if(file_data[i] == '1') {
