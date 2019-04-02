@@ -1,3 +1,5 @@
+//interface header for main function
+//this header hides the actual implementations of compressing/decompressing. 
 void doShits(const char* dir, int has_codebook, const char* codebook_path, int generate_only);
 void doSingleShit(const char* filepath, int has_codebook, const char* codebook_path, int generate_only);
 void undoShits(const char* dir, const char* codebook_path);
