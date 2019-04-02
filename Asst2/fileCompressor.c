@@ -35,9 +35,10 @@ int main(int argc, char* argv[])
 	extern int optind, optopt, opterr;
 	int reti;
 	regex_t regex;
-	reti=regcomp(&regex,".*\\.hcz",0);
+	reti=regcomp(&regex,".*\\.hcz",0); //init Regex Engine
+	//using regex match to ensure that decompressing file is a file ending with .hcz
 	if(reti){printf("regex ERROR");}
-	while ((c = getopt(argc, argv, "bcdR")) != -1) {
+	while ((c = getopt(argc, argv, "bcdR")) != -1) { //using getopt for getting operands
 	    switch(c) {
 	        case 'b':
 		        buildCodeBook=1;
@@ -59,22 +60,24 @@ int main(int argc, char* argv[])
 			return 2;
 		}
 	}
-	if(buildCodeBook==0&&compress==0&&decompress==0){printf("Need Flags\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;}
-	if(argv[optind]==NULL){printf("Missing Target\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;}
+	if(buildCodeBook==0&&compress==0&&decompress==0){printf("Need Flags\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;} //no option selected
+	if(argv[optind]==NULL){printf("Missing Target\n Usage: fileCompressor <flag> <path or file> |codebook|\n");return 2;}//no path or file given
 	filename=argv[optind];
 	reti=regexec(&regex,filename,0,NULL,0);
 	fs=isFile(filename);
-	if(decompress==1&&fs==1&&reti==REG_NOMATCH){printf("option d: The Target should be a directory or an .hcz file\n");return 2;}
-	if((recursive==1&&fs==1)||(recursive==0&&fs == 0)){printf("option R: Only for Directories\n");return 2;}
+	if(decompress==1&&fs==1&&reti==REG_NOMATCH){printf("option d: The Target should be a directory or an .hcz file\n");return 2;}//not a file end with .hcz
+	if((recursive==1&&fs==1)||(recursive==0&&fs == 0)){printf("option R: Only for Directories\n");return 2;} //Ensure that when dealing with folder the recursive flag is set
 	if (argv[optind+1]!=NULL) {
 		codebook=argv[optind+1];
 		hascodebook=1;
-	}
-	else{codebook="./HuffmanCodebook";
+	}//checking whether user input a codebook
+	else{codebook="./HuffmanCodebook"; //if user does not input a codebook use Default Codebook
 		printf("Using Default Codebook path in ./HuffmanCodebook\n");
 	}
 	//printf("%d",hascodebook);
-	if(decompress==1&&isFile(codebook)!=1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;}
+	if(decompress==1&&isFile(codebook)!=1){printf("Default Codebook Not Found!\nProgram will EXIT!\n");return 2;} 
+	//When decompressing and a given codebook, if the codebook path is given incorrect, the program will exit.
+	//execute:
 	if(buildCodeBook==1){
 		if(recursive==1){doShits(filename,0,NULL,1);
 		}
