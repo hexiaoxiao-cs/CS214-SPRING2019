@@ -43,7 +43,7 @@ int bst_compare(const void *a, const void *b) {
 */
 
 void buildHuffmanTreeFromNodesArray(node **nodes, int many) {
-    MinHeap *heap = initMinHeap(nodes, many);
+    MinHeap *heap = initMinHeap(nodes, many); //Init Mean Heap
     node *temp1, *temp2, *temp3;
     while (heap->size != 1) {
         //get two least element from both heap
@@ -59,16 +59,18 @@ void buildHuffmanTreeFromNodesArray(node **nodes, int many) {
     }
     tree = heap->array[0];
     size = many;
-    free(heap->array);
-    free(heap);
+    free(heap->array);//reduce memory usage
+    free(heap);//reduce memory usage
     return;
 }
 
 /*
 createHuffmanFromCodeBook
 Required
-Codes ending with \out0
-words ending with \0
+node** nodearray sorted in acsending sequence
+int many how many nodes in the node array
+Outputs:
+None
 */
 
 void buildHuffmanTreeFromCodes(node **nodearray, int many) {
