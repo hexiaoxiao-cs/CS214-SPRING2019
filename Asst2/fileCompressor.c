@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
 	if((recursive==1&&fs==1)||(recursive==0&&fs == 0)){printf("option R: Only for Directories\n");return 2;} //Ensure that when dealing with folder the recursive flag is set
 	if (argv[optind+1]!=NULL) {
 		codebook=argv[optind+1];
-		hascodebook=1;
+		if(isFile(codebook)==1){
+		hascodebook=1;}
 	}//checking whether user input a codebook
 	else{codebook="./HuffmanCodebook"; //if user does not input a codebook use Default Codebook
 		printf("Using Default Codebook path in ./HuffmanCodebook\n");
