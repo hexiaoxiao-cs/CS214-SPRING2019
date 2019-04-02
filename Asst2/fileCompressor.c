@@ -80,10 +80,10 @@ int main(int argc, char* argv[])
 	//When decompressing and a given codebook, if the codebook path is given incorrect, the program will exit.
 	//execute:
 	if(buildCodeBook==1){
-		if(recursive==1){doShits(filename,0,"./HuffmanCodebook",1);
+		if(recursive==1){doShits(filename,0,codebook,1);
 		}
 		else{
-			doSingleShit(filename,0,"./HuffmanCodebook",1);
+			doSingleShit(filename,0,codebook,1);
 		}
 	}
 	if(compress==1){
