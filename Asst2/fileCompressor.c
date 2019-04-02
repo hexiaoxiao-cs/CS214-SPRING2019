@@ -95,6 +95,6 @@ int main(int argc, char* argv[])
 		else{
 			undoSingleShit(filename,codebook);}
 	}
-
+	remove("output.tmp");
 	return 0;
 }
