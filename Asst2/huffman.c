@@ -22,6 +22,8 @@ void cleanHalfCodeBooks(expandable **codes, expandable **words, int items_count)
     free(words);
 }
 
+//compare function for Linux built in Binary Search Tree
+//we uses token as our primary key and compare token size first, then use memcmp
 int bst_compare(const void *a, const void *b) {
     const node *a_node = (const node *) a;
     const node *b_node = (const node *) b;
@@ -154,8 +156,7 @@ void exportCodeFromHuffmanTree(expandable **codes, expandable **words) {
 
 //FILE SYSTEM RELATED STUFF
 
-//Test Driver For Xiaoxiao He's Huffman Tree
-
+//this function kills the program and print out a informative error message
 void panic(const char *module, const char *reason, const char *extra) {
     if (extra) {
         printf("Error: %s (%s) [%s]\n", module, reason, extra);
@@ -221,6 +222,7 @@ void writeFile(const char *file_path, char *data, size_t size) {
     close(handler);    //Close file
 }
 
+//define a delimeter as non-alphanum and non-punctuation
 int isDelim(char c) {
     return !isalnum(c) && !ispunct(c);
 }
@@ -234,6 +236,7 @@ int isDelim(char c) {
 *
 */
 
+//save codebook into a file
 void dumpCodeBookToFileRaw(const char *codebook_path, expandable **const codes, expandable **words, int size) {
     int i;
     char hex[3];    //hex buffer
@@ -271,10 +274,12 @@ void dumpCodeBookToFileRaw(const char *codebook_path, expandable **const codes, 
     destroyExpandable(content);
 }
 
+//helper function for addign nodes to Binary Search Tree
 void addNodeToBST(void **tree, node *node) {
     tsearch(node, tree, bst_compare);
 }
 
+//populate Binary Search Tree with codebook file content
 void loadBSTFromCodeBookFile(const char *codebook_path, void **BSTree) {
     char *codebook_data;
     size_t codebook_size, i;
@@ -321,8 +326,8 @@ void loadBSTFromCodeBookFile(const char *codebook_path, void **BSTree) {
     free(codebook_data);
 }
 
-//1->inserted	(should not free token)
-//0->existed	(should free token);
+//1->inserted	(caller should not free token_node)
+//0->existed	(caller can free token_node);
 int incrementTokenFrequency(node *token_node, void **BSTree) {
     node *returnedNode;
     if ((returnedNode = *((node **) tsearch(token_node, BSTree, bst_compare))) == token_node) {
@@ -335,10 +340,12 @@ int incrementTokenFrequency(node *token_node, void **BSTree) {
     }
 }
 
-/*
-* 1: token loaded
-* 0: no more token available
-*/
+
+//this function uses a size_t idx to save it's state.
+//every call to this function will return the nextToken in file_data
+//delimeter counted as a token
+//1: token loaded
+//0: no more token available
 int nextToken(expandable *buffer, const char *file_data, size_t file_size, size_t *idx) {
     if (*idx == file_size)
         return 0;
@@ -359,6 +366,7 @@ int nextToken(expandable *buffer, const char *file_data, size_t file_size, size_
     return 3; //this should be the last token
 }
 
+//do the counting for tokens in file_data
 void counting(const char *file_data, size_t file_size, void **BSTree) {
     expandable *space = createExpandable();
     node *newNode = calloc(1, sizeof(node));
@@ -379,6 +387,8 @@ void counting(const char *file_data, size_t file_size, void **BSTree) {
     free(newNode);
 }
 
+//comparison function for qsort
+//sort by frequencies, from Low to High
 int qsort_cmp(const void *a, const void *b) {
     int freq_a = (*((node **) a))->count;
     int freq_b = (*((node **) b))->count;
@@ -390,6 +400,8 @@ int qsort_cmp(const void *a, const void *b) {
         return 0;
 }
 
+//compress file_data and store the result into buffer
+//this function relies on the correct token-code mapping in BSTree
 void compress(expandable *buffer, char *file_data, size_t file_size, void **BSTree) {
     expandable *tmp = createExpandable();
     size_t idx = 0, dbg;
@@ -409,6 +421,8 @@ void compress(expandable *buffer, char *file_data, size_t file_size, void **BSTr
     destroyExpandable(tmp);
 }
 
+//decompress file_data and store the result into a buffer
+//this function relies on a correct huffman tree
 void decompress(expandable *buffer, char *file_data, size_t file_size, node *huffman_tree) {
     node *star = tree;
     size_t i;
@@ -429,6 +443,9 @@ void decompress(expandable *buffer, char *file_data, size_t file_size, node *huf
     }
 }
 
+
+//save a codebook onto a specific path
+//call dumpCodeBookToFileRaw internally
 void dumpCodeBookToPathRaw(const char *dir, expandable **const codes, expandable **words, int items_count) {
     expandable *codebook_path = createExpandable();
     appendSequenceExpandable(codebook_path, dir, (int) strlen(dir));
@@ -438,12 +455,14 @@ void dumpCodeBookToPathRaw(const char *dir, expandable **const codes, expandable
     destroyExpandable(codebook_path);
 }
 
+//allocate populate codebook from a Huffman Tree
 void loadCodeBookFromTree(expandable ***codes, expandable ***words, int items_count) {
     *codes = malloc(sizeof(expandable *) * items_count);
     *words = malloc(sizeof(expandable *) * items_count);
     exportCodeFromHuffmanTree(*codes, *words);
 }
 
+//folder escape
 void useTmpFolderForFile(expandable *path_buffer, const char *original_file) {
     char *original_filename;
     char *original_file_dup = strdup(original_file);
@@ -459,6 +478,8 @@ void useTmpFolderForFile(expandable *path_buffer, const char *original_file) {
     free(original_file_dup);
 }
 
+//wrapper for compress
+//this function compress file_data and output the result to a new file
 void compressFile(const char *original_file, expandable *path_buffer,
                   expandable *buffer, char *file_data, size_t file_size,
                   void **BSTree, int move_to_tmp_folder) {
@@ -476,6 +497,8 @@ void compressFile(const char *original_file, expandable *path_buffer,
     buffer->size = 0;
 }
 
+//wrapper for decompress
+//this function decompress file_data and output the result to a new file
 void decompressFile(const char *original_file, expandable *path_buffer,
                     expandable *buffer, char *file_data, size_t file_size, node *huffman_tree,
                     int move_to_tmp_folder) {
@@ -494,8 +517,10 @@ void decompressFile(const char *original_file, expandable *path_buffer,
     buffer->size = 0;
 }
 
+//a expandable storage to store BST nodes from dumping process
 expandablePtr *nodes;
 
+//dump BST into a global expandablePtr
 void bst_dumper(const void *cur_node, const VISIT which, const int depth) {
     switch (which) {
         case preorder:
@@ -509,6 +534,9 @@ void bst_dumper(const void *cur_node, const VISIT which, const int depth) {
     }
 }
 
+//build a huffman tree based on BSTree
+//if there exist a token-codes relationship, it will build the huffman tree based on that
+//otherwise the huffman tree will be built based on token-frequencies relationship
 void buildHuffmanTreeFromBSTree(void **BSTree) {
     //sort counters
     nodes = createExpandablePtr();
@@ -523,23 +551,24 @@ void buildHuffmanTreeFromBSTree(void **BSTree) {
     }
 }
 
+//interface to main function for decompress a directory
 void undoShits(const char *dir, const char *codebook_path) {
     char *command, *task_data, *line, *file_data;
     size_t task_size, file_size;
     void *BSTree = NULL;
-    
+
     expandable *path_buffer = createExpandable();
     expandable *buffer = createExpandable();
-    
+
     loadBSTFromCodeBookFile(codebook_path, &BSTree);
     buildHuffmanTreeFromBSTree(&BSTree);
     printf("Finished loading codebook\n");
-    
+
     asprintf(&command, "find \"%s\" -type f -name \"*.hcz\" > output.tmp", dir);
     system(command);
     free(command);
     readFile("output.tmp", &task_data, &task_size);
-    
+
     line = strtok(task_data, "\n");
     if(!line) {
         printf("Requested directory is empty\n");
@@ -552,32 +581,34 @@ void undoShits(const char *dir, const char *codebook_path) {
         free(file_data);
         line = strtok(NULL, "\n");
     }
-    
+
     destroyExpandable(path_buffer);
     destroyExpandable(buffer);
     free(task_data);
 }
 
+//interface to main function for decompress a single file
 void undoSingleShit(const char *file, const char *codebook_path) {
     void *BSTree = NULL;
     expandable *buffer = createExpandable();
     expandable *path_buffer = createExpandable();
     char *file_data;
     size_t file_size;
-    
+
     loadBSTFromCodeBookFile(codebook_path, &BSTree);
     buildHuffmanTreeFromBSTree(&BSTree);
-    
+
     printf("Finished loading codebook\n");
     readFile(file, &file_data, &file_size);
     printf("Decompressing: %s\n", file);
     decompressFile(file, path_buffer, buffer, file_data, file_size, tree, 0);    //do not use tmp folder
-    
+
     destroyExpandable(buffer);
     destroyExpandable(path_buffer);
     free(file_data);
 }
 
+//interface to main function for compressing a directory
 void doShits(const char *dir, int has_codebook, const char *codebook_path, int generate_only) {
     char *command, *task_data, *line, *file_data;
     size_t task_size, file_size, items_count;
@@ -633,9 +664,9 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
         //exportCodeFromHuffmanTree(NULL, NULL);
         items_count = size;
     }
-    
+
     printf("Finished loading codebook\n");
-    
+
     line = strtok(task_data, "\n");
 
     expandable *output_buffer = createExpandable();
@@ -653,6 +684,7 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
     destroyExpandable(output_buffer);
 }
 
+//interface to main function for compressing a single file
 void doSingleShit(const char *filepath, int has_codebook, const char *codebook_path, int generate_only) {
     char *file_data;
     expandable **codes;
@@ -685,7 +717,7 @@ void doSingleShit(const char *filepath, int has_codebook, const char *codebook_p
         //exportCodeFromHuffmanTree(NULL, NULL);    //fill codes into tree
         items_count = size;
     }
-    
+
     printf("Finished loading codebook\n");
 
     expandable *output_buffer = createExpandable();

@@ -5,7 +5,7 @@
 
 expandable *createExpandable() {
     expandable *space = calloc(1, sizeof(expandable));
-    space->data = calloc(1, 50 + 1);  //5 bytes + 1 null terminator(reserved for codes)
+    space->data = calloc(1, 50 + 1);  //50 bytes, last bytes for NULL-terminator
     space->total_size = 50;
     return space;
 }
@@ -33,38 +33,36 @@ void appendExpandable(expandable *space, char c) {
     space->data[space->size++] = c;
     if (space->size == space->total_size) {
         if (space->size <= 1024)
-            expandExpandable(space, 10);
+            expandExpandable(space, 10);  //expand 10 bytes each time for small memory
         else
-            expandExpandable(space, space->size);
+            expandExpandable(space, space->size); //double the size each time for large memory
     }
     space->data[space->size] = 0;   //set the next byte to be 0
 }
 
 void appendSequenceExpandable(expandable *space, const char *sequence, size_t sequence_size) {
-    size_t available = space->total_size - space->size;
+    size_t available = space->total_size - space->size; //precalculate available size
     if (available <= sequence_size) {
         if (space->size + sequence_size > 1024) {
-            expandExpandable(space, (sequence_size - available) + 4096000);
+            expandExpandable(space, (sequence_size - available) + 4096000); //expand 4M each time for large memory
         } else {
-            expandExpandable(space, sequence_size - available + 10);
+            expandExpandable(space, sequence_size - available + 10);  //expand 10 bytes each time for small memory
         }
 
     }
 
     memcpy(space->data + space->size, sequence, sequence_size);
     space->size += sequence_size;
-    space->data[space->size] = 0;
-//	for(int i=0;i < sequence_size;i++) {
-//		appendExpandable(space, sequence[i]);
-//	}
+    space->data[space->size] = 0; //set the next byte to be 0
 }
 
 void zeroUnusedExpandable(expandable *space) {
-    memset(space->data + space->size, 0, space->total_size - space->size);
+    memset(space->data + space->size, 0, space->total_size - space->size);  //zero out unused space
 }
 
 expandablePtr *createExpandablePtr() {
     expandablePtr *space = calloc(1, sizeof(expandablePtr));
+    space->size = 0;
     space->data = calloc(1, sizeof(void *) * 10);  //10 void pointers
     space->total_size = 10; //10 void pointers
     return space;
@@ -80,7 +78,7 @@ void destroyExpandablePtrWithoutFree(expandablePtr *space) {
 }
 
 void expandExpandablePtr(expandablePtr *space) {
-    space->total_size = space->total_size + 10;
+    space->total_size = space->total_size + 10; //expand 10 slots each time
     space->data = realloc(space->data, space->total_size * sizeof(void *));  //null terminator (reserved for codes)
 }
 
