@@ -30,7 +30,7 @@ int bst_compare(const void *a, const void *b) {
     if (a_node->data->size == b_node->data->size) {
         return memcmp(a_node->data->data, b_node->data->data, a_node->data->size);
     } else {
-        return a_node->data->size - b_node->data->size;
+        return (int) (a_node->data->size - b_node->data->size);
     }
 }
 
@@ -62,8 +62,7 @@ void buildHuffmanTreeFromNodesArray(node **nodes, int many) {
     tree = heap->array[0];
     size = many;
     free(heap->array);//reduce memory usage
-    free(heap);//reduce memory usage
-    return;
+    free(heap);
 }
 
 /*
@@ -80,8 +79,8 @@ void buildHuffmanTreeFromCodes(node **nodearray, int many) {
     int temp = 0, cnt = 0;
     node *root = (node *) malloc(sizeof(node));
     root->left = root->right = NULL;
-    node *curr = root;
-    node *prev = root;
+    node *curr;
+    node *prev;
     for (temp = 0; temp < many; temp++) {
         cnt = 0;
         curr = root;
@@ -116,7 +115,6 @@ void buildHuffmanTreeFromCodes(node **nodearray, int many) {
     }
     tree = root;
     size = many;
-    return;
 }
 
 
@@ -127,7 +125,6 @@ void DongFeng41KuaiDi(node *curr) {
     DongFeng41KuaiDi(curr->right);
     destroyExpandable(curr->data);
     free(curr);
-    return;
 }
 
 void LaunchDongFengDaoDan() {
@@ -177,8 +174,9 @@ void readFile(const char *file_path, char **data, size_t *size) {
         panic("Unable to open file", strerror(errno), file_path);
     }
     //Blocking and readAll
-    size_t tmp, ret;
-    size_t file_size = lseek(handler, 0, SEEK_END);
+    size_t tmp;
+    ssize_t ret;
+    size_t file_size = (size_t) lseek(handler, 0, SEEK_END);
     lseek(handler, 0, SEEK_SET);
     char *huge_shit = (char *) malloc(file_size + 1);
     huge_shit[file_size] = 0;       //Zero terminated
@@ -206,7 +204,8 @@ void writeFile(const char *file_path, char *data, size_t size) {
         panic("Unable to open file", strerror(errno), file_path);
     }
     //Blocking and writeAll
-    size_t tmp, ret;
+    size_t tmp;
+    ssize_t ret;
     tmp = 0;
     while (tmp < size) {
         ret = write(handler, data + tmp, size - tmp);
@@ -404,11 +403,11 @@ int qsort_cmp(const void *a, const void *b) {
 //this function relies on the correct token-code mapping in BSTree
 void compress(expandable *buffer, char *file_data, size_t file_size, void **BSTree) {
     expandable *tmp = createExpandable();
-    size_t idx = 0, dbg;
+    size_t idx = 0;
     node dummy;
     node *found;
 
-    while ((dbg = nextToken(tmp, file_data, file_size, &idx)) > 0) {
+    while ((nextToken(tmp, file_data, file_size, &idx)) > 0) {
         dummy.data = tmp;
         found = *((node **) tfind(&dummy, BSTree, bst_compare));
         if (!found) {
@@ -423,7 +422,7 @@ void compress(expandable *buffer, char *file_data, size_t file_size, void **BSTr
 
 //decompress file_data and store the result into a buffer
 //this function relies on a correct huffman tree
-void decompress(expandable *buffer, char *file_data, size_t file_size, node *huffman_tree) {
+void decompress(expandable *buffer, const char *file_data, size_t file_size, node *huffman_tree) {
     node *star = tree;
     size_t i;
     for (i = 0; i < file_size; i++) {
@@ -521,7 +520,7 @@ void decompressFile(const char *original_file, expandable *path_buffer,
 expandablePtr *nodes;
 
 //dump BST into a global expandablePtr
-void bst_dumper(const void *cur_node, const VISIT which, const int depth) {
+void bst_dumper(const void *cur_node, VISIT which, int depth) {
     switch (which) {
         case preorder:
             break;
@@ -543,10 +542,10 @@ void buildHuffmanTreeFromBSTree(void **BSTree) {
     twalk(*BSTree, bst_dumper);
     qsort(nodes->data, (unsigned int) (nodes->size), sizeof(node *), qsort_cmp);
     if (((node *) (nodes->data[0]))->codes != NULL) {
-        buildHuffmanTreeFromCodes((node **) (nodes->data), nodes->size);
+        buildHuffmanTreeFromCodes((node **) (nodes->data), (int) nodes->size);
         destroyExpandablePtr(nodes);
     } else {
-        buildHuffmanTreeFromNodesArray((node **) (nodes->data), nodes->size);
+        buildHuffmanTreeFromNodesArray((node **) (nodes->data), (int) nodes->size);
         destroyExpandablePtrWithoutFree(nodes);
     }
 }
@@ -646,23 +645,22 @@ void doShits(const char *dir, int has_codebook, const char *codebook_path, int g
         //sort counters
         buildHuffmanTreeFromBSTree(&BSTree);
         loadCodeBookFromTree(&codes, &words, size);
-        items_count = size;
+        items_count = (size_t) size;
 
-        dumpCodeBookToFileRaw(codebook_path, codes, words, items_count);
+        dumpCodeBookToFileRaw(codebook_path, codes, words, (int) items_count);
 
         //build codebook only
         if (generate_only) {
-            cleanHalfCodeBooks(codes, words, items_count);
+            cleanHalfCodeBooks(codes, words, (int) items_count);
             return;
         } else {
-            cleanHalfCodeBooks(codes, words, items_count);
+            cleanHalfCodeBooks(codes, words, (int) items_count);
         }
     } else {
         //use existed codebook
         loadBSTFromCodeBookFile(codebook_path, &BSTree);
         //buildHuffmanTreeFromBSTree(&BSTree);
         //exportCodeFromHuffmanTree(NULL, NULL);
-        items_count = size;
     }
 
     printf("Finished loading codebook\n");
@@ -715,7 +713,6 @@ void doSingleShit(const char *filepath, int has_codebook, const char *codebook_p
         loadBSTFromCodeBookFile(codebook_path, &BSTree);
         //buildHuffmanTreeFromBSTree(&BSTree);
         //exportCodeFromHuffmanTree(NULL, NULL);    //fill codes into tree
-        items_count = size;
     }
 
     printf("Finished loading codebook\n");

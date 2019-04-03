@@ -15,7 +15,7 @@ void buildHuffmanTreeFromBSTree(void** BSTree);
 void loadBSTFromCodeBookFile(const char* codebook_path, void** BSTree);
 void counting(const char* file_data, size_t file_size, void** BSTree);
 void compress(expandable* buffer, char* file_data, size_t file_size, void** BSTree);
-void decompress(expandable* buffer, char* file_data, size_t file_size, node* huffman_tree);
+void decompress(expandable* buffer, const char* file_data, size_t file_size, node* huffman_tree);
 void compressFile(const char* original_file, expandable* path_buffer, expandable* buffer, char* file_data, size_t file_size,
   void** BSTree, int move_to_tmp_folder);
 void decompressFile(const char* original_file, expandable* path_buffer, expandable* buffer, char* file_data, size_t file_size, node* huffman_tree, int move_to_tmp_folder);
