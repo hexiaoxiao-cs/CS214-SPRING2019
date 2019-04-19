@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.1)
 project(WTF)
-add_executable(WTFserver common/protocol.c common/util.c server/server.c server/network.c)
+include_directories(common)
+add_executable(WTFserver common/protocol.c common/util.c server/main.c server/network.c server/ds.c)
 add_executable(WTF common/protocol.c common/util.c client/client.c client/network.c)
