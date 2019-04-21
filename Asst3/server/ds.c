@@ -1,6 +1,11 @@
 #include "ds.h"
 #include <pthread.h>
 #include <search.h>
+
+pthread_t listener_thread_id;
+int bailout = 0;
+pthread_mutex_t bailout_mtx = PTHREAD_MUTEX_INITIALIZER; //bailout mutex
+
 static pthread_mutex_t hashmap_mtx = PTHREAD_MUTEX_INITIALIZER; //mutex for hashmap (project - rwlock)
 
 //Initialize Hash Map
