@@ -60,17 +60,21 @@ size_t readfile(const char* path, char* data, size_t file_size) {
 //0 failure
 //1 success
 int readproc(const char* pid, proc* p) {
-    //TODO: minor status code, starttime, runtime, TTY device name
+    //TODO: starttime, runtime, TTY device name
     char path_buffer[MAXPATH];  // /proc/$PID/XXX
     char* appender = path_buffer + 6 + strlen(pid) + 1; //skip $pid/
     char stat_buffer[4096];
     char comm_buffer[4096];
+    char status_buffer[4096];
     char* file_data;
     unsigned long int utime, stime;
+    int session, pgrp, tpgid, stateend;
+    long nice, num_threads;
     unsigned long long starttime;
     struct sysinfo systeminfo;
     struct stat filestat;
     size_t file_size, i;
+    uint64_t Tgid = 0, VmLck = 0;
 
     // initialize path buffer
     strcpy(path_buffer, "/proc/");
@@ -79,6 +83,36 @@ int readproc(const char* pid, proc* p) {
 
     // parse pid
     p->pid = atoll(pid);
+
+    // read Tgid and vm_lock
+    strcpy(appender, "status");
+    file_size = readfile(path_buffer, status_buffer, 4096);
+    if (file_size < 0)
+        return 0;
+    file_data = status_buffer;
+    for (;;) {
+        char* colon;
+        colon = strchr(file_data, ':');
+        if (colon - file_data == 4 && memcmp(file_data, "Tgid", 4) == 0) {
+            // have Tgid
+            file_data += 4; //skip field name
+            file_data += 2; //skip :\t
+            Tgid = strtol(file_data, &file_data, 10);
+            if (Tgid != p->pid)
+                return 0;   //this is a thread folder
+        } else if (colon - file_data == 5 && memcmp(file_data, "VmLck", 5) == 0) {
+            // have VmLck
+            file_data += 5; //skip field name
+            file_data += 2; //skip :\t
+            VmLck = strtol(file_data, &file_data, 10);
+        }
+        file_data = strchr(file_data, '\n');
+        if (file_data == 0)
+            break;  //no new line
+        file_data++;
+        if (*file_data == 0)
+            break;  //last line
+    }
 
     // read command line
     strcpy(appender, "cmdline");
@@ -107,10 +141,29 @@ int readproc(const char* pid, proc* p) {
     file_size = readfile(path_buffer, stat_buffer, 4096);
     if (file_size < 0)
         return 0;
-    sscanf(stat_buffer, "%*d %*s %c %*d %*d %*d %d %*d %*u %*lu %*lu %*lu %*lu %lu %lu %*ld %*ld %*ld %*ld %*ld %*ld %llu %lu %ld", p->state, &p->tty, &utime, &stime, &starttime, &p->vsz, &p->rss);
+    sscanf(stat_buffer, "%*d %*s %c %*d %d %d %d %d %*u %*lu %*lu %*lu %*lu %lu %lu %*ld %*ld %*ld %ld %ld %*ld %llu %lu %ld", p->state, &pgrp, &session, &p->tty, &tpgid, &utime, &stime, &nice, &num_threads, &starttime, &p->vsz, &p->rss);
+
+    // fill in minor code of state
+    stateend = 1;
+    if (nice < 0)
+        p->state[stateend++] = '<';
+    if (nice > 0)
+        p->state[stateend++] = 'N';
+    if (VmLck > 0)
+        p->state[stateend++] = 'L';
+    if (session == Tgid)
+        p->state[stateend++] = 's';
+    if (num_threads > 1)
+        p->state[stateend++] = 'l';
+    if (pgrp == tpgid)
+        p->state[stateend++] = '+';
+    p->state[stateend] = 0;
+
+
+    // convert some format
     p->vsz /= 1024; //convert VSZ to kilobytes
     p->rss *= getpagesize();    //multiply with pagesize
-    p->rss /= 1024; //convert RSS to KB
+    p->rss /= 1024; //convert RSS to kilobytes
 
     // read uptime & calculate percentages
     sysinfo(&systeminfo);
@@ -143,4 +196,5 @@ int main() {
         }
     }
     closedir(testdir);
+    return 0;
 }
