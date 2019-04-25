@@ -114,7 +114,10 @@ int readproc(const char* pid, proc* p) {
 
     // read uptime & calculate percentages
     sysinfo(&systeminfo);
-    p->cpu_percentage = ((float)(utime + stime) / sysconf(_SC_CLK_TCK)) / (systeminfo.uptime - (float)starttime / sysconf(_SC_CLK_TCK)) * 100;
+    if (systeminfo.uptime - (float)starttime / sysconf(_SC_CLK_TCK) == 0.0)
+        p->cpu_percentage = 0.0;
+    else
+        p->cpu_percentage = ((float)(utime + stime) / sysconf(_SC_CLK_TCK)) / (systeminfo.uptime - (float)starttime / sysconf(_SC_CLK_TCK)) * 100;
     p->memory_percentage = (float)p->rss / ((float)systeminfo.totalram / 1024) * 100;
 
     // get username
@@ -124,14 +127,14 @@ int readproc(const char* pid, proc* p) {
 }
 
 void displayproc(proc* p) {
-    printf("%-10s %6ld %4.1lf %4.1lf %10lu %8lu %6d %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, "STTIME", "RUNTIME", p->cmdline);
+    printf("%-10s %7ld %6.1lf %4.1lf %10lu %8lu %6d %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, "STTIME", "RUNTIME", p->cmdline);
 }
 
 int main() {
     DIR* testdir = opendir("/proc/");
     struct dirent* dir;
     proc p;
-    printf("%-10s %6s %4s %4s %10s %8s %6s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
+    printf("%-10s %7s %6s %4s %10s %8s %6s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
     while ((dir = readdir(testdir)) != NULL) {
         if (dir->d_type == DT_DIR && dir->d_name[0] > '0' && dir->d_name[0] <= '9') {
             if (readproc(dir->d_name, &p)) {
