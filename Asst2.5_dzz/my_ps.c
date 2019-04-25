@@ -30,39 +30,6 @@ typedef struct {
 } proc ;
 
 //0 failure
-//1 success
-int readfilea(const char* path, char** data, size_t* size) {
-    int handler = open(path, O_RDONLY);
-    if (handler < 0) {
-        //Unable to open specific files
-        return 0;
-    }
-    //Blocking and readAll
-    size_t tmp;
-    ssize_t ret;
-    size_t file_size = (size_t) lseek(handler, 0, SEEK_END);
-    lseek(handler, 0, SEEK_SET);
-    char *huge_shit = (char *) malloc(file_size + 1);
-    huge_shit[file_size] = 0;       //Zero terminated
-    tmp = 0;
-    while (tmp < file_size) {
-        ret = read(handler, huge_shit + tmp, file_size - tmp);
-        if (ret < 0) {
-            return 0;
-        } else if (ret == 0) {
-            break;
-        } else {
-            //Positive interger
-            tmp += ret;
-        }
-    }
-    *data = huge_shit;
-    *size = file_size;
-    close(handler);    //Close file
-    return 1;
-}
-
-//0 failure
 //>0 success & file size
 size_t readfile(const char* path, char* data, size_t file_size) {
     int handler = open(path, O_RDONLY);
@@ -93,7 +60,7 @@ size_t readfile(const char* path, char* data, size_t file_size) {
 //0 failure
 //1 success
 int readproc(const char* pid, proc* p) {
-    //TODO: minor status code, starttime, runtime
+    //TODO: minor status code, starttime, runtime, TTY device name
     char path_buffer[MAXPATH];  // /proc/$PID/XXX
     char* appender = path_buffer + 6 + strlen(pid) + 1; //skip $pid/
     char stat_buffer[4096];
@@ -110,10 +77,8 @@ int readproc(const char* pid, proc* p) {
     strcat(path_buffer, pid);
     strcat(path_buffer, "/");
 
-
     // parse pid
     p->pid = atoll(pid);
-
 
     // read command line
     strcpy(appender, "cmdline");
@@ -159,13 +124,14 @@ int readproc(const char* pid, proc* p) {
 }
 
 void displayproc(proc* p) {
-    printf("%s %ld %0.1lf %0.1lf %lu %lu %d %s %s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, "", p->cmdline);
+    printf("%-10s %6ld %4.1lf %4.1lf %10lu %8lu %6d %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, "STTIME", "RUNTIME", p->cmdline);
 }
 
 int main() {
     DIR* testdir = opendir("/proc/");
     struct dirent* dir;
     proc p;
+    printf("%-10s %6s %4s %4s %10s %8s %6s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
     while ((dir = readdir(testdir)) != NULL) {
         if (dir->d_type == DT_DIR && dir->d_name[0] > '0' && dir->d_name[0] <= '9') {
             if (readproc(dir->d_name, &p)) {
