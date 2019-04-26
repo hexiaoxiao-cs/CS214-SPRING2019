@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define MAXPATH 64
 
@@ -21,10 +22,10 @@ typedef struct {
     float memory_percentage;
     uint64_t vsz;
     uint64_t rss;
-    uint32_t tty;
+    char tty[11];
     char state[8];
     char start_time[6];
-    uint64_t runtime;
+    char runtime[8];
     char cmdline[4 * 1024 + 2];
     char* user; //this is a static space owned by passwd
 } proc ;
@@ -60,7 +61,6 @@ size_t readfile(const char* path, char* data, size_t file_size) {
 //0 failure
 //1 success
 int readproc(const char* pid, proc* p) {
-    //TODO: starttime, runtime, TTY device name
     char path_buffer[MAXPATH];  // /proc/$PID/XXX
     char* appender = path_buffer + 6 + strlen(pid) + 1; //skip $pid/
     char stat_buffer[4096];
@@ -73,8 +73,12 @@ int readproc(const char* pid, proc* p) {
     unsigned long long starttime;
     struct sysinfo systeminfo;
     struct stat filestat;
+    struct tm* local_tm;
+    time_t tmp_time;
     size_t file_size, i;
     uint64_t Tgid = 0, VmLck = 0;
+    int tty = 0;
+    uint32_t now_year = 0, total_cpu_time = 0;
 
     // initialize path buffer
     strcpy(path_buffer, "/proc/");
@@ -141,7 +145,7 @@ int readproc(const char* pid, proc* p) {
     file_size = readfile(path_buffer, stat_buffer, 4096);
     if (file_size < 0)
         return 0;
-    sscanf(stat_buffer, "%*d %*s %c %*d %d %d %d %d %*u %*lu %*lu %*lu %*lu %lu %lu %*ld %*ld %*ld %ld %ld %*ld %llu %lu %ld", p->state, &pgrp, &session, &p->tty, &tpgid, &utime, &stime, &nice, &num_threads, &starttime, &p->vsz, &p->rss);
+    sscanf(stat_buffer, "%*d %*s %c %*d %d %d %d %d %*u %*lu %*lu %*lu %*lu %lu %lu %*ld %*ld %*ld %ld %ld %*ld %llu %lu %ld", p->state, &pgrp, &session, &tty, &tpgid, &utime, &stime, &nice, &num_threads, &starttime, &p->vsz, &p->rss);
 
     // fill in minor code of state
     stateend = 1;
@@ -176,18 +180,48 @@ int readproc(const char* pid, proc* p) {
     // get username
     stat(path_buffer, &filestat);   //stat the stat file
     p->user = getpwuid(filestat.st_uid)->pw_name;
+
+    // calculate start time
+    tmp_time = time(0);
+    local_tm = localtime(&tmp_time);
+    now_year = local_tm->tm_year;
+    tmp_time = time(0) - (systeminfo.uptime - starttime / sysconf(_SC_CLK_TCK));
+    local_tm = localtime(&tmp_time);
+    if (systeminfo.uptime - starttime / sysconf(_SC_CLK_TCK) <= 86400)
+        strftime(p->start_time, 6, "%H:%M", local_tm);
+    else if(local_tm->tm_year != now_year)
+        strftime(p->start_time, 6, "%Y", local_tm);
+    else
+        strftime(p->start_time, 6, "%b%d", local_tm);
+
+    // calculate runtime
+    total_cpu_time = (utime + stime) / sysconf(_SC_CLK_TCK);
+    sprintf(p->runtime, "%d:%02d", total_cpu_time / 60, total_cpu_time % 60);
+
+    // adjust TTY name
+    p->tty[0] = 0;
+
+    if (major(tty) == 136)
+        strcpy(p->tty, "pts/");
+    else if(major(tty) == 4)
+        strcpy(p->tty, "tty");
+    else {
+        strcpy(p->tty, "?");
+        return 1;
+    }
+    sprintf(p->tty + strlen(p->tty), "%d", minor(tty));
     return 1;
 }
 
 void displayproc(proc* p) {
-    printf("%-10s %7ld %6.1lf %4.1lf %10lu %8lu %6d %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, "STTIME", "RUNTIME", p->cmdline);
+    printf("%-10s %7ld %6.1lf %4.1lf %10lu %8lu %11s %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, p->start_time, p->runtime, p->cmdline);
 }
 
 int main() {
     DIR* testdir = opendir("/proc/");
     struct dirent* dir;
     proc p;
-    printf("%-10s %7s %6s %4s %10s %8s %6s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
+    printf("%-10s %7s %6s %4s %10s %8s %11s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
     while ((dir = readdir(testdir)) != NULL) {
         if (dir->d_type == DT_DIR && dir->d_name[0] > '0' && dir->d_name[0] <= '9') {
             if (readproc(dir->d_name, &p)) {
