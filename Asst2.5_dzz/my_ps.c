@@ -78,7 +78,7 @@ int readproc(const char* pid, proc* p) {
     size_t file_size, i;
     uint64_t Tgid = 0, VmLck = 0;
     int tty = 0;
-    uint32_t now_year = 0, total_cpu_time = 0;
+    uint32_t now_year = 0, now_day_of_year = 0, total_cpu_time = 0;
 
     // initialize path buffer
     strcpy(path_buffer, "/proc/");
@@ -185,14 +185,17 @@ int readproc(const char* pid, proc* p) {
     tmp_time = time(0);
     local_tm = localtime(&tmp_time);
     now_year = local_tm->tm_year;
+    now_day_of_year = local_tm->tm_yday;
+
     tmp_time = time(0) - (systeminfo.uptime - starttime / sysconf(_SC_CLK_TCK));
     local_tm = localtime(&tmp_time);
-    if (systeminfo.uptime - starttime / sysconf(_SC_CLK_TCK) <= 86400)
-        strftime(p->start_time, 6, "%H:%M", local_tm);
-    else if(local_tm->tm_year != now_year)
-        strftime(p->start_time, 6, "%Y", local_tm);
-    else
+
+    if(local_tm->tm_year != now_year)
+        strftime(p->start_time, 6, "%Y", local_tm);     //not the same year
+    else if (local_tm->tm_yday != now_day_of_year)      //the same year, but not the same day
         strftime(p->start_time, 6, "%b%d", local_tm);
+    else
+        strftime(p->start_time, 6, "%H:%M", local_tm);  //the same day
 
     // calculate runtime
     total_cpu_time = (utime + stime) / sysconf(_SC_CLK_TCK);
