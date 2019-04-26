@@ -25,7 +25,7 @@ typedef struct {
     char tty[11];
     char state[8];
     char start_time[6];
-    char runtime[11];
+    char runtime[13];
     char cmdline[4 * 1024 + 2];
     char* user; //this is a static space owned by passwd
 } proc ;
@@ -217,14 +217,14 @@ int readproc(const char* pid, proc* p) {
 }
 
 void displayproc(proc* p) {
-    printf("%-10s %7ld %6.1lf %4.1lf %10lu %8lu %-11s %-4s %8s %10s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, p->start_time, p->runtime, p->cmdline);
+    printf("%-10s %7ld %6.1lf %4.1lf %10lu %10lu %-11s %-4s %8s %12s %s\n", p->user, p->pid, p->cpu_percentage, p->memory_percentage, p->vsz, p->rss, p->tty, p->state, p->start_time, p->runtime, p->cmdline);
 }
 
 int main() {
     DIR* testdir = opendir("/proc/");
     struct dirent* dir;
     proc p;
-    printf("%-10s %7s %6s %4s %10s %8s %-11s %-4s %8s %10s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
+    printf("%-10s %7s %6s %4s %10s %10s %-11s %-4s %8s %12s %s\n", "USER", "PID", "%CPU", "%MEM", "VSZ", "RSS", "TT", "STAT", "STARTED", "TIME", "COMMAND");
     while ((dir = readdir(testdir)) != NULL) {
         if (dir->d_type == DT_DIR && dir->d_name[0] > '0' && dir->d_name[0] <= '9') {
             if (readproc(dir->d_name, &p)) {
