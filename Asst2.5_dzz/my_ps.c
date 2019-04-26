@@ -25,7 +25,7 @@ typedef struct {
     char tty[11];
     char state[8];
     char start_time[6];
-    char runtime[8];
+    char runtime[11];
     char cmdline[4 * 1024 + 2];
     char* user; //this is a static space owned by passwd
 } proc ;
