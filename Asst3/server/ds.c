@@ -21,19 +21,19 @@ int init_hashmap()
 //Input: Project Name
 //Output: a read_write lock for the specified project name
 
-pthread_rwlock_t* get_rwlock_for_project(const char* project_name)
-{
-    ENTRY e,*ep;
-    ACTION act;
-
-    e.key=project_name;
-    ep=hsearch(e);
-    if(ep->data==NULL){
-        if(pthread_rwlock_init(ep->data,pthread_rwlockattr_setkind_np())!=0){return NULL;}
-        else {
-            hsearch(ep);
-            return ep->data;
-        }
-    }
-}
+//pthread_rwlock_t* get_rwlock_for_project(const char* project_name)
+//{
+//    ENTRY e,*ep;
+//    ACTION act;
+//
+//    e.key=project_name;
+//    ep=hsearch(e);
+//    if(ep->data==NULL){
+//        if(pthread_rwlock_init(ep->data,pthread_rwlockattr_setkind_np())!=0){return NULL;}
+//        else {
+//            hsearch(ep);
+//            return ep->data;
+//        }
+//    }
+//}
 
