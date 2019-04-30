@@ -10,3 +10,6 @@ target_link_libraries(WTF)
 
 target_include_directories(WTFserver PRIVATE server)
 target_include_directories(WTF PRIVATE client)
+
+target_compile_definitions(WTFserver PRIVATE SERVER_COMPILING)
+target_compile_definitions(WTF PRIVATE CLIENT_COMPILING)
