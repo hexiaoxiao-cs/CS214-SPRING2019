@@ -69,7 +69,7 @@ void* network_handler_thread(void* arg) {
     size_t claimed_packet_size = 0;
     buffer* response_buffer;
     buffer* request_buffer = createBuffer();
-    expandBuffer(request_buffer, 8 * 1024);     //8K initial network buffer
+    expandBuffer(request_buffer, 8 * 1024 - availableBuffer(request_buffer));     //8K initial network buffer
 
     fds[0].fd = fd;
     fds[0].events = POLLIN;
@@ -95,21 +95,25 @@ void* network_handler_thread(void* arg) {
                 }
             } else if (read_res == 0) {
                 //client disconnected
+                destroyBuffer(request_buffer);
                 close(fd);
                 pthread_exit(NULL); // release resources
             } else {
                 //error happened
+                destroyBuffer(request_buffer);
                 TRACE(("Read error: %s\n", strerror(errno)));
                 close(fd);
                 pthread_exit(NULL); // release resources
             }
         } else if (poll_res == 0){
             // time out for poll
+            destroyBuffer(request_buffer);
             TRACE(("Socket timed out\n"));
             close(fd);
             pthread_exit(NULL);
         } else {
             // internal error for poll
+            destroyBuffer(request_buffer);
             TRACE(("Poll error: %s\n", strerror(errno)));
             close(fd);
             pthread_exit(NULL);
@@ -120,6 +124,7 @@ void* network_handler_thread(void* arg) {
     memcpy((void*)&claimed_packet_size, peakBuffer(request_buffer), 8); // 8 bytes for packet size
     if (claimed_packet_size > MAX_PACKET_SIZE) {
         // claimed size is too big
+        destroyBuffer(request_buffer);
         TRACE(("Socket closed, reason: claimed size is too big\n"));
         close(fd);
         pthread_exit(NULL); // release resources
@@ -127,7 +132,7 @@ void* network_handler_thread(void* arg) {
 
     // we have a proper packet size
     // expand the buffer
-    expandBuffer(request_buffer, claimed_packet_size);
+    expandBuffer(request_buffer, claimed_packet_size - availableBuffer(request_buffer));
 
     // poll for data (POLL_IN only)
     // note: we use multiple pool to avoid condition boolean check for indication of receiving status
@@ -144,24 +149,21 @@ void* network_handler_thread(void* arg) {
                     break;  //transfer control to protocol layer
                 }
             } else if (read_res == 0) {
-                close(fd);  // client disconnected
-                pthread_exit(NULL); // release resources
+                //client disconnected
+                goto gg_beforeprocess;
             } else {
                 // error
                 TRACE(("Read error: %d\n", strerror(errno)));
-                close(fd);
-                pthread_exit(NULL);
+                goto gg_beforeprocess;
             }
         } else if (poll_res == 0) {
             // poll time out
             TRACE(("Socket timed out\n"));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_beforeprocess;
         } else {
             // internal error for poll
             TRACE(("Poll error: %s\n", strerror(errno)));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_beforeprocess;
         }
     }
 
@@ -188,25 +190,29 @@ void* network_handler_thread(void* arg) {
                     break;  // release resources
                 }
             } else if (write_res == 0) {
-                close(fd);
-                pthread_exit(NULL); // client disconnected
+                //client disconnected
+                goto gg_afterprocess;
             } else {
                 TRACE(("Read error: %d\n", strerror(errno)));
-                close(fd);
-                pthread_exit(NULL);
+                goto gg_afterprocess;
             }
         } else if (poll_res == 0) {
             // poll time out
             TRACE(("Wait for write timed out\n"));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_afterprocess;
         } else {
             // internal error for poll
             TRACE(("Poll error: %s\n", strerror(errno)));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_afterprocess;
         }
     }
 
+gg_afterprocess:
+    destroyBuffer(response_buffer);
+    pthread_exit(NULL);
+
+gg_beforeprocess:
+    destroyBuffer(request_buffer);
+    close(fd);
     pthread_exit(NULL);
 }
