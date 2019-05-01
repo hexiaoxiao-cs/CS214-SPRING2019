@@ -7,6 +7,6 @@
 #include "util.h"
 #include "protocol.h"
 
-buffer* process_logic(const parsed_request_t* op);
+buffer* process_logic(parsed_request_t* op);
 
 #endif

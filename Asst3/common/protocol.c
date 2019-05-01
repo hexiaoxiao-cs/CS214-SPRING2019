@@ -173,6 +173,7 @@ buffer* get_output_buffer_for_request(uint8_t op_code, const char* project_name,
     } else {
         buf->data[buf->size - 1] = (uint8_t)2;
     }
+    return buf;
 }
 
 

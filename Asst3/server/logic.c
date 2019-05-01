@@ -1,3 +1,5 @@
 #include "logic.h"
 
-//For g
+buffer* process_logic(parsed_request_t* req) {
+    return NULL;
+}
