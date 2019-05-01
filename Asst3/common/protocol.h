@@ -34,6 +34,7 @@ typedef struct {
     uint8_t op_code;
     size_t project_name_size;
     const char* project_name;
+    uint8_t is_two_payload;
     union {
         str_payload_t str_payload;
         files_payload_t files_payload;

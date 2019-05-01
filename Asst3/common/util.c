@@ -28,6 +28,8 @@ void destroyBufferWithoutFree(buffer *space) {
 }
 
 void expandBuffer(buffer *space, size_t size) {
+    if (size <= 0)
+        return;
     space->total_size = space->total_size + size;
     void *tmp = realloc(space->data, space->total_size + 1);
     if(tmp == NULL) {
