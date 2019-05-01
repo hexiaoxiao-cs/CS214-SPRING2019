@@ -74,21 +74,27 @@ int process_packet(buffer* in_packet, buffer** out_packet);
 void free_in_packet();
 
 /*
+ * Utility function to parse a request buffer into parsed_request_t
+ * return val:
+ *  0: parse success
+ *  1: malformed packet
+ *
+ * SUGGESTION: use stack space to hold out
+ */
+int parse_request(buffer* in_packet, parsed_request_t* out);
+
+/*
+ * Generate a buffer to be used as a response buffer
+ */
+buffer* get_output_buffer_for_response(uint16_t status_code, uint8_t is_two_payload);
+
+/*
  * This function need to be called by logical layer after it has set its first payload (if using two payloads response)
  * If called with only one payload's response is UB
  */
 void finalize_file_payload1_for_response(buffer* buf);
 
 #elif defined (CLIENT_COMPILING)
-
-/*
- * This function need to be called by logical layer after it has set its first payload in the buffer (if using two payloads response)
- * If called with only one payload's response is UB
- */
-void finalize_file_payload1_for_request(buffer* buf);
-
-#endif
-
 
 /*
  * Utility function to parse a response buffer into parsed_response_t
@@ -102,28 +108,21 @@ void finalize_file_payload1_for_request(buffer* buf);
 int parse_response(buffer* in_packet, parsed_response_t* out);
 
 /*
- * Utility function to parse a request buffer into parsed_request_t
- * return val:
- *  0: parse success
- *  1: malformed packet
- *
- * SUGGESTION: use stack space to hold out
- */
-int parse_request(buffer* in_packet, parsed_request_t* out);
-
-/*
  * Generate a buffer to be used as a request buffer
  */
 buffer* get_output_buffer_for_request(uint8_t op_code, const char* project_name, size_t project_name_size, uint8_t is_two_payload);
 
 /*
- * Generate a buffer to be used as a response buffer
+ * This function need to be called by logical layer after it has set its first payload in the buffer (if using two payloads response)
+ * If called with only one payload's response is UB
  */
-buffer* get_output_buffer_for_response(uint16_t status_code, uint8_t is_two_payload);
+void finalize_file_payload1_for_request(buffer* buf);
+
+#endif
 
 /*
  * This function need to be called by logical layer after it has set all of its payload
  */
-void finalize_buffer_for(buffer* buf);
+void finalize_buffer(buffer* buf);
 
 #endif

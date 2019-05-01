@@ -4,6 +4,11 @@
 #include <string.h>
 #include <pthread.h>
 
+void _roller_read(buffer* in_packet, void* output, size_t* offset, size_t size) {
+    memcpy(output, peakBuffer(in_packet) + (*offset), size);
+    *offset += size;
+}
+
 #if defined(SERVER_COMPILING)
 #include <logic.h>
 
@@ -30,39 +35,24 @@ int process_packet(buffer* in_packet, buffer** out_packet) {
     return 0;
 }
 
-void finalize_file_payload1_for_response(buffer *buf) {
-    // SIZE[size_t] + STATUS[uint16_t] + TYPE[uint8_t] + PAYLOAD 1 SIZE [size_t] + (PAYLOAD DATA)
-    size_t size_of_payload1 = getLengthBuffer(buf) - sizeof(size_t) - sizeof(uint16_t) - sizeof(uint8_t) - sizeof(size_t);
-    memcpy(peakBuffer(buf) + sizeof(size_t) + sizeof(uint16_t) + sizeof(uint8_t), (void*)&size_of_payload1, sizeof(size_t));
-}
 
-void finalize_buffer(buffer *buf) {
-    size_t size_of_buffer = getLengthBuffer(buf);
-    memcpy(peakBuffer(buf), (void*)&size_of_buffer, sizeof(size_t));
-}
-
-#elif defined(CLIENT_COMPILING)
-
-void finalize_file_payload1_for_request(buffer *buf) {
-    // SIZE[size_t] + OP_CODE[uint8_t] + PROJECT_SIZE[size_t] + PROJECT NAME[PROJECT_SIZE] + TYPE[uint8_t] + PAYLOAD 1 SIZE [size_t] + (PAYLOAD DATA)
-    size_t project_name_size, size_of_payload1;
-    memcpy(&project_name_size, peakBuffer(buf) + sizeof(size_t) + sizeof(uint8_t), sizeof(size_t));
-    size_of_payload1 = getLengthBuffer(buf) - sizeof(size_t) - sizeof(uint8_t) - sizeof(size_t) - project_name_size - sizeof(uint8_t) - sizeof(size_t);
-    memcpy(peakBuffer(buf) + sizeof(size_t) + sizeof(uint8_t) + sizeof(size_t) + project_name_size + sizeof(uint8_t), (void*)&size_of_payload1, sizeof(size_t));
-}
-
-#endif
-
-void _roller_read(buffer* in_packet, void* output, size_t* offset, size_t size) {
-    memcpy(output, peakBuffer(in_packet) + (*offset), size);
-    *offset += size;
-}
-
-int parse_response(buffer* in_packet, parsed_response_t* out) {
+int parse_request(buffer* in_packet, parsed_request_t* out) {
     size_t packet_size, offset = 0;
     // we trust network layer checked packet size already
     _roller_read(in_packet, &packet_size, &offset, sizeof(size_t));
-    _roller_read(in_packet, &out->status_code, &offset, sizeof(uint16_t));
+    _roller_read(in_packet, &out->op_code, &offset, sizeof(uint8_t));
+    _roller_read(in_packet, &out->project_name_size, &offset, sizeof(size_t));
+    if (out->project_name_size > MAX_PACKET_SIZE) {
+        // malformed packet
+        return 1;
+    }
+    if (out->project_name_size >= getLengthBuffer(in_packet) - offset) {
+        // malformed packet
+        return 1;
+    }
+    out->project_name = peakBuffer(in_packet) + offset;
+    offset += out->project_name_size;
+
     _roller_read(in_packet, &out->is_two_payload, &offset, sizeof(uint8_t));
     if (out->is_two_payload != 1 && out->is_two_payload != 2) {
         // malformed packet
@@ -98,23 +88,41 @@ int parse_response(buffer* in_packet, parsed_response_t* out) {
     return 0;
 }
 
-int parse_request(buffer* in_packet, parsed_request_t* out) {
+
+buffer* get_output_buffer_for_response(uint16_t status_code, uint8_t is_two_payload) {
+    buffer* buf = createBuffer();
+    buf->size += sizeof(size_t); // reserve 8 bytes to hold size
+    // 42 left
+    memcpy(lastposBuffer(buf), (void*)&status_code, sizeof(uint16_t));
+    buf->size += sizeof(uint16_t);
+    // 40 left
+    buf->size += 1; // reserve 1 byte for type of packet
+    // 39 left
+    if (is_two_payload) {
+        buf->data[buf->size - 1] = (uint8_t)1;
+        buf->size += sizeof(size_t); // reserve another 8 bytes to hold the size of first payload
+        // 31 left
+    } else {
+        buf->data[buf->size - 1] = (uint8_t)2;
+    }
+    return buf;
+}
+
+void finalize_file_payload1_for_response(buffer *buf) {
+    // SIZE[size_t] + STATUS[uint16_t] + TYPE[uint8_t] + PAYLOAD 1 SIZE [size_t] + (PAYLOAD DATA)
+    size_t size_of_payload1 = getLengthBuffer(buf) - sizeof(size_t) - sizeof(uint16_t) - sizeof(uint8_t) - sizeof(size_t);
+    memcpy(peakBuffer(buf) + sizeof(size_t) + sizeof(uint16_t) + sizeof(uint8_t), (void*)&size_of_payload1, sizeof(size_t));
+}
+
+
+
+#elif defined(CLIENT_COMPILING)
+
+int parse_response(buffer* in_packet, parsed_response_t* out) {
     size_t packet_size, offset = 0;
     // we trust network layer checked packet size already
     _roller_read(in_packet, &packet_size, &offset, sizeof(size_t));
-    _roller_read(in_packet, &out->op_code, &offset, sizeof(uint8_t));
-    _roller_read(in_packet, &out->project_name_size, &offset, sizeof(size_t));
-    if (out->project_name_size > MAX_PACKET_SIZE) {
-        // malformed packet
-        return 1;
-    }
-    if (out->project_name_size >= getLengthBuffer(in_packet) - offset) {
-        // malformed packet
-        return 1;
-    }
-    out->project_name = peakBuffer(in_packet) + offset;
-    offset += out->project_name_size;
-
+    _roller_read(in_packet, &out->status_code, &offset, sizeof(uint16_t));
     _roller_read(in_packet, &out->is_two_payload, &offset, sizeof(uint8_t));
     if (out->is_two_payload != 1 && out->is_two_payload != 2) {
         // malformed packet
@@ -176,22 +184,17 @@ buffer* get_output_buffer_for_request(uint8_t op_code, const char* project_name,
     return buf;
 }
 
+void finalize_file_payload1_for_request(buffer *buf) {
+    // SIZE[size_t] + OP_CODE[uint8_t] + PROJECT_SIZE[size_t] + PROJECT NAME[PROJECT_SIZE] + TYPE[uint8_t] + PAYLOAD 1 SIZE [size_t] + (PAYLOAD DATA)
+    size_t project_name_size, size_of_payload1;
+    memcpy(&project_name_size, peakBuffer(buf) + sizeof(size_t) + sizeof(uint8_t), sizeof(size_t));
+    size_of_payload1 = getLengthBuffer(buf) - sizeof(size_t) - sizeof(uint8_t) - sizeof(size_t) - project_name_size - sizeof(uint8_t) - sizeof(size_t);
+    memcpy(peakBuffer(buf) + sizeof(size_t) + sizeof(uint8_t) + sizeof(size_t) + project_name_size + sizeof(uint8_t), (void*)&size_of_payload1, sizeof(size_t));
+}
 
-buffer* get_output_buffer_for_response(uint16_t status_code, uint8_t is_two_payload) {
-    buffer* buf = createBuffer();
-    buf->size += sizeof(size_t); // reserve 8 bytes to hold size
-    // 42 left
-    memcpy(lastposBuffer(buf), (void*)&status_code, sizeof(uint16_t));
-    buf->size += sizeof(uint16_t);
-    // 40 left
-    buf->size += 1; // reserve 1 byte for type of packet
-    // 39 left
-    if (is_two_payload) {
-        buf->data[buf->size - 1] = (uint8_t)1;
-        buf->size += sizeof(size_t); // reserve another 8 bytes to hold the size of first payload
-        // 31 left
-    } else {
-        buf->data[buf->size - 1] = (uint8_t)2;
-    }
-    return buf;
+#endif
+
+void finalize_buffer(buffer *buf) {
+    size_t size_of_buffer = getLengthBuffer(buf);
+    memcpy(peakBuffer(buf), (void*)&size_of_buffer, sizeof(size_t));
 }
