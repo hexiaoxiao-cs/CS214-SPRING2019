@@ -20,6 +20,7 @@ int start_server(const char* hostname, unsigned int port) {
         printf("Server has started already\n");
         return -1;
     }
+    memset(&binder, 0, sizeof(binder));
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     binder.sin_family = AF_INET;
     binder.sin_port = htons(port);
@@ -74,13 +75,6 @@ void* network_handler_thread(void* arg) {
     fds[0].fd = fd;
     fds[0].events = POLLIN;
 
-
-    //need a to utilize POLLOUT later
-    //need a better way to transfer control to protocol layer, maybe let them send back a buffer?
-    //need to implement a output buffer
-    //need better buffer implementation
-    //need to make sure intactness of the packet
-
     // poll for size first
     // POLL_IN only
     while (1) {
@@ -89,34 +83,27 @@ void* network_handler_thread(void* arg) {
             read_res = read(fd, lastposBuffer(request_buffer), availableBuffer(request_buffer));
             if (read_res > 0) {
                 request_buffer->size += read_res;  // increase internal buffer size
-                if (getLengthBuffer(request_buffer) >= 8) {
+                if (getLengthBuffer(request_buffer) >= sizeof(size_t)) {
                     // make sure we have the size ready to read
                     break;
                 }
             } else if (read_res == 0) {
                 //client disconnected
                 destroyBuffer(request_buffer);
-                close(fd);
-                pthread_exit(NULL); // release resources
+                goto gg_beforeprocess;
             } else {
                 //error happened
-                destroyBuffer(request_buffer);
                 TRACE(("Read error: %s\n", strerror(errno)));
-                close(fd);
-                pthread_exit(NULL); // release resources
+                goto gg_beforeprocess;
             }
         } else if (poll_res == 0){
             // time out for poll
-            destroyBuffer(request_buffer);
             TRACE(("Socket timed out\n"));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_beforeprocess;
         } else {
             // internal error for poll
-            destroyBuffer(request_buffer);
             TRACE(("Poll error: %s\n", strerror(errno)));
-            close(fd);
-            pthread_exit(NULL);
+            goto gg_beforeprocess;
         }
     }
 
@@ -124,10 +111,8 @@ void* network_handler_thread(void* arg) {
     memcpy((void*)&claimed_packet_size, peakBuffer(request_buffer), 8); // 8 bytes for packet size
     if (claimed_packet_size > MAX_PACKET_SIZE) {
         // claimed size is too big
-        destroyBuffer(request_buffer);
         TRACE(("Socket closed, reason: claimed size is too big\n"));
-        close(fd);
-        pthread_exit(NULL); // release resources
+        goto gg_beforeprocess;
     }
 
     // we have a proper packet size

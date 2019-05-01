@@ -1,5 +1,4 @@
 #include "protocol.h"
-#include "logic.h"
 #include "util.h"
 
 #include <string.h>
@@ -24,6 +23,7 @@ int process_packet(buffer* in_packet, buffer** out_packet) {
     parsed_request_t request;
     in_packet_global = in_packet; // store buffer pointer to thread local storage
     if (parse_request(in_packet, &request) == 1) {
+        destroyBuffer(in_packet);   // this has to be destroyed before return
         return 1;   // malformed packet should close connection
     }
     *out_packet = process_logic(&request);

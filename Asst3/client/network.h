@@ -2,7 +2,7 @@
 #define NETWORK_CLIENT_H
 
 #include <util.h>
-
+#include <stdint.h>
 /*
  *  return:
  *      0: have a response
@@ -15,5 +15,5 @@
  *      out is not modified when this function returning 1
  */
 
-int send_request(buffer* in, buffer** out);
+int send_request(const char* hostname, uint16_t port, buffer* request, buffer** response);
 #endif
