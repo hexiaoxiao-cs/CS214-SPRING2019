@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <errno.h>
 
 int writeFile(const char *file_path, char *data, size_t size) {
     int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
@@ -29,6 +31,15 @@ int writeFile(const char *file_path, char *data, size_t size) {
         }
     }
     close(handler);    //Close file
+    return 0;
+}
+
+int isDir(const char *name) {
+    DIR *directory = opendir(name);
+
+    if (errno !=0) {
+        return -1;
+    }
     return 0;
 }
 
