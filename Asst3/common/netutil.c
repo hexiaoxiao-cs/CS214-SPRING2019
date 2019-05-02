@@ -47,7 +47,7 @@ int _poll_and_write(int fd, buffer* buf) {
                 //client disconnected
                 goto gg;
             } else {
-                TRACE(("Write error: %d\n", strerror(errno)));
+                TRACE(("Write error: %s\n", strerror(errno)));
                 goto gg;
             }
         } else if (poll_res == 0) {
