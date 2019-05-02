@@ -37,9 +37,10 @@ int writeFile(const char *file_path, char *data, size_t size) {
 int isDir(const char *name) {
     DIR *directory = opendir(name);
 
-    if (errno !=0) {
+    if (directory == NULL) {
         return -1;
     }
+    closedir(directory);
     return 0;
 }
 
