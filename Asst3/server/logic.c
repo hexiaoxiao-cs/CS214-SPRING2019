@@ -16,7 +16,7 @@ buffer* createProject(parsed_request_t *req){
     proj_name[req->project_name_size]=0;
     pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
     pthread_rwlock_wrlock(rwlock);
-    status=mkdir(req->project_name,DEFFILEMODE);
+    status=mkdir(proj_name,S_IRUSR|S_IWUSR|S_IXUSR);
     if(status==EEXIST){
         response=get_output_buffer_for_response(001,2);
         finalize_buffer(response);
