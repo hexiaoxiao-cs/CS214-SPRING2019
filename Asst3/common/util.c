@@ -278,19 +278,31 @@ void zeroUnusedBuffer(buffer *space) {
 //  Manifest Format:
 //  Made by blah blah blah
 //  Filename with path in base64	file_Version#	hash#
+//outside malloc curr_project, project name need to be written in that struct
 
-
-int readManifest(char* proj_name,project** curr_project){
+int readManifest(project* curr_project){
     char* manifest_raw;
     char* path;
     buffer *temporary;
     int status,tmp=0;
+    int type=0,count =0 ;
     size_t size;
     manifest_item *curr;
     asprintf(&path,"%s/.manifest",proj_name);
     status=readFile(path,&manifest_raw,&size);
     if(status!=0){return -1;}
+    temporary=createBuffer();
+
     for(tmp=16;tmp<size;tmp++){
-        if(manifest_raw[tmp]!=)
+        if(manifest_raw[tmp]!='/n' || manifest_raw[tmp]!=' '){appendSequenceBuffer(temporary,manifest_raw,tmp);}
+        else{
+            if(type == 0 ){
+                curr=malloc(sizeof(manifest_item));
+                curr->filename_64=temporary->data;
+                //free(temporary);
+                destroyBufferWithoutFree(temporary);
+                temporary=createBuffer();
+            }
+        }
     }
 }
