@@ -31,13 +31,13 @@ pthread_rwlock_t* get_rwlock_for_project(const char* project_name)
     pthread_mutex_lock(&hashmap_mtx);
     e.key=project_name;
     ep=hsearch(e,FIND);
-    if(ep->data==NULL){ // not found
-        ep->data = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
+    if(ep==NULL){ // not found
+        e.data = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
         pthread_rwlockattr_init(&attr);
         pthread_rwlockattr_setkind_np(&attr,PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
-        if(pthread_rwlock_init(ep->data,&attr)!=0){return NULL;} // get RWLock Failed
-        hsearch(*ep,ENTER);
-        return ep->data;
+        if(pthread_rwlock_init(e.data,&attr)!=0){return NULL;} // get RWLock Failed
+        hsearch(e,ENTER);
+        return e.data;
 
     }
     else{
