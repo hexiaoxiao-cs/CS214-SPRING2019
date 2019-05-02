@@ -8,6 +8,37 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdint.h>
+//#include <stdlib.h>
+
+//#include <lzma.h>
+//DongFengDaoDan
+//int compress(char** file_paths,char* path_7z)
+typedef struct{
+    char* filename_64;
+    char* filename;
+    char* hash;
+    long version_num;
+} manifest_item;
+
+typedef struct{
+    char* project_name;
+    manifest_item **manifestItem; //manifestItem Matrix
+    int project_version;
+} project;
+
+
+//for Base64 Encrypting and Decrypring
+static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                                'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                                'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                                'w', 'x', 'y', 'z', '0', '1', '2', '3',
+                                '4', '5', '6', '7', '8', '9', '+', '/'};
+static char *decoding_table = NULL;
+static int mod_table[] = {0, 2, 1};
 
 int writeFile(const char *file_path, char *data, size_t size) {
     int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
@@ -44,6 +75,83 @@ int isDir(const char *name) {
     return 0;
 }
 
+
+void build_decoding_table() {
+
+    decoding_table = malloc(256);
+
+    for (int i = 0; i < 64; i++)
+        decoding_table[(unsigned char) encoding_table[i]] = i;
+}
+
+char *base64_encode(const unsigned char *data,
+                    size_t input_length,
+                    size_t *output_length) {
+
+    *output_length = 4 * ((input_length + 2) / 3);
+
+    char *encoded_data = malloc(*output_length);
+    if (encoded_data == NULL) return NULL;
+
+    for (int i = 0, j = 0; i < input_length;) {
+
+        uint32_t octet_a = i < input_length ? (unsigned char)data[i++] : 0;
+        uint32_t octet_b = i < input_length ? (unsigned char)data[i++] : 0;
+        uint32_t octet_c = i < input_length ? (unsigned char)data[i++] : 0;
+
+        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+
+        encoded_data[j++] = encoding_table[(triple >> 3 * 6) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 2 * 6) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
+        encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
+    }
+
+    for (int i = 0; i < mod_table[input_length % 3]; i++)
+        encoded_data[*output_length - 1 - i] = '=';
+
+    return encoded_data;
+}
+
+
+unsigned char *base64_decode(const char *data,
+                             size_t input_length,
+                             size_t *output_length) {
+
+    if (decoding_table == NULL) build_decoding_table();
+
+    if (input_length % 4 != 0) return NULL;
+
+    *output_length = input_length / 4 * 3;
+    if (data[input_length - 1] == '=') (*output_length)--;
+    if (data[input_length - 2] == '=') (*output_length)--;
+
+    unsigned char *decoded_data = malloc(*output_length);
+    if (decoded_data == NULL) return NULL;
+
+    for (int i = 0, j = 0; i < input_length;) {
+
+        uint32_t sextet_a = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+        uint32_t sextet_b = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+        uint32_t sextet_c = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+        uint32_t sextet_d = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+
+        uint32_t triple = (sextet_a << 3 * 6)
+                          + (sextet_b << 2 * 6)
+                          + (sextet_c << 1 * 6)
+                          + (sextet_d << 0 * 6);
+
+        if (j < *output_length) decoded_data[j++] = (triple >> 2 * 8) & 0xFF;
+        if (j < *output_length) decoded_data[j++] = (triple >> 1 * 8) & 0xFF;
+        if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
+    }
+
+    return decoded_data;
+}
+
+void base64_cleanup() {
+    free(decoding_table);
+}
 
 int readFile(char *filename, char** buffer,size_t *size){
     int fno=open(filename,O_RDONLY);
@@ -165,4 +273,24 @@ buffer* duplicateBuffer(buffer* space) {
 
 void zeroUnusedBuffer(buffer *space) {
     memset(space->data + space->size, 0, space->total_size - space->size);  //zero out unused space
+}
+
+//  Manifest Format:
+//  Made by blah blah blah
+//  Filename with path in base64	file_Version#	hash#
+
+
+int readManifest(char* proj_name,project** curr_project){
+    char* manifest_raw;
+    char* path;
+    buffer *temporary;
+    int status,tmp=0;
+    size_t size;
+    manifest_item *curr;
+    asprintf(&path,"%s/.manifest",proj_name);
+    status=readFile(path,&manifest_raw,&size);
+    if(status!=0){return -1;}
+    for(tmp=16;tmp<size;tmp++){
+        if(manifest_raw[tmp]!=)
+    }
 }
