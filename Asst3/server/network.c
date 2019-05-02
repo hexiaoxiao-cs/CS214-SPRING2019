@@ -17,12 +17,14 @@ void* listener_thread(void* arg);
 
 int start_server(const char* hostname, unsigned int port) {
     struct sockaddr_in binder;
+    int one = 1;
     if (server_fd != 0) {
         printf("Server has started already\n");
         return -1;
     }
     memset(&binder, 0, sizeof(binder));
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(int));
     binder.sin_family = AF_INET;
     binder.sin_port = htons(port);
     binder.sin_addr.s_addr = inet_addr(hostname);

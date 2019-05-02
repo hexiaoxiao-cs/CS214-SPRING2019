@@ -11,11 +11,9 @@ void signal_handler(int a) {
     pthread_mutex_unlock(&bailout_mtx);
 }
 
-
-
 int main() {
     init_hashmap();
     signal(SIGINT, signal_handler);
-    start_server("0.0.0.0", 3333);
+    start_server("0.0.0.0", 2222);
     pthread_join(listener_thread_id, NULL);
 }
