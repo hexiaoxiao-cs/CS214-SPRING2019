@@ -19,7 +19,7 @@ typedef struct {
 } buffer;
 
 buffer* createBuffer();
-int isDir(const char *name)
+int isDir(const char *name);
 void    destroyBuffer(buffer* space);
 void    destroyBufferWithoutFree(buffer* space);
 void    expandBuffer(buffer* space, size_t size);

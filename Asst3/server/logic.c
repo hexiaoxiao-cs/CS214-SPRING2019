@@ -61,7 +61,7 @@ buffer* destroy(parsed_request_t *req){
         finalize_buffer(response);
         goto END;
     }
-    asprintf(&path,"rm -rf %s",req->project_name);
+    asprintf(&path,"rm -rf %s",proj_name);
     system(path);
     response=get_output_buffer_for_response(300,2);// success removing the project
     finalize_buffer(response);
