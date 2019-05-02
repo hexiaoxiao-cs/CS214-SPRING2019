@@ -10,7 +10,11 @@ buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;
     char* path;
-    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name);
+    char* proj_name;
+    proj_name=(char*)malloc(req->project_name_size+1);
+    strncpy(proj_name,req->project_name,req->project_name_size);
+    proj_name[req->project_name_size]=0;
+    pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
     pthread_rwlock_wrlock(rwlock);
     status=mkdir(req->project_name,DEFFILEMODE);
     if(status==EEXIST){
