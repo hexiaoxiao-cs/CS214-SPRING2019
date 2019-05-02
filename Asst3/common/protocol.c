@@ -13,7 +13,6 @@ void _roller_read(buffer* in_packet, void* output, size_t* offset, size_t size) 
 #include <logic.h>
 
 //TODO:
-// make sure __thread effect
 // limit status code range
 // limit op_code range
 
