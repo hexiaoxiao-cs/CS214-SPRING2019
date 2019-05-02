@@ -68,7 +68,7 @@ void* network_handler_thread(void* arg) {
     size_t claimed_packet_size = 0;
     buffer* response_buffer;
     buffer* request_buffer = createBuffer();
-    expandBuffer(request_buffer, 8 * 1024 - availableBuffer(request_buffer));     //8K initial network buffer
+    expandBuffer(request_buffer, 8 * 1024 - request_buffer->total_size);     //8K initial network buffer
 
 
     if (_poll_and_read(fd, request_buffer, sizeof(size_t)) != 0) {
@@ -86,7 +86,7 @@ void* network_handler_thread(void* arg) {
 
     // we have a proper packet size
     // expand the buffer
-    expandBuffer(request_buffer, claimed_packet_size - availableBuffer(request_buffer));
+    expandBuffer(request_buffer, claimed_packet_size - request_buffer->total_size);
 
 
     if (_poll_and_read(fd, request_buffer, request_buffer->total_size) != 0) {

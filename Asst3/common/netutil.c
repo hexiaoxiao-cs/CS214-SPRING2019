@@ -78,6 +78,10 @@ int _poll_and_read(int fd, buffer* buf, size_t stop_watermark) {
     fds[0].fd = fd;
     fds[0].events = POLLIN;
 
+    if (getLengthBuffer(buf) >= stop_watermark) {
+        return 0;   // data is ready already
+    }
+
     // poll for size first
     // POLL_IN only
     while (1) {

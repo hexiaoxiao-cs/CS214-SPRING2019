@@ -37,7 +37,7 @@ int send_request(const char* hostname, uint16_t port, buffer* in, buffer** out) 
 
     // wait for server response
     response_buffer = createBuffer();
-    expandBuffer(response_buffer, 8 * 1024 - availableBuffer(response_buffer));
+    expandBuffer(response_buffer, 8 * 1024 - response_buffer->total_size);
 
     if (_poll_and_read(fd, response_buffer, sizeof(size_t)) != 0) {
         return 1;
@@ -53,7 +53,7 @@ int send_request(const char* hostname, uint16_t port, buffer* in, buffer** out) 
 
     // we have a proper packet size
     // expand the buffer
-    expandBuffer(response_buffer, claimed_packet_size - availableBuffer(response_buffer));
+    expandBuffer(response_buffer, claimed_packet_size - response_buffer->total_size);
 
     // poll for data (POLL_IN only)
     if (_poll_and_read(fd, response_buffer, response_buffer->total_size) != 0) {
