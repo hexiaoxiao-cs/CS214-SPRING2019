@@ -14,6 +14,7 @@ void signal_handler(int a) {
 
 
 int main() {
+    init_hashmap();
     signal(SIGINT, signal_handler);
     start_server("0.0.0.0", 3333);
     pthread_join(listener_thread_id, NULL);
