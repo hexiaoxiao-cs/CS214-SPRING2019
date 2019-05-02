@@ -30,5 +30,7 @@ size_t  getLengthBuffer(buffer *ptr);
 void    appendSequenceBuffer(buffer* space, const char* sequence, size_t sequence_size);
 buffer* duplicateBuffer(buffer* space);
 void    zeroUnusedBuffer(buffer* space);
+int writeFile(const char *file_path, char *data, size_t size);
+int readFile(char *filename, char** buffer,size_t *size);
 
 #endif

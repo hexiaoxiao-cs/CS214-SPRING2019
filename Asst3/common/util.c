@@ -4,6 +4,58 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int writeFile(const char *file_path, char *data, size_t size) {
+    int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
+    if (handler < 0) {
+        //Unable to open specific files
+        printf("Unable to open file %s\n", file_path);
+    }
+    //Blocking and writeAll
+    size_t tmp;
+    ssize_t ret;
+    tmp = 0;
+    while (tmp < size) {
+        ret = write(handler, data + tmp, size - tmp);
+        if (ret < 0) {
+            return -1;
+        } else if (ret == 0) {
+            return -1;
+        } else {
+            //Positive interger
+            tmp += ret;
+        }
+    }
+    close(handler);    //Close file
+    return 0;
+}
+
+
+int readFile(char *filename, char** buffer,size_t *size){
+    int fno=open(filename,O_RDONLY);
+    if(fno<0){return -1;}
+    //readAll
+    size_t tmp;
+    ssize_t ret;
+    size_t file_size= (size_t) lseek(fno, 0,SEEK_END);
+    lseek(fno,0,SEEK_SET);
+    char *data = (char*) malloc(file_size+1);
+    data[file_size]=0;
+    tmp=0;
+    while(tmp<file_size){
+        ret = read(fno,data+tmp,file_size-tmp);
+        if(ret<0){return -1;}
+        else  if(ret==0){break;}
+        else{
+            tmp+=ret;
+        }
+    }
+    *buffer=data;
+    *size=file_size;
+}
+
 
 void dbg_printf(const char* fmt, ...) {
     va_list args;
