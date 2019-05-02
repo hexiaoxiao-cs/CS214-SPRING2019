@@ -1,6 +1,7 @@
 #include "client.h"
 #include "util.h"
 #include <protocol.h>
+#include <network.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <unistd.h>
@@ -9,11 +10,53 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <openssl/sha.h>
 
 #define PARSEERROR "Argv Error\nUsage:\n./wtf [configure <IP/hostname> <port>] [checkout <project name>] [update <project name>]\n[upgrade <project name>] [commit <project name>] [push <project name>]\n[create <project name>] [destroy <project name>] [add <project name> <filename>]\n[remove <project name> <filename>] [currentversion <project name>] [history <project name>]\n[rollback <project name> <version>]\n"
 
 char* ipaddr;
 int portno;
+
+//using openSSL hashing library
+
+void sha256_string(char *string, char outputBuffer[65])
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, string, strlen(string));
+    SHA256_Final(hash, &sha256);
+    int i = 0;
+    for(i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    }
+    outputBuffer[64] = 0;
+}
+
+int sha256_file(char *path, char outputBuffer[65])
+{
+    FILE *file = fopen(path, "rb");
+    if(!file) return -534;
+
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    const int bufSize = 32768;
+    unsigned char *buffer = malloc(bufSize);
+    int bytesRead = 0;
+    if(!buffer) return ENOMEM;
+    while((bytesRead = fread(buffer, 1, bufSize, file)))
+    {
+        SHA256_Update(&sha256, buffer, bytesRead);
+    }
+    SHA256_Final(hash, &sha256);
+
+    sha256_hash_string(hash, outputBuffer);
+    fclose(file);
+    free(buffer);
+    return 0;
+}
 
 void writeFile(const char *file_path, char *data, size_t size) {
     int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
@@ -65,28 +108,30 @@ int readFile(char *filename, char** buffer,size_t *size){
 
 int create(char* project_name){
     int op=0;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    //send packet
-    //receive packet
-    //read .manifest
-    parse_response(NULL);
-
-    return 0;
+    buffer *output,*input;
+    parsed_response_t response;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name));
+    send_request(output,&input);
+    response=parse_response(input);
+    if(strcmp(response.str_payload.payload,"OK")!=0){return 0;}
+    else{return -1;}
 }
 int history(char* project_name){
     int op =1;
     char *the_history;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    //send packet
-    //receive packet
-    parse_response(NULL);
-    printf("%s",the_history);
+    buffer *output,*input;
+    parsed_response_t response;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name));
+    send_request(output,&input);
+    response=parse_response(input);
+    if(response.str_payload.payload_size!=0){return -1;}
+    printf("%s",response.str_payload.payload);
     return 0;
-
 }
 
 int current_version(char* project_name){
     int op=2;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
 
 
@@ -94,36 +139,43 @@ int current_version(char* project_name){
 }
 int destroy(char* project_name){
     int op=3;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
 }
 int rollback(char* project_name){
     int op=4;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
 }
 int checkout(char* project_name){
     int op=5;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
 }
 int update(char* project_name){
     int op=6;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
 
     return 0;
 }
 int upgrade(char* project_name){
     int op=7;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
 }
 int commit(char* project_name){
     int op=8;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
 }
 int push(char* project_name){
     int op = 9 ;
+    buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
 
@@ -152,7 +204,7 @@ int main(int argc,char* argv[]) {
     if(argc <2) {printf(PARSEERROR);return -1;}
     if(strlen(argv[1])<3){printf(PARSEERROR);}
 
-    if((argv[1][0]+argv[1][2]*100)!=11099) {
+    if ((argv[1][0] + argv[1][2] * 100) != 11099) {
         if (readConfigure() == -1) { printf("Error Happened During Reading Configure File\n"); }
     }
 
@@ -270,7 +322,6 @@ int main(int argc,char* argv[]) {
             return -1;
         }
     }
-
     //TRACE(("size of a size_t: %d \n", sizeof(size_t)));
     return 0;
 }
