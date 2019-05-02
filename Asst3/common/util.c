@@ -15,14 +15,15 @@
 //DongFengDaoDan
 //int compress(char** file_paths,char* path_7z)
 typedef struct{
-    char* filename_64;
-    char* filename;
-    char* hash;
+    buffer* filename_64;
+    buffer* filename;
+    buffer* hash;
+    buffer* newhash;
     long version_num;
 } manifest_item;
 
 typedef struct{
-    char* project_name;
+    buffer* project_name;
     manifest_item **manifestItem; //manifestItem Matrix
     int project_version;
 } project;
@@ -280,29 +281,61 @@ void zeroUnusedBuffer(buffer *space) {
 //  Filename with path in base64	file_Version#	hash#
 //outside malloc curr_project, project name need to be written in that struct
 
-int readManifest(project* curr_project){
-    char* manifest_raw;
-    char* path;
+int readManifest(char* manifest_raw,size_t size, project* curr_project){
+    //char* manifest_raw;
+    char* kk;
     buffer *temporary;
     int status,tmp=0;
     int type=0,count =0 ;
-    size_t size;
+    size_t tt=0;
     manifest_item *curr;
-    asprintf(&path,"%s/.manifest",proj_name);
-    status=readFile(path,&manifest_raw,&size);
     if(status!=0){return -1;}
     temporary=createBuffer();
-
     for(tmp=16;tmp<size;tmp++){
-        if(manifest_raw[tmp]!='/n' || manifest_raw[tmp]!=' '){appendSequenceBuffer(temporary,manifest_raw,tmp);}
-        else{
+        if(manifest_raw[tmp]=='\n' || manifest_raw[tmp]==' '){
             if(type == 0 ){
                 curr=malloc(sizeof(manifest_item));
-                curr->filename_64=temporary->data;
-                //free(temporary);
-                destroyBufferWithoutFree(temporary);
+                curr->filename_64=temporary;
                 temporary=createBuffer();
+                kk=base64_decode(curr->filename_64->data,curr->filename_64->size,&tt);
+                appendSequenceBuffer(temporary,kk,tt);
+                free(kk);
+                curr->filename=temporary;
+                temporary=createBuffer();
+                //free(temporary);
+                //destroyBufferWithoutFree(temporary);
+
+                type++;
+            }
+            else{
+                if(type == 1){
+                    curr=malloc(sizeof(manifest_item));
+                    curr->version_num=atol(temporary->data);
+                    //free(temporary);
+                    //destroyBufferWithoutFree(temporary);
+                    temporary=createBuffer();
+                    type++;
+                }
+                else{
+                    if(type == 2){
+                        curr=malloc(sizeof(manifest_item));
+                        curr->hash=temporary;
+                        //free(temporary);
+                        //destroyBufferWithoutFree(temporary);
+                        temporary=createBuffer();
+                        type=0;
+                        curr_project->manifestItem=(manifest_item**)realloc(curr_project->manifestItem,sizeof(manifest_item*)*(count+1));
+                        //if(status!=0){return -2;}
+                        curr_project->manifestItem[count]=curr;
+                        count++;
+                    }
+                }
             }
         }
+        else{
+            appendSequenceBuffer(temporary,manifest_raw,tmp);
+        }
     }
+    if(type!=0){return -1;}
+    return 0;
 }
