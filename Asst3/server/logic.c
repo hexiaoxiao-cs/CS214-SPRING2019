@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+char* get
+
 buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;
@@ -17,7 +19,11 @@ buffer* createProject(parsed_request_t *req){
     proj_name[req->project_name_size]=0;
     pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
     pthread_rwlock_wrlock(rwlock);
-    status=mkdir(proj_name,S_IRUSR|S_IWUSR|S_IXUSR);
+    mkdir("Projects",S_IRUSR|S_IWUSR|S_IXUSR);
+    path=(char*)malloc(sizeof(char)*(req->project_name_size+11+9));
+    strcat(path,"Projects/");
+    strncat(path,req->project_name,req->project_name_size);
+    status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     if(status==EEXIST){
         response=get_output_buffer_for_response(001,2);
         finalize_buffer(response);
@@ -28,10 +34,9 @@ buffer* createProject(parsed_request_t *req){
         finalize_buffer(response);
         goto END;
     }
-    path=(char*)malloc(sizeof(char)*(req->project_name_size+11));
-    strncat(path,req->project_name,req->project_name_size);
     strncat(path,"/.manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
+
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
@@ -72,14 +77,17 @@ buffer* destroy(parsed_request_t *req){
     return response;
 }
 
+buffer* history(parsed_request_t *req){
+
+}
 
 buffer* process_logic(parsed_request_t* req) {
 
     switch(req->op_code){
         case 0 : return createProject(req);
-        //case 1 : return history(req);
-        //case 2: return currentversion(req);
-        case 3: return destroy(req);
+        case 1 : return history(req);
+        case 2 : return currentversion(req);
+        case 3 : return destroy(req);
         default: return NULL;
     }
 

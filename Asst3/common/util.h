@@ -18,6 +18,21 @@ typedef struct {
     size_t total_size;
 } buffer;
 
+typedef struct{
+    buffer* filename_64;
+    buffer* filename;
+    buffer* hash;
+    buffer* newhash;
+    long version_num;
+} manifest_item;
+
+typedef struct{
+    buffer* project_name;
+    manifest_item **manifestItem; //manifestItem Matrix
+    int project_version;
+    int many_Items;
+} project;
+
 buffer* createBuffer();
 int isDir(const char *name);
 void    destroyBuffer(buffer* space);

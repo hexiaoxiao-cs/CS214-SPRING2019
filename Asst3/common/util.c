@@ -14,20 +14,7 @@
 //#include <lzma.h>
 //DongFengDaoDan
 //int compress(char** file_paths,char* path_7z)
-typedef struct{
-    buffer* filename_64;
-    buffer* filename;
-    buffer* hash;
-    buffer* newhash;
-    long version_num;
-} manifest_item;
 
-typedef struct{
-    buffer* project_name;
-    manifest_item **manifestItem; //manifestItem Matrix
-    int project_version;
-    int many_Items;
-} project;
 
 
 //for Base64 Encrypting and Decrypring
