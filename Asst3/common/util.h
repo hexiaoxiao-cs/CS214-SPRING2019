@@ -49,5 +49,16 @@ buffer* duplicateBuffer(buffer* space);
 void    zeroUnusedBuffer(buffer* space);
 int writeFile(const char *file_path, char *data, size_t size);
 int readFile(char *filename, char** buffer,size_t *size);
-
+int readManifest(char* manifest_raw,size_t size, project* curr_project);
+int writeManifest(char** manifest_towrite,project *curr_project,int old_new);
+void sort_manifest(manifest_item** items, size_t len);
+int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver);
+int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changelist, size_t changelist_size);
+int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size);
+unsigned char *base64_decode(const char *data,
+                             size_t input_length,
+                             size_t *output_length);
+char *base64_encode(const unsigned char *data,
+                    size_t input_length,
+                    size_t *output_length);
 #endif

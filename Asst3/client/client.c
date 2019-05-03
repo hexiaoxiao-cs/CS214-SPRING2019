@@ -86,9 +86,9 @@ int create(char* project_name){
     int op=0;
     buffer *output,*input;
     parsed_response_t response;
-    output=get_output_buffer_for_request(op,project_name,strlen(project_name));
-    send_request(output,&input);
-    response=parse_response(input);
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
     if(strcmp(response.str_payload.payload,"OK")!=0){return 0;}
     else{return -1;}
 }
@@ -97,72 +97,95 @@ int history(char* project_name){
     char *the_history;
     buffer *output,*input;
     parsed_response_t response;
-    output=get_output_buffer_for_request(op,project_name,strlen(project_name));
-    send_request(output,&input);
-    response=parse_response(input);
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
     if(response.str_payload.payload_size!=0){return -1;}
     printf("%s",response.str_payload.payload);
     return 0;
 }
 
-int current_version(char* project_name){
-    int op=2;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-
-
-    return 0;
-}
-int destroy(char* project_name){
-    int op=3;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-}
-int rollback(char* project_name){
-    int op=4;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    return 0;
-}
-int checkout(char* project_name){
-    int op=5;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    return 0;
-}
-int update(char* project_name){
-    int op=6;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-
-    return 0;
-}
-int upgrade(char* project_name){
-    int op=7;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    return 0;
-}
-int commit(char* project_name){
-    int op=8;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    return 0;
-}
-int push(char* project_name){
-    int op = 9 ;
-    buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-    return 0;
-
-}
+//int current_version(char* project_name){
+//    int op=2;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//
+//
+//    return 0;
+//}
+//int destroy(char* project_name){
+//    int op=3;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//}
+//int rollback(char* project_name){
+//    int op=4;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//    return 0;
+//}
+//int checkout(char* project_name){
+//    int op=5;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//    return 0;
+//}
+//int update(char* project_name){
+//    int op=6;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//
+//    return 0;
+//}
+//int upgrade(char* project_name){
+//    int op=7;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//    return 0;
+//}
+//int commit(char* project_name){
+//    int op=8;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//    return 0;
+//}
+//int push(char* project_name){
+//    int op = 9 ;
+//    buffer *output,*input;
+//    get_output_buffer_for_request(op,project_name,strlen(project_name));
+//    return 0;
+//
+//}
 
 //0 -> OK!
 //-1-> File Not Found
 //-2-> Is Directory
 
-int add(char* project_name, char* path){
-
+int add(char* project_name, char* to_add_path){
+    char* manifest_path;
+    size_t size;
+    project curr;
+    int status=0;
+    asprintf(&manifest_path,"%s/.manifest",project_name);
+    char* manifest_raw;
+    manifest_item *new = (manifest_item*) malloc(sizeof(manifest_item));
+    status=readFile(manifest_path,&manifest_raw,&size);
+    if(status!=0){return -1;} // -1 -> Manifest Reading Error
+    readManifest(manifest_raw,size,&curr);
+    curr.manifestItem=(manifest_item**)realloc(curr.manifestItem,sizeof(manifest_item*)*(curr.many_Items+1));
+    new->version_num=0;
+    new->hash=createBuffer();
+    appendSequenceBuffer(new->hash,"0",1);
+    new->filename=createBuffer();
+    appendSequenceBuffer(new->filename,to_add_path,strlen(to_add_path));
+    new->filename_64 =createBuffer();
+    size=0;
+    appendSequenceBuffer(new->filename_64,base64_encode(to_add_path,strlen(to_add_path),&size),size);
+    curr.manifestItem[curr.many_Items]=new;
+    curr.many_Items++;
+    sort_manifest(curr.manifestItem,curr.many_Items);
+    writeManifest(&manifest_raw,&curr,0);
+    return 0;
 }
 
 //read Configure under the current directory .configure file
@@ -189,7 +212,7 @@ int main(int argc,char* argv[]) {
     if(strlen(argv[1])<3){printf(PARSEERROR);}
 
     if ((argv[1][0] + argv[1][2] * 100) != 11099) {
-        if (readConfigure() == -1) { printf("Error Happened During Reading Configure File\n"); }
+        if (readConfigure() == -1) { printf("Error Happened During Reading Configure File\n"); return -1; }
     }
 
     switch(argv[1][0]+argv[1][2]*100){
@@ -208,7 +231,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("checkout");
-            if(checkout(argv[3])!=0){printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",argv[2],argv[2]);}
+            //if(checkout(argv[3])!=0){printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",argv[2],argv[2]);}
             break;
         }
         case 10117: {
@@ -265,6 +288,7 @@ int main(int argc,char* argv[]) {
                 printf(PARSEERROR);
                 return -1;
             }
+            if(add(argv[2],argv[3])!=0){printf("Error Add file %s into Project %s\nPossible Reason:\n1. Project %s not existed locally.\n2. File not exist.\n",argv[3],argv[2],argv[2]);}
             //printf("add");
             break;
         }
