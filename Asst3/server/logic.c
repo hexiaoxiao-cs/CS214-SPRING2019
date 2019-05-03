@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-char* get
-
 buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;

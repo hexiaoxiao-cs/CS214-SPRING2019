@@ -349,3 +349,262 @@ int writeManifest(char** manifest_towrite,project *curr_project,int old_new){
     return 0;
 }
 
+int cmp_compare(const void* a_, const void* b_) {
+    manifest_item* a = *((manifest_item**)a_);
+    manifest_item* b = *((manifest_item**)b_);
+    if (a->filename->size != b->filename->size) {
+        return a->filename->size - b->filename->size;
+    } else {
+        return memcmp(a->filename->data, b->filename->data, a->filename->size);
+    }
+}
+
+void sort_manifest(manifest_item** items, size_t len) {
+    qsort(items, len, sizeof(manifest_item*), cmp_compare);
+}
+// is two manifest -> 0 ->Two Manifest, 1-> One Manifest
+// Client_side-> need to have both new hash and old hash,
+// Server_side-> only compare old hash
+// Changelog-> Any differences between those two files
+// Any conflicts are exhibited in the conflicts pointer with an returned value of -9
+int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver){
+    size_t curr_client=0,curr_server=0;
+    size_t counts=0;
+    int has_conflicts=0;
+    changelog=(manifest_item***)malloc(sizeof(manifest_item**));
+    conflicts=(manifest_item***)malloc(sizeof(manifest_item**));
+    while(curr_client<size_client&&curr_server<size_server){
+        if(isTwoManifest==0){
+//            if(cmp_compare(client_side[curr_client],server_side[curr_server])>0){
+//                if(server_ver!=client_ver){// server has something that clients does not have and the proj version number is different, therefore the changecode is D->4
+//                    changelog=(manifest_item***)realloc(changelog,sizeof(manifest_item**)*(counts+1));
+//                    (*changelog)[counts]=server_side[curr_server];
+//                    (*changelog)[counts]->changecode=4;
+//                    curr_server++;
+//                    //continue;
+//                }
+//                else{
+//                    // server has something that client does not have, and the version number of proj is the same, therefore the changecode is U->1
+//                    changelog=(manifest_item***)realloc(changelog,sizeof(manifest_item**)*(counts+1));
+//                    (*changelog)[counts]=server_side[curr_server];
+//                    (*changelog)[counts]->changecode=1;
+//                    curr_server++;
+//                }
+//            }
+//            else if(cmp_compare(client_side[curr_client],server_side[curr_server])<0){
+//                changelog=(manifest_item***)realloc(changelog,sizeof(manifest_item**)*(counts+1));
+//                (*changelog)[counts]=client_side[curr_server];
+//                (*changelog)[counts]->changecode=4; // client has something that server does not have, therefore the chagnecode is A->3
+//                curr_server++;
+//            }
+        if(cmp_compare(client_side[curr_client],server_side[curr_server])>0){//a file in the server but not in client side
+            if(client_ver!=server_ver){
+                    *changelog=(manifest_item**)realloc((*changelog),sizeof(manifest_item*)*(counts+1));
+                    (*changelog)[counts]=server_side[curr_server];
+                    (*changelog)[counts]->changecode=3; // Something being added in the server side
+                    curr_server++; // server to the next item
+                    counts++;
+            }
+            else{
+                *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
+                (*conflicts)[counts]=server_side[curr_server];
+                (*conflicts)[counts]->changecode=5; // In Server Not In Client Conflicts!!
+                curr_server++; // server to the next item
+                counts++;
+                has_conflicts=1;
+            } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
+        }
+        else{
+            if(cmp_compare(client_side[curr_client],server_side[curr_server])<0) {// a file in the client side but not in server side
+                if(client_ver==server_ver){
+                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                    (*changelog)[counts]=client_side[curr_client];
+                    (*changelog)[counts]->changecode=1; // Something needed to be upload in the server side
+                    curr_client++; // server to the next item
+                    counts++;
+                }
+                else{
+                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                    (*changelog)[counts]=client_side[curr_client];
+                    (*changelog)[counts]->changecode=4; // Something needed to be deleted in the client side
+                    curr_client++; // server to the next item
+                    counts++;
+                }
+            }
+            else
+            {
+                if(cmp_compare(client_side[curr_client],server_side[curr_server])==0){ // a file in both client and server side
+                    if(client_ver==server_ver && strcmp(client_side[curr_client]->newhash->data,server_side[curr_client]->hash->data)!=0){ // they have the same version number and not same hash (new hash from client and old has from server)
+                        *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                        (*changelog)[counts]=client_side[curr_client];
+                        (*changelog)[counts]->changecode=1; // Something needed to be upload in the server side
+
+                        curr_client++; // curr_client to the next item
+                        curr_server++; // curr-server to the nect item
+                        counts++;
+                    }
+                    else{
+                        if(client_side!=server_side && strcmp(client_side[curr_client]->newhash->data,client_side[curr_client]->hash->data)==0){// different version number but the file in client does not changed (Only) REMOTE CHANGED
+                            *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                            (*changelog)[counts]=server_side[curr_client];
+                            (*changelog)[counts]->changecode=2; // Modified by remote
+                            (*changelog)[counts]->newhash=server_side[curr_server]->hash; // Modified by remote
+                            curr_client++; // curr_client to the next item
+                            curr_server++; // curr-server to the nect item
+                            counts++;
+                        }
+                        else{
+                            *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
+                            (*conflicts)[counts]=server_side[curr_server];
+                            (*conflicts)[counts]->changecode=6; // Something being added in the server side
+                            curr_server++; // server to the next item
+                            counts++;
+                            has_conflicts=1;
+                            //return -9; //Something Wrong or Conflict!!!
+                        }
+
+                    }
+                }
+            }
+        }
+
+        }
+        else{
+            if(strcmp(client_side[curr_client]->hash->data,client_side[curr_client]->newhash->data)!=0){
+                *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                (*changelog)[counts]=client_side[curr_client];
+                (*changelog)[counts]->changecode=1; // Something needed to be upload in the server side
+                curr_client++; // curr_client to the next item
+                //curr_server++; // curr-server to the nect item
+                counts++;
+            }
+            else{
+                curr_client++;
+            }
+        }
+
+    }
+    if(size_client>curr_client){ // client does not go to the end
+        //client has something that server does not have
+        for (;curr_client<size_client;curr_client++){
+            if(cmp_compare(client_side[curr_client],server_side[curr_server])<0) {// a file in the client side but not in server side
+                if(client_ver==server_ver){
+                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                    (*changelog)[counts]=client_side[curr_client];
+                    (*changelog)[counts]->changecode=1; // Something needed to be upload in the server side
+                    //curr_client++; // server to the next item
+                    counts++;
+                }
+                else{
+                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+                    (*changelog)[counts]=client_side[curr_client];
+                    (*changelog)[counts]->changecode=4; // Something needed to be deleted in the client side
+                    //curr_client++; // server to the next item
+                    counts++;
+                }
+            }
+        }
+    }
+    else{// server does not go to the end
+        if(client_ver!=server_ver){
+            *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
+            (*changelog)[counts]=server_side[curr_server];
+            (*changelog)[counts]->changecode=3; // Something being added in the server side
+            curr_server++; // server to the next item
+            counts++;
+        }
+        else{
+            *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
+            (*conflicts)[counts]=server_side[curr_server];
+            (*conflicts)[counts]->changecode=5; // In Server Not In Client Conflicts!!
+            curr_server++; // server to the next item
+            counts++;
+            has_conflicts=1;
+        } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
+
+    }
+    if(has_conflicts==1){
+        return -9;
+    }
+    return 0;
+}
+//Increment file version number according to the changelist
+//Change Hash to the "current status" hash code
+//Requirement: Both lists are sorted
+//!!!!!This Is Only Used By Commit and Push
+
+int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changelist, size_t changelist_size){
+    size_t temp=0, m_size=0,new_size=0;
+    manifest->project_version++;
+    manifest_item **c = manifest->manifestItem;
+    manifest_item **new_manifest = malloc(sizeof(manifest_item*) *(changelist_size+manifest->many_Items));
+    for(temp=0;temp<changelist_size;temp++){
+        while(cmp_compare(c[m_size],changelist[temp])<0 && m_size<manifest->many_Items){
+            new_manifest[new_size]=c[m_size];
+            new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
+            new_size++;
+            m_size++;
+        }
+        if(cmp_compare(c[m_size],changelist[temp])==0){
+            if(changelist[temp]->changecode==1 ){
+                // Upload to server, Modified by server
+                // Update Hash
+                new_manifest[new_size]=c[m_size];
+                new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
+                new_manifest[new_size]->version_num++;
+                new_size++;
+                m_size++;
+            }
+
+            else{
+                    if(changelist[temp]->changecode==3){
+                        //Deleted
+                        //Free Memory
+                        free(c[m_size]);
+                        m_size++;
+                        new_size++;
+                    }
+            }
+
+            }
+
+        else{ //filename are different ,which means we need to add the change list item to the result list
+            if(changelist[temp]->changecode==4){
+                new_manifest[new_size]=c[temp];
+                new_size++;
+            }
+        }
+    }
+    manifest->manifestItem=new_manifest;
+    free(c);
+    free(changelist);
+    manifest->many_Items=new_size;
+    return 0;
+}
+
+//Input Server's Manifest
+
+int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size) {
+    size_t temp=0, m_size=0,new_size=0;
+    manifest->project_version++;
+    manifest_item **c = manifest->manifestItem;
+    manifest_item **new_manifest = malloc(sizeof(manifest_item*) *(changelist_size+manifest->many_Items));
+    for(temp=0;temp<changelist_size;temp++){
+        while(cmp_compare(c[m_size],changelist[temp])<0 && m_size<manifest->many_Items){
+            new_manifest[new_size]=c[m_size];
+            new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
+            new_size++;
+            m_size++;
+        }
+        if(changelist[temp]->changecode==1){
+            new_manifest[new_size]=changelist[temp];
+            //new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
+            new_size++;
+        }
+    }
+    manifest->manifestItem=new_manifest;
+    free(c);
+    free(changelist);
+    manifest->many_Items=new_size;
+    return 0;
+}

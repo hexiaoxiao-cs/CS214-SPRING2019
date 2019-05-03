@@ -24,6 +24,7 @@ typedef struct{
     buffer* hash;
     buffer* newhash;
     long version_num;
+    int changecode; // U-> 1, M->2, A->3, D->4
 } manifest_item;
 
 typedef struct{

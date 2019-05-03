@@ -64,6 +64,23 @@ int sha256_file(char *path, char outputBuffer[65])
 
 
 
+//make new manifest according to the array listed files
+//rehash
+int make_new_manifest(manifest_item **array,int counts){
+    int temp=0;
+    char* file_data;
+    int status;
+    size_t size;
+    char sha256buf[65];
+    for(temp=0;temp<counts;temp++){
+        status=readFile(array[temp]->filename->data,&file_data,&size);
+        array[temp]->newhash=createBuffer();
+        if(status!=0){ continue;}
+        sha256_string(file_data,size,sha256buf);
+        appendSequenceBuffer(array[temp]->newhash,sha256buf,65);
+    }
+    return 0;
+}
 
 int create(char* project_name){
     int op=0;
@@ -137,6 +154,14 @@ int push(char* project_name){
     buffer *output,*input;
     get_output_buffer_for_request(op,project_name,strlen(project_name));
     return 0;
+
+}
+
+//0 -> OK!
+//-1-> File Not Found
+//-2-> Is Directory
+
+int add(char* project_name, char* path){
 
 }
 
