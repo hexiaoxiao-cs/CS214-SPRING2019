@@ -29,7 +29,7 @@ pthread_rwlock_t* get_rwlock_for_project(const char* project_name)
     ACTION act;
     pthread_rwlockattr_t attr;
     pthread_mutex_lock(&hashmap_mtx);
-    e.key=project_name;
+    e.key = (char*)Cproject_name;
     ep=hsearch(e,FIND);
     if(ep==NULL){ // not found
         e.data = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));

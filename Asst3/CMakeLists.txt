@@ -5,10 +5,10 @@ add_executable(WTFserver common/protocol.c common/util.c common/netutil.c server
 add_executable(WTF common/protocol.c common/util.c common/netutil.c client/client.c client/network.c common/netutil.c common/netutil.h)
 
 add_executable(playground playground/main.c)
-target_link_libraries(playground /usr/lib64/libtar.so.1.2.11)
+target_link_libraries(playground /usr/lib64/libtar.so.1.2.11 -lcrypto)
 
 target_link_libraries(WTFserver PRIVATE -lpthread /usr/lib64/libtar.so.1.2.11)
-target_link_libraries(WTF PRIVATE /usr/lib64/libtar.so.1.2.11)
+target_link_libraries(WTF PRIVATE /usr/lib64/libtar.so.1.2.11 -lcrypto)
 
 target_include_directories(WTFserver PRIVATE server)
 target_include_directories(WTF PRIVATE client)
