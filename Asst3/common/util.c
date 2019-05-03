@@ -26,6 +26,7 @@ typedef struct{
     buffer* project_name;
     manifest_item **manifestItem; //manifestItem Matrix
     int project_version;
+    int many_Items;
 } project;
 
 
@@ -279,7 +280,7 @@ void zeroUnusedBuffer(buffer *space) {
 //  Manifest Format:
 //  Made by blah blah blah
 //  Filename with path in base64	file_Version#	hash#
-//outside malloc curr_project, project name need to be written in that struct
+//  outside malloc curr_project, project name need to be written in that struct
 
 int readManifest(char* manifest_raw,size_t size, project* curr_project){
     //char* manifest_raw;
@@ -289,7 +290,7 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
     int type=0,count =0 ;
     size_t tt=0;
     manifest_item *curr;
-    if(status!=0){return -1;}
+    //if(status!=0){return -1;}
     temporary=createBuffer();
     for(tmp=16;tmp<size;tmp++){
         if(manifest_raw[tmp]=='\n' || manifest_raw[tmp]==' '){
@@ -304,7 +305,6 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
                 temporary=createBuffer();
                 //free(temporary);
                 //destroyBufferWithoutFree(temporary);
-
                 type++;
             }
             else{
@@ -337,5 +337,28 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
         }
     }
     if(type!=0){return -1;}
+    curr_project->many_Items=count;
     return 0;
 }
+//Count is how many stuff you have in the manifest_item (index+1)
+
+int writeManifest(char** manifest_towrite,project *curr_project,int old_new){
+    char* temp;
+    int tmp=0;
+    *manifest_towrite=(char*) malloc(sizeof(char)*17);
+    strcpy(*manifest_towrite,"Made_By_HXX&DZZ\n");
+    for(tmp=0;tmp<curr_project->many_Items;tmp++){
+        if(old_new==0) {
+            asprintf(&temp, "%s %ld %s\n", curr_project->manifestItem[tmp]->filename_64->data,
+                     curr_project->manifestItem[tmp]->version_num, curr_project->manifestItem[tmp]->hash->data);
+        }
+        else{
+            asprintf(&temp, "%s %ld %s\n", curr_project->manifestItem[tmp]->filename_64->data,
+                     curr_project->manifestItem[tmp]->version_num, curr_project->manifestItem[tmp]->newhash->data);
+        }
+        *manifest_towrite=(char*) realloc(*manifest_towrite,strlen(*manifest_towrite)+strlen(temp)+1);
+        *manifest_towrite=strcat(*manifest_towrite,temp);
+    }
+    return 0;
+}
+
