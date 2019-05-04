@@ -4,19 +4,21 @@ project(WTF)
 include_directories(common)
 include_directories(libtar/lib libtar/listhash libtar/compat libtar)
 
-AUX_SOURCE_DIRECTORY(libtar/lib/ libtar_lib)
-AUX_SOURCE_DIRECTORY(libtar/listhash/ libtar_listhash)
-AUX_SOURCE_DIRECTORY(libtar/compat/ libtar_compact)
+list(APPEND
+        libtar_
+        libtar/lib/append.c libtar/lib/block.c libtar/lib/decode.c libtar/lib/encode.c libtar/lib/extract.c libtar/lib/handle.c libtar/lib/output.c libtar/lib/util.c libtar/lib/wrapper.c
+        libtar/listhash/libtar_hash.c libtar/listhash/libtar_list.c
+        libtar/compat/basename.c libtar/compat/dirname.c libtar/compat/strlcpy.c libtar/compat/strmode.c)
 
-foreach(c_file in ${libtar_lib} ${libtar_listhash} ${libtar_compact})
+foreach(c_file IN LISTS libtar_)
     set_source_files_properties(${c_file} PROPERTIES COMPILE_FLAGS -std=gnu99)
 endforeach()
 
-add_executable(WTFserver ${libtar_lib} ${libtar_listhash} ${libtar_compact} common/protocol.c common/util.c common/netutil.c server/main.c server/network.c server/ds.c server/logic.c)
-add_executable(WTF ${libtar_lib} ${libtar_listhash} ${libtar_compact} common/protocol.c common/util.c common/netutil.c client/client.c client/network.c)
+add_executable(WTFserver ${libtar_} common/protocol.c common/util.c common/netutil.c server/main.c server/network.c server/ds.c server/logic.c)
+add_executable(WTF ${libtar_} common/protocol.c common/util.c common/netutil.c client/client.c client/network.c)
 
-add_executable(playground playground/main.c)
-target_link_libraries(playground /usr/lib64/libtar.so.1.2.11 -lcrypto)
+add_executable(playground ${libtar_} playground/main.c)
+target_link_libraries(playground  -lcrypto)
 
 target_link_libraries(WTFserver PRIVATE -lpthread)
 target_link_libraries(WTF PRIVATE -lcrypto)
