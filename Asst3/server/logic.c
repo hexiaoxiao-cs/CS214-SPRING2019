@@ -186,6 +186,13 @@ no_version:
     finalize_buffer(output);
     return output;
 }
+//TODO:DZZ IMPLEMENTATION
+//Server: Receive request
+//       Validate the Client request by comparing the Project Version Number
+//       Save tar file to local new folder and decompress it to the curr folder
+//       Change the currentversion file for the project version
+//       copy the .Commit file to the corrosponding folder (The place with Tar)
+//       Write the .manifest file to the folder and curr
 
 buffer* process_logic(parsed_request_t* req) {
 

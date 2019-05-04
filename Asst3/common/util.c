@@ -439,12 +439,12 @@ void sort_manifest(manifest_item** items, size_t len) {
 // Server_side-> only compare old hash
 // Changelog-> Any differences between those two files
 // Any conflicts are exhibited in the conflicts pointer with an returned value of -9
-int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver){
+int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver,size_t *changelog_size,size_t *conflicts_size ){
     size_t curr_client=0,curr_server=0;
-    size_t counts=0;
+    size_t counts=0,counts_conflicts=0;
     int has_conflicts=0;
-    changelog=(manifest_item***)malloc(sizeof(manifest_item**));
-    conflicts=(manifest_item***)malloc(sizeof(manifest_item**));
+    (*changelog)=(manifest_item**)malloc(sizeof(manifest_item*));
+    (*conflicts)=(manifest_item**)malloc(sizeof(manifest_item*));
     while(curr_client<size_client&&curr_server<size_server){
         if(isTwoManifest==0){
 //            if(cmp_compare(client_side[curr_client],server_side[curr_server])>0){
@@ -478,11 +478,11 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
                     counts++;
             }
             else{
-                *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
-                (*conflicts)[counts]=server_side[curr_server];
-                (*conflicts)[counts]->changecode=5; // In Server Not In Client Conflicts!!
+                *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts_conflicts+1));
+                (*conflicts)[counts_conflicts]=server_side[curr_server];
+                (*conflicts)[counts_conflicts]->changecode=5; // In Server Not In Client Conflicts!!
                 curr_server++; // server to the next item
-                counts++;
+                counts_conflicts++;
                 has_conflicts=1;
             } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
         }
@@ -526,11 +526,11 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
                             counts++;
                         }
                         else{
-                            *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
-                            (*conflicts)[counts]=server_side[curr_server];
-                            (*conflicts)[counts]->changecode=6; // Something being added in the server side
+                            *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts_conflicts+1));
+                            (*conflicts)[counts_conflicts]=server_side[curr_server];
+                            (*conflicts)[counts_conflicts]->changecode=6; // Something being added in the server side
                             curr_server++; // server to the next item
-                            counts++;
+                            counts_conflicts++;
                             has_conflicts=1;
                             //return -9; //Something Wrong or Conflict!!!
                         }
@@ -554,50 +554,63 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
                 curr_client++;
             }
         }
+        if(isTwoManifest==1){ // one manifest -> client side
+            if(strcmp(client_side[curr_client]->hash->data,client_side[curr_client]->newhash->data)!=0) {
+                *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+                (*changelog)[counts]=client_side[curr_client];
+                (*changelog)[counts]->changecode=1;
+                counts++;
 
+            }
+            curr_client++;
+        }
     }
-    if(size_client>curr_client){ // client does not go to the end
-        //client has something that server does not have
-        for (;curr_client<size_client;curr_client++){
-            if(cmp_compare(client_side[curr_client],server_side[curr_server])<0) {// a file in the client side but not in server side
-                if(client_ver==server_ver){
-                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
-                    (*changelog)[counts]=client_side[curr_client];
-                    (*changelog)[counts]->changecode=1; // Something needed to be upload in the server side
-                    //curr_client++; // server to the next item
-                    counts++;
+    if(isTwoManifest==0) {
+        if (size_client > curr_client) { // client does not go to the end
+            //client has something that server does not have
+            for (; curr_client < size_client; curr_client++) {
+                if (cmp_compare(client_side[curr_client], server_side[curr_server]) <
+                    0) {// a file in the client side but not in server side
+                    if (client_ver == server_ver) {
+                        *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+                        (*changelog)[counts] = client_side[curr_client];
+                        (*changelog)[counts]->changecode = 1; // Something needed to be upload in the server side
+                        //curr_client++; // server to the next item
+                        counts++;
+                    } else {
+                        *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+                        (*changelog)[counts] = client_side[curr_client];
+                        (*changelog)[counts]->changecode = 4; // Something needed to be deleted in the client side
+                        //curr_client++; // server to the next item
+                        counts++;
+                    }
                 }
-                else{
-                    *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
-                    (*changelog)[counts]=client_side[curr_client];
-                    (*changelog)[counts]->changecode=4; // Something needed to be deleted in the client side
-                    //curr_client++; // server to the next item
+            }
+        } else {// server does not go to the end
+            for (; curr_server < size_server; curr_server++) {
+                if (client_ver != server_ver) {
+                    *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+                    (*changelog)[counts] = server_side[curr_server];
+                    (*changelog)[counts]->changecode = 3; // Something being added in the server side
+                    curr_server++; // server to the next item
                     counts++;
-                }
+                } else {
+                    *conflicts = (manifest_item **) realloc(conflicts, sizeof(manifest_item *) * (counts_conflicts + 1));
+                    (*conflicts)[counts_conflicts] = server_side[curr_server];
+                    (*conflicts)[counts_conflicts]->changecode = 5; // In Server Not In Client Conflicts!!
+                    curr_server++; // server to the next item
+                    counts_conflicts++;
+                    has_conflicts = 1;
+                } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
             }
         }
     }
-    else{// server does not go to the end
-        if(client_ver!=server_ver){
-            *changelog=(manifest_item**)realloc(changelog,sizeof(manifest_item*)*(counts+1));
-            (*changelog)[counts]=server_side[curr_server];
-            (*changelog)[counts]->changecode=3; // Something being added in the server side
-            curr_server++; // server to the next item
-            counts++;
-        }
-        else{
-            *conflicts=(manifest_item**)realloc(conflicts,sizeof(manifest_item*)*(counts+1));
-            (*conflicts)[counts]=server_side[curr_server];
-            (*conflicts)[counts]->changecode=5; // In Server Not In Client Conflicts!!
-            curr_server++; // server to the next item
-            counts++;
-            has_conflicts=1;
-        } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
 
-    }
     if(has_conflicts==1){
+        (*conflicts_size)=counts_conflicts;
         return -9;
     }
+    (*changelog_size)=counts;
     return 0;
 }
 //Increment file version number according to the changelist

@@ -66,19 +66,40 @@ int sha256_file(char *path, char outputBuffer[65])
 
 //make new manifest according to the array listed files
 //rehash
-int make_new_manifest(manifest_item **array,int *counts){
+//return -1 indicating make_new_manifest deleted something
+int make_new_manifest(manifest_item **array,int *counts,char*** deleted_files,size_t *deleted_counts){
     int temp=0;
     char* file_data;
-    int status;
-    size_t size;
+    int status,isDeleted=0;
+    size_t size,deleted;
+    deleted=0;
     char sha256buf[65];
+    (*deleted_files)=(char**) malloc(sizeof(char*));
     for(temp=0;temp<*counts;temp++){
         status=readFile(array[temp]->filename->data,&file_data,&size);
         array[temp]->newhash=createBuffer();
-        if(status!=0){ continue;}
+
+        //if not found, we will destroy the manifest item
+        if(status!=0){
+            (*deleted_files)=realloc((*deleted_files), sizeof(char*)*(deleted+1));
+            (*deleted_files)[deleted]=array[temp]->filename->data;
+            deleted++;
+            if(temp!=*counts-1){
+            free(array[temp]);
+            array[temp]=array[*counts-1];
+                (*counts)--;
+        }
+            else{
+                free(array[temp]);
+                (*counts)--;
+            }
+            isDeleted=1;
+            continue;}// -1 means not found (or deleted)
         sha256_string(file_data,size,sha256buf);
         appendSequenceBuffer(array[temp]->newhash,sha256buf,65);
     }
+    *deleted_counts=deleted;
+    if(isDeleted==1){return -1;}
     return 0;
 }
 
@@ -113,7 +134,7 @@ int history(char* project_name){
 //
 //    return 0;
 //}
-//TODO:DZZ -> Fix get_output_buffer_for_request last option -> 1/2->0/1
+
 int destroy(char* project_name){
     int op=3;
     buffer *output,*input;
@@ -150,12 +171,17 @@ int destroy(char* project_name){
 //    get_output_buffer_for_request(op,project_name,strlen(project_name));
 //    return 0;
 //}
-//int commit(char* project_name){
-//    int op=8;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//    return 0;
-//}
+//server
+int commit(char* project_name){
+    int op=8;
+    buffer *output,*input;
+    parsed_response_t response;
+    get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
+    if(response.status_code!=800){return -1;}
+    return 0;
+}
 
 //Push Work Flow:
 //Local: Check if all files in the manifest has been changed or changes recorded in the .Commit File
@@ -163,12 +189,6 @@ int destroy(char* project_name){
 //       Send to the Server the tar file and the newly written Manifest (remember to tar the .Commit file
 //       Wait for server to give OK respond
 //       Write Manifest to the local storage and delete .Commit File
-//Server: Receive request
-//       Validate the Client request by comparing the Project Version Number
-//       Save tar file to local new folder and decompress it to the curr folder
-//       Change the currentversion file for the project version
-//       copy the .Commit file to the corrosponding folder (The place with Tar)
-//       Write the .manifest file to the folder and curr
 
 
 //Return Code:
@@ -178,28 +198,67 @@ int destroy(char* project_name){
 //-3 ->.Commit Read Error
 //-4 ->.Commit Corrupted
 int push(char* project_name){
-    int op = 9 ;
-    buffer *output,*input;
-    char *manifest_path,*commit_path;
-    char *file_info;
-    size_t size=0,counts=0;
-    int status;
+    int op = 9;
+    buffer *output, *input;
+    char *manifest_path, *commit_path, **deleted_files, *actual_path,*inside_path;
+    char *file_info,*stuff,*tar_info;
+    size_t size = 0, counts = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0,tar_size=0;
+    int status, temp = 0;
     project my_project;
-    manifest_item **Changelog;
-    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);//two payload
-    asprintf(&manifest_path,"%s/.manifest",project_name);
-    asprintf(&commit_path,"%s/.Commit",project_name);
-    status=readFile(manifest_path,&file_info,&size);
-    if(status!=0){return -1;}
-    status=readManifest(file_info,size,&my_project);
-    if(status!=0){return -2;}
-    status=readFile(commit_path,&file_info,&size);
-    if(status!=0){return -3;}
-    readChangeLogFile(&Changelog,&file_info,size,&counts);
-    make_new_manifest(my_project.manifestItem,&(my_project.many_Items));
+    TAR *tar;
+    manifest_item **Changelog, **Generate;
+    parsed_response_t out;
+    output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);//two payload
+    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&commit_path, "%s/.Commit", project_name);
+    status = readFile(manifest_path, &file_info, &size);
+    if (status != 0) { return -1; }
+    status = readManifest(file_info, size, &my_project);
+    if (status != 0) { return -2; }
+    status = readFile(commit_path, &file_info, &size);
+    if (status != 0) { return -3; }
+    readChangeLogFile(&Changelog, &file_info, size, &counts);
+    if (make_new_manifest(my_project.manifestItem, &(my_project.many_Items), &deleted_files, &deleted_counts) == -1) {
+        printf("Error: Please commit the following deleted files\n");
+        for (temp = 0; temp < deleted_counts; temp++) {
+            printf("%s\n", deleted_files[temp]);
+        }
+        writeManifest(&file_info, &my_project, 0);
+        writeFile(manifest_path, file_info, strlen(file_info));
+        return -4;
+    }
+    compareManifest(0, my_project.manifestItem, NULL, &Generate, NULL, my_project.many_Items, 1, 0, 1, &new_size, NULL);
+    if (new_size != counts) {
+        printf("Error: There are uncommitted changes!\nPlease Commit then Push!\n");
+    }
+    //TODO:Implement check whether two lists are identical (HASH)
 
-    return 0;
-
+    proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
+    writeManifest(&file_info,&my_project,0);
+    asprintf(&stuff, "%s/.tmp.manifest", project_name);
+    writeFile(stuff,file_info,strlen(file_info));
+    //start to tar
+    tar_open(&tar, "tmp.tar", NULL, O_WRONLY | O_CREAT, 0700, TAR_GNU);
+    for(temp=0;temp<my_project.many_Items;temp++){
+        asprintf(&actual_path,"%s/%s",project_name,my_project.manifestItem[temp]->filename->data);
+        tar_append_file(tar,actual_path,my_project.manifestItem[temp]->filename->data);
+    }
+    asprintf(&inside_path,".tmp.manifest");
+    tar_append_file(tar,stuff,inside_path);
+    asprintf(&actual_path,"%s/.Commit",project_name);
+    asprintf(&inside_path,".Commit");
+    tar_append_file(tar,actual_path,inside_path);
+    tar_close(tar);
+    appendSequenceBuffer(output,file_info,strlen(file_info));
+    finalize_file_payload1_for_request(output);
+    readFile("tmp.tar",&tar_info,&tar_size);
+    appendSequenceBuffer(output,tar_info,tar_size);
+    finalize_buffer(output);
+    if(send_request(ipaddr,portno,output,&input)==1){return -5;}
+    parse_response(input,&out);
+    if(out.status_code==900){return 0;}
+    else{return -9;}
+    //return 0;
 }
 
 //0 -> OK!
