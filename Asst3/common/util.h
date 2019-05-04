@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <stddef.h>
+#include <libtar.h>
 
 // DEBUG UTIL
 
@@ -61,4 +62,60 @@ unsigned char *base64_decode(const char *data,
 char *base64_encode(const unsigned char *data,
                     size_t input_length,
                     size_t *output_length);
+
+int tar_extract_specific_file(const char* tar_file, const char* stored_filename,
+                              const char* output_root_path);
+
+/*
+ * Utility to sanitize input path (relative)
+ *
+ *
+ * Return value:
+ *  NULL: input path is not valid, this can be the result of multiple reasons
+ *          1. the input_path is resolved to a location that is outside of our cwd
+ *          2. the input_path is resolved to the cwd
+ *
+ *  Valid pointer: the sanitized version of input path (through malloc)
+ *          Note:
+ *          0. the pointer need to be freed using [free] after done using
+ *          1. return has a valid pointer does not guarantee the existence of file/directory
+ *          2. the escaped format does not contain '/' at the end (regardless whether the path is a directory)
+ *          3. when one or more component directory of the referring file does not exist or such component directory is a file,
+ *             this function will return the first directory that we cannot descend into
+ *              Ex:
+ *                  directory tree:
+ *                      CWD
+ *                       |---- abc (dir)
+ *                       |         |------ def
+ *                       |
+ *                       \---- cba
+ *
+ *                  sanitize_path('./abc/def/gkk/cfk') = 'abc/def'
+ *                      reason:
+ *                          because def is a file (instead of a dir), we can't descend into such file, so we stop our further search
+ *
+ *                  sanitize_path('./ddd/ggg') = 'ddd'
+ *                      reason:
+ *                          because ddd directory does not exist in our CWD, so we stop our further descend
+ *
+ *                  sanitize_path('./abc/def') - 'abc/def'
+ *                      reason:
+ *                          this should be fairly straight forward
+ *
+ * Suggest usage:
+ *  after sanitize_path, try to open the returned path
+ *      if open success, it means the referring file is valid
+ *      if the open failed, it means the referring file is invalid
+ *          reason:
+ *              if open failed means the referring file does not exist or one or more component directories does not exist
+ *              if open success, either means the referring file exists, or one of the component directories is actually a file:
+ *                  say we only have one file 'ttt', the path 'ttt/abc/def' still refers to ttt
+ *
+ *  Ex:
+ *      '../${cwd}/abc/' -> 'abc'
+ *      '../${cwd}/def/ggg/ccc' -> 'def/ggg/ccc'
+ */
+
+char* sanitize_path(const char* input_path);
+
 #endif

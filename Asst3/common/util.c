@@ -9,6 +9,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <stdint.h>
+#include <util.h>
+#include <libtar.h>
 //#include <stdlib.h>
 
 //#include <lzma.h>
@@ -262,6 +264,64 @@ buffer* duplicateBuffer(buffer* space) {
 
 void zeroUnusedBuffer(buffer *space) {
     memset(space->data + space->size, 0, space->total_size - space->size);  //zero out unused space
+}
+
+/*
+ * output_root_path has to have a '/' as it's last character
+ *
+ * This function extract a specific file inside tar_file.
+ * The specific file is specified by stored_filename
+ *
+ * output_root_path indicates the path extraction will output
+ */
+int tar_extract_specific_file(const char* tar_file, const char* stored_filename,
+                              const char* output_root_path) {
+    TAR* tar;
+    int ret;
+
+    char* out_path = (char*) malloc(strlen(output_root_path) + strlen(stored_filename) + 1);
+    char* appender = out_path + strlen(output_root_path);
+
+    strcpy(out_path, output_root_path);
+
+    if (tar_open(&tar, (char*)tar_file, NULL, O_RDONLY, 0700, TAR_GNU) < 0)
+        return -1;  // Unable to open file
+
+    while ((ret = th_read(tar)) == 0) {
+        if (strcmp(th_get_pathname(tar), stored_filename) == 0) {
+            strcpy(appender, stored_filename);
+            tar_extract_file(tar, out_path);
+            break;
+        }
+        if (TH_ISREG(tar))
+            tar_skip_regfile(tar);
+    }
+
+    free(out_path);
+
+    return 0;
+}
+
+char* sanitize_path(const char* input_path) {
+    char cwd[PATH_MAX];
+    char real_path[PATH_MAX];
+    char *cursor;
+    char *output;
+    getcwd(cwd, PATH_MAX);
+    realpath(input_path, real_path);
+    cursor = strstr(real_path, cwd);
+    if (!cursor) {
+        return NULL;
+    }
+    if (cursor != real_path) {
+        return NULL;    // there is a cwd somewhere in between
+    }
+    if (cursor[strlen(cwd)] == 0) {
+        return NULL;    // it only contain cwd
+    }
+    output = (char*) malloc(strlen(real_path) - strlen(cwd) - 1 + 1);   // -1 is for the '/'
+    strcpy(output, cursor + strlen(cwd) + 1);
+    return output;
 }
 
 //  Manifest Format:
