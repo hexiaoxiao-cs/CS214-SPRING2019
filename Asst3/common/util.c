@@ -401,8 +401,11 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
 int writeManifest(char** manifest_towrite,project *curr_project,int old_new){
     char* temp;
     int tmp=0;
-    *manifest_towrite=(char*) malloc(sizeof(char)*17);
+    *manifest_towrite=(char*) malloc(sizeof(char)*30);
     strcpy(*manifest_towrite,"Made_By_HXX&DZZ\n");
+    asprintf(&temp,"%d\n",curr_project->project_version);
+    *manifest_towrite=(char*) realloc(*manifest_towrite,strlen(*manifest_towrite)+strlen(temp)+1);
+    *manifest_towrite=strcat(*manifest_towrite,temp);
     for(tmp=0;tmp<curr_project->many_Items;tmp++){
         if(old_new==0) {
             asprintf(&temp, "%s %ld %s\n", curr_project->manifestItem[tmp]->filename_64->data,
@@ -677,3 +680,77 @@ int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** chang
     manifest->many_Items=new_size;
     return 0;
 }
+// TODO: Need to give project directory (DZZ)
+
+
+//Changelog File Format:
+//Made_By_HXX&DZZ
+//ChangeCode(char) Filename Filename_64 File_Version Hash_old Hash_new
+//1->MAD 2->UAD 3->Conflicts
+
+int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int type){
+    size_t curr=0;
+    char* temporary;
+    buffer *o;
+    o=createBuffer();
+
+    appendSequenceBuffer(o,"Made_By_HXX&DZZ\n",17);
+    for(curr=0;curr<size;curr++){
+        if(type!=3){
+            if((changelog[curr]->changecode==1&&type!=1)  ) { // U
+                asprintf(&temporary, "%d %s %s %ld %s %s\n", changelog[curr]->changecode, changelog[curr]->filename->data,
+                         changelog[curr]->filename_64->data, changelog[curr]->version_num, changelog[curr]->hash->data,
+                         changelog[curr]->newhash->data);
+            }
+            else {
+                if ((changelog[curr]->changecode == 2 && type != 2 )|| changelog[curr]->changecode==4||changelog[curr]->changecode==3) {//M A D
+                    asprintf(&temporary, "%d %s %s %ld %s 0\n", changelog[curr]->changecode, changelog[curr]->filename->data,
+                             changelog[curr]->filename_64->data, changelog[curr]->version_num, changelog[curr]->hash->data);
+                }
+            }
+        }
+        else{
+            if(changelog[curr]->changecode==5 ||changelog[curr]->changecode==6 )   { // U
+                asprintf(&temporary, "Conflicts:%s\n", changelog[curr]->filename->data);
+            }
+
+        }
+        appendSequenceBuffer(o,temporary,strlen(temporary));
+    }
+    *output=o->data;
+    return 0;
+}
+
+int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_t *list_size,int onlyConflicts){
+    manifest_item **temp=(manifest_item**)malloc(sizeof(manifest_item*));
+    manifest_item *item;
+    char* to_trans= *input, *tfilename,*tbase64,*tsha256,*tsha256_new;
+    size_t read_bytes=0,list=0;
+    to_trans+=16;
+    size-=16;
+    tfilename=(char*)malloc(100000);
+    tbase64=(char*)malloc(100000);
+    tsha256=(char*)malloc(100);
+    tsha256_new=(char*)malloc(100);
+    while(size!=0) {
+        item=(manifest_item*)malloc(sizeof(manifest_item));
+        item->filename_64=createBuffer();
+        item->filename=createBuffer();
+        item->newhash=createBuffer();
+        item->hash=createBuffer();
+        sscanf(to_trans, "%d %s %s %ld %s %s\n%ln",&(item->changecode),tfilename,tbase64,&(item->version_num),tsha256,tsha256_new,&read_bytes); // %n is how many bytes i've read sofar
+        size-=read_bytes;
+        read_bytes=0;
+        appendSequenceBuffer(item->filename,tfilename,strlen(tfilename));
+        appendSequenceBuffer(item->filename_64,tbase64,strlen(tbase64));
+        appendSequenceBuffer(item->hash,tsha256,strlen(tsha256));
+        appendSequenceBuffer(item->newhash,tsha256_new,strlen(tsha256_new));
+        temp=(manifest_item**)realloc(temp,sizeof(manifest_item*)*(list+1));
+        temp[list]=item;
+        list++;
+    }
+    *list_size=list;
+    *changelog=temp;
+    return 0;
+}
+

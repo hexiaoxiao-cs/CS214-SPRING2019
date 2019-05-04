@@ -154,8 +154,8 @@ int push(char* project_name){
     buffer *output,*input;
     TAR* t;
     tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
-    get_output_buffer_for_request(op,project_name,strlen(project_name),1);//two payload
-    
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);//two payload
+
     return 0;
 
 }
