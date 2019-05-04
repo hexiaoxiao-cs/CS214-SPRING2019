@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "util.h"
+#include <util.h>
 #include "protocol.h"
 #include "ds.h"
 

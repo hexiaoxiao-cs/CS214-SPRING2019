@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <serverutil.h>
+
+#include <limits.h>
+
+// TODO: create Project resee
 
 buffer* createProject(parsed_request_t *req){
     int status,fh;
@@ -89,13 +94,97 @@ buffer* destroy(parsed_request_t *req){
 //             |---files.tar
 //             |---.Commit
 //             |---.Manifest
-//     |---Currentversion (file store a number)
-//     |---Curr (folder store the current files)
-//         |---.Manifest
-//         |---.....
+//         |---Currentversion (file store a number)
+//         |---Curr (folder store the current files)
+//             |---.Manifest
+//             |---.....
 
+
+/*
+ * handler for history request
+ *
+ * Response:
+ *  [100] => successful query, latest displayable history will be in str_payload
+ *  [101] => failed query, reason: no history information available (current version is zero)
+ *
+ */
 buffer* history(parsed_request_t *req){
+    char commit_path[PATH_MAX];
+    int version = get_latest_project_version(req->project_name, req->project_name_size);
+    int i;
+    buffer* output;
+    char* file_data;
+    size_t file_size;
 
+    if (version == 0) {
+        goto no_history;
+    }
+
+    output = get_output_buffer_for_response(100, 0);
+
+    for (i = 1;i <= version;i++) {
+        get_project_path(commit_path, req->project_name, req->project_name_size, i);
+        if (readFile(commit_path, &file_data, &file_size) < 0) {
+            TRACE(("Possible directory structure corruption, exiting... \n"));
+            exit(0)
+        }
+        appendSequenceBuffer(output, file_data, file_size);
+        free(file_data);
+        appendBuffer(output, '\n');
+        appendBuffer(output, '\n');
+    }
+
+    finalize_buffer(output);
+    return output;
+
+no_history:
+    output = get_output_buffer_for_response(101, 0);
+    finalize_buffer(output);
+    return output;
+}
+
+
+/*
+ * handler for currentversion request
+ *
+ * Response:
+ *  [200] => successful query, latest manifest will be in str_payload
+ *  [201] => failed query, reason: no version information available (current version is zero)
+ *
+ */
+buffer* currentversion(parsed_request_t* req) {
+    char manifest_path[PATH_MAX];
+    char *file_data;
+    size_t file_size;
+    int project_version;
+    buffer* output;
+
+    project_version = get_latest_project_version(req->project_name, req->project_name_size);
+    get_project_path(manifest_path, req->project_name, req->project_name_size, project_version);
+
+    free_in_packet();
+
+    if (project_version == 0) {
+        goto no_version;
+    }
+
+    strcat(manifest_path, ".Manifest"); // Projects/${project_name}/${project_version}/.Manifest
+    if (readFile(manifest_path, &file_data, &file_size) < 0) {
+        TRACE(("Possible directory structure corruption, exiting... \n"));
+        exit(0);
+    }
+
+    output = get_output_buffer_for_response(200, 0);
+    appendSequenceBuffer(output, file_data, file_size);
+    free(file_data);
+    finalize_buffer(output);
+
+    return output;
+
+no_version:
+    output = get_output_buffer_for_response(201, 0);
+    finalize_buffer(output);
+    return output;
 }
 
 buffer* process_logic(parsed_request_t* req) {
