@@ -1,0 +1,55 @@
+This project utilized a tar library: libtar
+
+We were supposed to use the libtar.1.2.11.so inside iLab, however, such library has memory leaks problems and cannot be used.
+Per Francisco's instruction, we downloaded libtar-1.2.11 source code from the following git repository:
+    https://repo.or.cz/libtar.git
+
+And made our patches on top of the tag/v1.2.11 inside the libtar git tree.
+    Main changes:
+        * fixes various memory leaks bugs
+        * made the code ready to compile under iLab machine (config.h and listhash source codes are generated based on the
+        original ./configure tool using iLab machine.
+
+Because we cannot find the original LICENSE of libtar, we presume it is released under GPL license. The code changes that we
+have made on top of libtar-1.2.11 is available in "libtar.patch" file, we also made it to be open source to comply to GPL License:
+    https://github.com/dzz007/libtar
+
+Our makefile does not produce libtar library directory (neither dynamically linked .aso file nor statically linked .a file)
+we compile source codes resides inside libtar directly and link into our executable.
+
+
+ORIGINAL COPYRIGHT STATEMENT:
+   1 Copyright (c) 1998-2003  University of Illinois Board of Trustees
+   2 Copyright (c) 1998-2003  Mark D. Roth
+   3 All rights reserved.
+   4
+   5 Developed by: Campus Information Technologies and Educational Services,
+   6               University of Illinois at Urbana-Champaign
+   7
+   8 Permission is hereby granted, free of charge, to any person obtaining
+   9 a copy of this software and associated documentation files (the
+  10 ``Software''), to deal with the Software without restriction, including
+  11 without limitation the rights to use, copy, modify, merge, publish,
+  12 distribute, sublicense, and/or sell copies of the Software, and to
+  13 permit persons to whom the Software is furnished to do so, subject to
+  14 the following conditions:
+  15
+  16 * Redistributions of source code must retain the above copyright
+  17   notice, this list of conditions and the following disclaimers.
+  18
+  19 * Redistributions in binary form must reproduce the above copyright
+  20   notice, this list of conditions and the following disclaimers in the
+  21   documentation and/or other materials provided with the distribution.
+  22
+  23 * Neither the names of Campus Information Technologies and Educational
+  24   Services, University of Illinois at Urbana-Champaign, nor the names
+  25   of its contributors may be used to endorse or promote products derived
+  26   from this Software without specific prior written permission.
+  27
+  28 THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+  29 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  30 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  31 IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+  32 ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  33 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+  34 OR THE USE OR OTHER DEALINGS WITH THE SOFTWARE.
