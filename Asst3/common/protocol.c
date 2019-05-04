@@ -157,6 +157,8 @@ int parse_response(buffer* in_packet, parsed_response_t* out) {
     return 0;
 }
 
+//0-not two payload
+
 buffer* get_output_buffer_for_request(uint8_t op_code, const char* project_name, size_t project_name_size, uint8_t is_two_payload) {
     buffer* buf = createBuffer();
     buf->size += sizeof(size_t);    // reserve 8 bytes to hold size

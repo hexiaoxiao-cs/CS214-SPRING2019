@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/sha.h>
-
+#include <libtar.h>
 #define PARSEERROR "Argv Error\nUsage:\n./wtf [configure <IP/hostname> <port>] [checkout <project name>] [update <project name>]\n[upgrade <project name>] [commit <project name>] [push <project name>]\n[create <project name>] [destroy <project name>] [add <project name> <filename>]\n[remove <project name> <filename>] [currentversion <project name>] [history <project name>]\n[rollback <project name> <version>]\n"
 
 char* ipaddr;
@@ -86,7 +86,7 @@ int create(char* project_name){
     int op=0;
     buffer *output,*input;
     parsed_response_t response;
-    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
     send_request(ipaddr,portno,output,&input);
     parse_response(input,&response);
     if(strcmp(response.str_payload.payload,"OK")!=0){return 0;}
@@ -97,7 +97,7 @@ int history(char* project_name){
     char *the_history;
     buffer *output,*input;
     parsed_response_t response;
-    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
     send_request(ipaddr,portno,output,&input);
     parse_response(input,&response);
     if(response.str_payload.payload_size!=0){return -1;}
@@ -149,13 +149,16 @@ int history(char* project_name){
 //    get_output_buffer_for_request(op,project_name,strlen(project_name));
 //    return 0;
 //}
-//int push(char* project_name){
-//    int op = 9 ;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//    return 0;
-//
-//}
+int push(char* project_name){
+    int op = 9 ;
+    buffer *output,*input;
+    TAR* t;
+    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
+    get_output_buffer_for_request(op,project_name,strlen(project_name),1);//two payload
+    
+    return 0;
+
+}
 
 //0 -> OK!
 //-1-> File Not Found
@@ -185,6 +188,35 @@ int add(char* project_name, char* to_add_path){
     curr.many_Items++;
     sort_manifest(curr.manifestItem,curr.many_Items);
     writeManifest(&manifest_raw,&curr,0);
+    return writeFile(manifest_path,manifest_raw,strlen(manifest_raw));
+
+}
+
+int remove_entry(char* project_name, char* path){
+    char* manifest_path;
+    size_t size,temp;
+    project curr;
+    int status=0;
+    asprintf(&manifest_path,"%s/.manifest",project_name);
+    char* manifest_raw;
+    char* base=base64_encode(path,strlen(path),&size);
+    //manifest_item *new = (manifest_item*) malloc(sizeof(manifest_item));
+    status=readFile(manifest_path,&manifest_raw,&size);
+    if(status!=0){return -1;} // -1 -> Manifest Reading Error
+    readManifest(manifest_raw,size,&curr);
+    for(temp=0;temp<curr.many_Items;temp++){
+        if(strcmp(curr.manifestItem[temp]->filename_64->data,base)==0){break;}
+    }
+    if(temp==curr.many_Items-1){
+        curr.many_Items--;
+    }
+    else {
+        curr.manifestItem[temp]=curr.manifestItem[curr.many_Items-1];
+        curr.many_Items--;
+        sort_manifest(curr.manifestItem,curr.many_Items);
+    }
+    writeManifest(&manifest_raw,&curr,0);
+    return writeFile(manifest_path,manifest_raw,strlen(manifest_raw));
     return 0;
 }
 
