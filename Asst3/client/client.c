@@ -113,11 +113,18 @@ int history(char* project_name){
 //
 //    return 0;
 //}
-//int destroy(char* project_name){
-//    int op=3;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//}
+//TODO:DZZ -> Fix get_output_buffer_for_request last option -> 1/2->0/1
+int destroy(char* project_name){
+    int op=3;
+    buffer *output,*input;
+    parsed_response_t response;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
+    if(strcmp(response.str_payload.payload,"OK")!=0){return 0;}
+    else{return -1;}
+
+}
 //int rollback(char* project_name){
 //    int op=4;
 //    buffer *output,*input;
@@ -149,33 +156,74 @@ int history(char* project_name){
 //    get_output_buffer_for_request(op,project_name,strlen(project_name));
 //    return 0;
 //}
+
+//Push Work Flow:
+//Local: Check if all files in the manifest has been changed or changes recorded in the .Commit File
+//       Increment the Project Number and File Version Number
+//       Send to the Server the tar file and the newly written Manifest (remember to tar the .Commit file
+//       Wait for server to give OK respond
+//       Write Manifest to the local storage and delete .Commit File
+//Server: Receive request
+//       Validate the Client request by comparing the Project Version Number
+//       Save tar file to local new folder and decompress it to the curr folder
+//       Change the currentversion file for the project version
+//       copy the .Commit file to the corrosponding folder (The place with Tar)
+//       Write the .manifest file to the folder and curr
+
+
+//Return Code:
+//O -> OK
+//-1 ->Manifest Read Error
+//-2 ->Manifest Corrupted
+//-3 ->.Commit Read Error
+//-4 ->.Commit Corrupted
 int push(char* project_name){
     int op = 9 ;
     buffer *output,*input;
-    TAR* t;
-    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
+    char *manifest_path,*commit_path;
+    char *file_info;
+    size_t size=0,counts=0;
+    int status;
+    project my_project;
+    manifest_item **Changelog;
     output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);//two payload
+    asprintf(&manifest_path,"%s/.manifest",project_name);
+    asprintf(&commit_path,"%s/.Commit",project_name);
+    status=readFile(manifest_path,&file_info,&size);
+    if(status!=0){return -1;}
+    status=readManifest(file_info,size,&my_project);
+    if(status!=0){return -2;}
+    status=readFile(commit_path,&file_info,&size);
+    if(status!=0){return -3;}
+    readChangeLogFile(&Changelog,&file_info,size,&counts);
+    make_new_manifest(my_project.manifestItem,my_project.many_Items);
 
     return 0;
 
 }
 
 //0 -> OK!
-//-1-> File Not Found
-//-2-> Is Directory
-
+//-1-> Manifest Reading Error Potential Error: Project Name Does Not Exists
+//-2-> Path Not Correct Format
 int add(char* project_name, char* to_add_path){
     char* manifest_path;
     size_t size;
     project curr;
+    char *regulized_path;
     int status=0;
     asprintf(&manifest_path,"%s/.manifest",project_name);
     char* manifest_raw;
-    manifest_item *new = (manifest_item*) malloc(sizeof(manifest_item));
+    manifest_item *new ;
     status=readFile(manifest_path,&manifest_raw,&size);
     if(status!=0){return -1;} // -1 -> Manifest Reading Error
     readManifest(manifest_raw,size,&curr);
     curr.manifestItem=(manifest_item**)realloc(curr.manifestItem,sizeof(manifest_item*)*(curr.many_Items+1));
+    asprintf(&regulized_path,"%s/%s",project_name,to_add_path);
+    regulized_path=is_valid_path(regulized_path);
+    if(regulized_path==NULL){return -2;}
+    status=open(regulized_path,O_RDONLY);
+    if(status!=0){return -2;}
+    new= (manifest_item*) malloc(sizeof(manifest_item));
     new->version_num=0;
     new->hash=createBuffer();
     appendSequenceBuffer(new->hash,"0",1);
@@ -329,6 +377,7 @@ int main(int argc,char* argv[]) {
                 printf(PARSEERROR);
                 return -1;
             }
+            remove_entry(argv[2],argv[3]);
             //printf("remove");
             break;
         }

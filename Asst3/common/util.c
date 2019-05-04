@@ -721,7 +721,7 @@ int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int t
     return 0;
 }
 
-int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_t *list_size,int onlyConflicts){
+int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_t *list_size){
     manifest_item **temp=(manifest_item**)malloc(sizeof(manifest_item*));
     manifest_item *item;
     char* to_trans= *input, *tfilename,*tbase64,*tsha256,*tsha256_new;
