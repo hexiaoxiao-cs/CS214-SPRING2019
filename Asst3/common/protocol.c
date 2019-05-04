@@ -53,11 +53,11 @@ int parse_request(buffer* in_packet, parsed_request_t* out) {
     offset += out->project_name_size;
 
     _roller_read(in_packet, &out->is_two_payload, &offset, sizeof(uint8_t));
-    if (out->is_two_payload != 1 && out->is_two_payload != 2) {
+    if (out->is_two_payload != 0 && out->is_two_payload != 1) {
         // malformed packet
         return 1;
     }
-    if (out->is_two_payload == 1) {
+    if (out->is_two_payload) {
         _roller_read(in_packet, &out->files_payload.payload1_size, &offset, sizeof(size_t));
         if (out->files_payload.payload1_size > MAX_PACKET_SIZE) {
             // malformed packet
@@ -102,7 +102,7 @@ buffer* get_output_buffer_for_response(uint16_t status_code, uint8_t is_two_payl
         buf->size += sizeof(size_t); // reserve another 8 bytes to hold the size of first payload
         // 31 left
     } else {
-        buf->data[buf->size - 1] = (uint8_t)2;
+        buf->data[buf->size - 1] = (uint8_t)0;
     }
     return buf;
 }
@@ -123,11 +123,11 @@ int parse_response(buffer* in_packet, parsed_response_t* out) {
     _roller_read(in_packet, &packet_size, &offset, sizeof(size_t));
     _roller_read(in_packet, &out->status_code, &offset, sizeof(uint16_t));
     _roller_read(in_packet, &out->is_two_payload, &offset, sizeof(uint8_t));
-    if (out->is_two_payload != 1 && out->is_two_payload != 2) {
+    if (out->is_two_payload != 0 && out->is_two_payload != 1) {
         // malformed packet
         return 1;
     }
-    if (out->is_two_payload == 1) {
+    if (out->is_two_payload) {
         _roller_read(in_packet, &out->files_payload.payload1_size, &offset, sizeof(size_t));
         if (out->files_payload.payload1_size > MAX_PACKET_SIZE) {
             // malformed packet
@@ -180,7 +180,7 @@ buffer* get_output_buffer_for_request(uint8_t op_code, const char* project_name,
         buf->data[buf->size - 1] = (uint8_t)1;
         buf->size += sizeof(size_t);    // reserve another 8 bytes to hold the size of first payload
     } else {
-        buf->data[buf->size - 1] = (uint8_t)2;
+        buf->data[buf->size - 1] = (uint8_t)0;
     }
     return buf;
 }
