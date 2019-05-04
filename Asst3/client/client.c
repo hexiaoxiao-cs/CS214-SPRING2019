@@ -66,13 +66,13 @@ int sha256_file(char *path, char outputBuffer[65])
 
 //make new manifest according to the array listed files
 //rehash
-int make_new_manifest(manifest_item **array,int counts){
+int make_new_manifest(manifest_item **array,int *counts){
     int temp=0;
     char* file_data;
     int status;
     size_t size;
     char sha256buf[65];
-    for(temp=0;temp<counts;temp++){
+    for(temp=0;temp<*counts;temp++){
         status=readFile(array[temp]->filename->data,&file_data,&size);
         array[temp]->newhash=createBuffer();
         if(status!=0){ continue;}
@@ -196,7 +196,7 @@ int push(char* project_name){
     status=readFile(commit_path,&file_info,&size);
     if(status!=0){return -3;}
     readChangeLogFile(&Changelog,&file_info,size,&counts);
-    make_new_manifest(my_project.manifestItem,my_project.many_Items);
+    make_new_manifest(my_project.manifestItem,&(my_project.many_Items));
 
     return 0;
 

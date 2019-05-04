@@ -75,6 +75,25 @@ buffer* destroy(parsed_request_t *req){
     return response;
 }
 
+//Folder Structure
+//-|
+// |---WTFserver
+// |---Projects
+//     |---Project_Name_1
+//     | ......
+//     |---Project_Name_N
+//         |---0
+//         |---1 (->Project Version Number)
+//         | ....
+//         |---n (->Current Version Number)
+//             |---files.tar
+//             |---.Commit
+//             |---.Manifest
+//     |---Currentversion (file store a number)
+//     |---Curr (folder store the current files)
+//         |---.Manifest
+//         |---.....
+
 buffer* history(parsed_request_t *req){
 
 }
