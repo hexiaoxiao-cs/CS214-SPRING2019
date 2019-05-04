@@ -202,16 +202,16 @@ void expandBuffer(buffer *space, size_t size) {
     space->data = tmp;
 }
 
-//void appendExpandable(buffer *space, char c) {
-//    space->data[space->size++] = c;
-//    if (space->size == space->total_size) {
-//        if (space->size <= 1024)
-//            expandExpandable(space, 10);  //expand 10 bytes each time for small memory
-//        else
-//            expandExpandable(space, space->size); //double the size each time for large memory
-//    }
-//    space->data[space->size] = 0;   //set the next byte to be 0
-//}
+void appendBuffer(buffer *space, char c) {
+    space->data[space->size++] = c;
+    if (space->size == space->total_size) {
+        if (space->size <= 1024)
+            expandBuffer(space, 10);  //expand 10 bytes each time for small memory
+        else
+            expandBuffer(space, space->size); //double the size each time for large memory
+    }
+    space->data[space->size] = 0;   //set the next byte to be 0
+}
 
 /*
  * We do not need a remove buffer here
@@ -389,7 +389,7 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
             }
         }
         else{
-            appendSequenceBuffer(temporary,manifest_raw,tmp);
+            appendBuffer(temporary,manifest_raw[tmp]);
         }
     }
     if(type!=0){return -1;}
@@ -397,7 +397,7 @@ int readManifest(char* manifest_raw,size_t size, project* curr_project){
     return 0;
 }
 //Count is how many stuff you have in the manifest_item (index+1)
-
+//old -> 0 new ->1
 int writeManifest(char** manifest_towrite,project *curr_project,int old_new){
     char* temp;
     int tmp=0;

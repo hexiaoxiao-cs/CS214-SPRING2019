@@ -133,5 +133,5 @@ char* sanitize_path(const char* input_path);
 char* is_valid_path(const char* input_path);
 int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_t *list_size);
 int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int type);
-
+void appendBuffer(buffer *space, char c);
 #endif
