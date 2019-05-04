@@ -302,6 +302,15 @@ int tar_extract_specific_file(const char* tar_file, const char* stored_filename,
     return 0;
 }
 
+char* is_valid_path(const char* input_path) {
+    char* sanitized_path;
+    int op_ret;
+    if ((op_ret = open(input_path, O_RDONLY)) < 0)
+        return NULL;
+    close(op_ret);
+    return sanitize_path(input_path);
+}
+
 char* sanitize_path(const char* input_path) {
     char cwd[PATH_MAX];
     char real_path[PATH_MAX];

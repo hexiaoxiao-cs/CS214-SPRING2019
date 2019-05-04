@@ -115,7 +115,21 @@ int tar_extract_specific_file(const char* tar_file, const char* stored_filename,
  *      '../${cwd}/abc/' -> 'abc'
  *      '../${cwd}/def/ggg/ccc' -> 'def/ggg/ccc'
  */
-
 char* sanitize_path(const char* input_path);
+
+/*
+ *  This function utilizes sanitize_path to make sure the input_path is a valid path
+ *  valid is defined as an openable file under current CWD
+ *
+ *  Implementation:
+ *      this function try to open input_path before calling sanitize_path, if open failed return null, other wise return sanitizing result
+ *
+ *  Reason:
+ *      if open success, it means the file exist after resolving by open system call,
+ *      this branch eliminates all other possibilities which sanitize_path will return a valid pointer except our expected result
+ *
+ *  return value: see sanitize_path
+ */
+char* is_valid_path(const char* input_path);
 
 #endif
