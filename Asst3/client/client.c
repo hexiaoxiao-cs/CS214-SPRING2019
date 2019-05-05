@@ -106,6 +106,7 @@ int create(char *project_name) {
     int op = 0;
     buffer *output, *input;
     parsed_response_t response;
+    char* path,*contents;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
@@ -113,7 +114,13 @@ int create(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code == 000) { return 0; }
+    if (response.status_code == 000) {
+        asprintf(&path,"%s",project_name);
+        mkdir(path,0700);
+        asprintf(&path,"%s/.Manifest",project_name);
+        asprintf(&contents,"Made_By_HXX&DZZ\n0\n");
+        writeFile(path,contents,18);
+        return 0; }
     else { return -1; }
 }
 
@@ -703,3 +710,10 @@ int main(int argc, char *argv[]) {
     //TRACE(("size of a size_t: %d \n", sizeof(size_t)));
     return 0;
 }
+
+/*
+ * TODO LIST
+ * 1. client error output
+ * 2. client create -> initialize local directory structure
+ * 3.
+ */
