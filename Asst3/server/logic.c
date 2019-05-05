@@ -389,7 +389,22 @@ buffer* rollback(parsed_request_t* req){
 
 buffer* checkout(parsed_request_t *req){
 
-    
+
+}
+
+buffer* update(parsed_request_t *req){
+
+
+}
+
+buffer* upgrade(parsed_request_t *req){
+
+
+}
+
+buffer* commit(parsed_request_t *req){
+
+
 }
 
 buffer* process_logic(parsed_request_t* req) {
