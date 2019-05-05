@@ -217,7 +217,7 @@ int checkout(char *project_name) {
     parsed_response_t response;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     printf("WARNING!\nThis operation will overwrite all necessary files in the project folder to \"reset\" the repository to the current server version.\nProceed?(Y\\N)\n");
-    sscanf("%c", &a);
+    scanf("%c", &a);
     if (a == 'N' || a == 'n') { return -1; }
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
@@ -483,8 +483,9 @@ int add(char *project_name, char *to_add_path) {
     project curr;
     char *regulized_path;
     int status = 0;
-    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&manifest_path, "%s/.Manifest", project_name);
     char *manifest_raw;
+    char *base64_encoded;
     manifest_item *new;
     status = readFile(manifest_path, &manifest_raw, &size);
     if (status != 0) { return -1; } // -1 -> Manifest Reading Error
@@ -494,7 +495,7 @@ int add(char *project_name, char *to_add_path) {
     regulized_path = is_valid_path(regulized_path);
     if (regulized_path == NULL) { return -2; }
     status = open(regulized_path, O_RDONLY);
-    if (status != 0) { return -2; }
+    if (status < 0) { return -2; }
     new = (manifest_item *) malloc(sizeof(manifest_item));
     new->version_num = 0;
     new->hash = createBuffer();
@@ -503,7 +504,8 @@ int add(char *project_name, char *to_add_path) {
     appendSequenceBuffer(new->filename, to_add_path, strlen(to_add_path));
     new->filename_64 = createBuffer();
     size = 0;
-    appendSequenceBuffer(new->filename_64, base64_encode(to_add_path, strlen(to_add_path), &size), size);
+    base64_encoded = base64_encode(to_add_path, strlen(to_add_path), &size);
+    appendSequenceBuffer(new->filename_64, base64_encoded, size);
     curr.manifestItem[curr.many_Items] = new;
     curr.many_Items++;
     sort_manifest(curr.manifestItem, curr.many_Items);
@@ -574,7 +576,7 @@ int main(int argc, char *argv[]) {
 
     switch (argv[1][0] + argv[1][2] * 100) {
         case 11099: {
-            if (strcmp("configure", argv[1]) != 0 || argc == 4) {
+            if (strcmp("configure", argv[1]) != 0 || argc != 4) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -583,15 +585,23 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10199: {
-            if (strcmp("checkout", argv[1]) != 0 || argc == 3) {
+            if (strcmp("create", argv[1]) == 0 && argc == 3) {
+                //printf("create");
+                if (create(argv[2]) != 0) {
+                    printf("Error Create project with name %s\nPossible Reasons:\n1. Project %s already existed in sever.\n2. Error communicating with server.\n",
+                           argv[2], argv[2]);
+                }
+            } else if (strcmp("checkout", argv[1]) == 0 || argc == 3) {
+                //printf("checkout");
+                if (checkout(argv[2]) != 0) {
+                    printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
+                           argv[2], argv[2]);
+                }
+            } else {
                 printf(PARSEERROR);
                 return -1;
             }
-            //printf("checkout");
-            if (checkout(argv[3]) != 0) {
-                printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
-                       argv[2], argv[2]);
-            }
+
             break;
         }
         case 10117: {
@@ -628,18 +638,6 @@ int main(int argc, char *argv[]) {
             }
             //printf("push");
             push(argv[2]);
-            break;
-        }
-        case 10119: {
-            if (strcmp("create", argv[1]) != 0 || argc != 3) {
-                printf(PARSEERROR);
-                return -1;
-            }
-            //printf("create");
-            if (create(argv[2]) != 0) {
-                printf("Error Create project with name %s\nPossible Reasons:\n1. Project %s already existed in sever.\n2. Error communicating with server.\n",
-                       argv[2], argv[2]);
-            }
             break;
         }
         case 11600: {

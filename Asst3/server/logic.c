@@ -25,8 +25,8 @@ buffer* createProject(parsed_request_t *req){
     mkdir("Projects",S_IRUSR|S_IWUSR|S_IXUSR);
     get_project_path(path,req->project_name,req->project_name_size,-1);
     //path=(char*)malloc(sizeof(char)*(req->project_name_size+11+9));
-    strcat(path,"Projects/");
-    strncat(path,req->project_name,req->project_name_size);
+    //strcat(path,"Projects/");
+    //strncat(path,req->project_name,req->project_name_size);
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     if(status==EEXIST){
         response=get_output_buffer_for_response(001,2);
@@ -412,9 +412,13 @@ buffer* checkout(parsed_request_t *req){
     char project_path[PATH_MAX];
     char cmd[PATH_MAX + 9],*tmp;
     int status=0;
+    int latest_version;
     size_t size;
     pthread_rwlock_rdlock(lock);
-    get_project_path(project_path,req->project_name,req->project_name_size,get_latest_project_version(req->project_name,req->project_name_size));
+    latest_version = get_latest_project_version(req->project_name, req->project_name_size);
+    if (latest_version == 0)
+        goto version_zero;
+    get_project_path(project_path,req->project_name,req->project_name_size,latest_version);
     strcat(project_path,"/files.tar");
     status = readFile(project_path,&tmp,&size);
     if(status !=0 ){ goto checkout_error;}
@@ -429,6 +433,10 @@ buffer* checkout(parsed_request_t *req){
         output=get_output_buffer_for_response(501,0);
         finalize_buffer(output);
         return output;
+version_zero:
+    output = get_output_buffer_for_response(502, 0);
+finalize_buffer(output);
+    return output;
 }
 //UPDATE logic:
 // read current version manifest and send it to the client
