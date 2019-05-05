@@ -301,7 +301,7 @@ buffer* push(parsed_request_t* req) {
 
     // change Currentversion file
     version_buffer_size = sprintf(version_buffer, "%d", latest_version + 1);
-    strcpy(project_path_appender, ".Currentversion");
+    strcpy(project_path_appender, "/currentversion");
     writeFile(project_path, version_buffer, version_buffer_size);
 
     output = get_output_buffer_for_response(900, 0);
@@ -320,6 +320,74 @@ out_of_sync:
     return output;
 }
 
+
+//potential error: tar is broken then we lost data!!
+
+buffer* rollback(parsed_request_t* req){
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    buffer* output;
+    char project_version_path[PATH_MAX];
+    char project_path[PATH_MAX];
+    char cmd[PATH_MAX + 9];
+    char version_buffer[1024];  // should be able to hold maximum integer converted to bytes form LMAO
+    int  version;
+    const char* cursor;
+    char* project_version_path_appender, project_path_appender[PATH_MAX],*project_name;
+    int latest_version, uploaded_version;
+    TAR* t;
+    latest_version = get_latest_project_version(req->project_name, req->project_name_size);
+    strncpy(version_buffer,req->str_payload.payload,req->str_payload.payload_size);
+//    project_name=(char*)malloc(req->str_payload.payload_size+1);
+//    strncpy(project_name,req->str_payload.payload,req->str_payload.payload_size);
+//
+//    version=get_latest_project_version(req->project_name,req->project_name_size);
+    sscanf(version_buffer,"%d",&version);
+
+    get_project_path(project_path,req->project_name,req->project_name_size,-1);
+
+    pthread_rwlock_wrlock(lock);
+    if(version>latest_version){
+        goto rollback_error;
+    }
+    if(version==latest_version){
+        goto rollback_ok; // nothing to do
+    }
+    if(version<latest_version){
+        for(;latest_version>version;latest_version--){
+            get_project_path(project_version_path,req->project_name,req->project_name_size,latest_version);
+            strcpy(cmd,"rm -rf ");
+            strcat(cmd,project_version_path);
+            system(cmd);
+
+        }
+        strcpy(cmd,"rm -rf ");
+        strcat(cmd,project_path);
+        strcat(cmd,"/curr");
+        system(cmd);
+        get_project_path(project_version_path,req->project_name,req->project_name_size,version);
+        get_project_path(project_path,req->project_name,req->project_name_size,-1);
+        strcpy(project_path_appender,project_path);
+        strcpy(cmd,project_path);
+        strcat(project_version_path,"/files.tar");
+        strcat(cmd,"/curr");
+        tar_open(&t,project_version_path, NULL, O_RDONLY, 0700, TAR_GNU);
+        tar_extract_all(t,cmd);
+        strcat(project_path,"/currentversion");
+        writeFile(project_path,req->str_payload.payload,req->str_payload.payload_size);
+        goto rollback_ok;
+    }
+    rollback_error:
+        output=get_output_buffer_for_response(401,0);
+        pthread_rwlock_unlock(lock);
+        return output;
+    rollback_ok:
+        output=get_output_buffer_for_response(400,0);
+        pthread_rwlock_unlock(lock);
+        return output;
+
+}
+
+buffer* checkout(parsed_req)
 
 buffer* process_logic(parsed_request_t* req) {
     if (req->op_code != 0) {

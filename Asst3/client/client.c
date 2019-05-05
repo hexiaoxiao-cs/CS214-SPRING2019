@@ -184,11 +184,12 @@ int destroy(char *project_name) {
 
 }
 
-int rollback(char *project_name) {
+int rollback(char *project_name, char* version) {
     int op = 4, status = 0;
     buffer *output, *input;
     parsed_response_t response;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
+    appendSequenceBuffer(output,version,strlen(version));
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
     if (status != 0)
@@ -686,7 +687,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("rollback");
-            rollback(argv[2]);
+            rollback(argv[2],argv[3]);
             break;
         }
         default: {
