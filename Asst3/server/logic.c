@@ -71,6 +71,7 @@ buffer* createProject(parsed_request_t *req){
     finalize_buffer(response);
     END:
     free_in_packet();
+    free(path_bk);
     pthread_rwlock_unlock(rwlock);
     return response;
 }
@@ -83,20 +84,20 @@ buffer* destroy(parsed_request_t *req){
     proj_name=(char*)malloc(req->project_name_size+1);
     strncpy(proj_name,req->project_name,req->project_name_size);
     proj_name[req->project_name_size]=0;
-    pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
+    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
     pthread_rwlock_wrlock(rwlock);
     asprintf(&proj_name,"Projects/%s",proj_name);
     status=isDir(proj_name);
     if(status!=0){
         response=get_output_buffer_for_response(301,2);// does not exists the project with project name
         finalize_buffer(response);
-        goto END;
+        goto destroy_end;
     }
     asprintf(&path,"rm -rf %s",proj_name);
     system(path);
     response=get_output_buffer_for_response(300,2);// success removing the project
     finalize_buffer(response);
-    END:
+    destroy_end:
     free_in_packet();
     pthread_rwlock_unlock(rwlock);
     return response;
@@ -388,15 +389,18 @@ buffer* rollback(parsed_request_t* req){
         tar_extract_all(t,cmd);
         strcat(project_path,"/Currentversion");
         writeFile(project_path,req->str_payload.payload,req->str_payload.payload_size);
+        tar_close(t);
         goto rollback_ok;
     }
     rollback_error:
         output=get_output_buffer_for_response(401,0);
         pthread_rwlock_unlock(lock);
+        free_in_packet();
         return output;
     rollback_ok:
         output=get_output_buffer_for_response(400,0);
         pthread_rwlock_unlock(lock);
+        free_in_packet();
         return output;
 
 }
@@ -417,6 +421,8 @@ buffer* checkout(parsed_request_t *req){
     output=get_output_buffer_for_response(500,1);
     finalize_file_payload1_for_response(output);
     appendSequenceBuffer(output,tmp,size);
+    free_in_packet();
+    free(tmp);
     finalize_buffer(output);
     return output;
     checkout_error:
@@ -442,12 +448,18 @@ buffer* update(parsed_request_t *req){
     output=get_output_buffer_for_response(600,0);
     finalize_file_payload1_for_response(output);
     appendSequenceBuffer(output,tmp,size);
+    free_in_packet();
+    free(tmp);
     finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
     return output;
     checkout_error:
-    output=get_output_buffer_for_response(601,0);
-    finalize_buffer(output);
-    return output;
+        output=get_output_buffer_for_response(601,0);
+        finalize_buffer(output);
+        free_in_packet();
+        free(tmp);
+        pthread_rwlock_unlock(lock);
+        return output;
 
 }
 
