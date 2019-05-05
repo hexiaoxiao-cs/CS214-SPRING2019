@@ -14,7 +14,7 @@ foreach(c_file IN LISTS libtar_)
     set_source_files_properties(${c_file} PROPERTIES COMPILE_FLAGS -std=gnu99)
 endforeach()
 
-add_executable(WTFserver ${libtar_} common/protocol.c common/util.c common/netutil.c server/main.c server/network.c server/ds.c server/logic.c)
+add_executable(WTFserver ${libtar_} common/protocol.c common/util.c common/netutil.c server/main.c server/network.c server/ds.c server/logic.c server/serverutil.c server/serverutil.h)
 add_executable(WTF ${libtar_} common/protocol.c common/util.c common/netutil.c client/client.c client/network.c)
 
 add_executable(playground ${libtar_} playground/main.c)

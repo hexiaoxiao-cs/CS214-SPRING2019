@@ -291,15 +291,19 @@ int tar_extract_specific_file(const char* tar_file, const char* stored_filename,
         if (strcmp(th_get_pathname(tar), stored_filename) == 0) {
             strcpy(appender, stored_filename);
             tar_extract_file(tar, out_path);
-            break;
+            tar_close(tar);
+            free(out_path);
+            return 0;
         }
         if (TH_ISREG(tar))
             tar_skip_regfile(tar);
     }
 
+    tar_close(tar);
+
     free(out_path);
 
-    return 0;
+    return -2;
 }
 
 char* is_valid_path(const char* input_path) {
