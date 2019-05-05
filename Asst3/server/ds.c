@@ -2,6 +2,8 @@
 #include <pthread.h>
 #include <search.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <string.h>
 
 pthread_t listener_thread_id;
 int bailout = 0;
@@ -23,13 +25,17 @@ int init_hashmap()
 //Output: a read_write lock for the specified project name
 //Output: if RWlock in use
 
-pthread_rwlock_t* get_rwlock_for_project(const char* project_name)
+pthread_rwlock_t* get_rwlock_for_project(const char* project_name, size_t project_name_size)
 {
     ENTRY e,*ep;
     ACTION act;
     pthread_rwlockattr_t attr;
+    char tmp_path[PATH_MAX];
+    strncpy(tmp_path, project_name, project_name_size);
+    tmp_path[project_name_size] = 0;    // null terminate
+
     pthread_mutex_lock(&hashmap_mtx);
-    e.key = (char*)project_name;
+    e.key = (char*)tmp_path;
     ep=hsearch(e,FIND);
     if(ep==NULL){ // not found
         e.data = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
