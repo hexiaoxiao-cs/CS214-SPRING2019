@@ -269,9 +269,7 @@ buffer* push(parsed_request_t* req) {
     free_in_packet();
 
     // empty out the current version folder
-    strcpy(cmd, "rm -rf ");
-    strcat(cmd, project_path);
-    strcat(cmd, "Curr/*");
+    strcpy(cmd, "rm -rf ");strcat(cmd, project_path);strcat(cmd, "Curr/*");
     system(cmd);
 
     // untar our tar file into Curr
@@ -283,19 +281,13 @@ buffer* push(parsed_request_t* req) {
     // copy .Commit from Curr to specific version folder
     strcpy(project_version_path_appender, ".Commit");
     strcpy(project_path_appender, "Curr/.Commit");
-    strcpy(cmd, "cp ");
-    strcat(cmd, project_path);
-    strcat(cmd, " ");
-    strcat(cmd, project_version_path);
+    strcpy(cmd, "cp ");strcat(cmd, project_path);strcat(cmd, " ");strcat(cmd, project_version_path);
     system(cmd);
 
     // copy .Manifest from specific version folder to Curr
     strcpy(project_version_path_appender, ".Manifest");
     strcpy(project_path_appender, "Curr/.Manifest");
-    strcpy(cmd, "cp ");
-    strcat(cmd, project_version_path);
-    strcat(cmd, " ");
-    strcat(cmd, project_path);
+    strcpy(cmd, "cp ");strcat(cmd, project_version_path);strcat(cmd, " ");strcat(cmd, project_path);
     system(cmd);
 
     // change Currentversion file
