@@ -212,23 +212,25 @@ no_version:
 
 
 
-//TODO:DZZ IMPLEMENTATION
-//Server: Receive request
-//       Validate the Client request by comparing the Project Version Number
-//       Save tar file to local new folder and decompress it to the curr folder
-//       Change the currentversion file for the project version
-//       copy the .Commit file to the corrosponding folder (The place with Tar)
-//       Write the .manifest file to the folder and curr
-
-
+/*
+ * handler for push request
+ *
+ * Response:
+ *  [900] => successful push
+ *  [901] => failed push, reason: invalid manifest sent
+ *  [902] => failed push, reason: out of sync, upgrade first
+ *
+ */
 buffer* push(parsed_request_t* req) {
     pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
-    char rm_cmd[PATH_MAX + 9];
+    char cmd[PATH_MAX + 9];
+    char version_buffer[1024];  // should be able to hold maximum integer converted to bytes form LMAO
+    int  version_buffer_size;
     const char* cursor;
-    char* appender;
+    char* project_version_path_appender, *project_path_appender;
     int latest_version, uploaded_version;
     TAR* t;
 
@@ -245,45 +247,72 @@ buffer* push(parsed_request_t* req) {
         goto out_of_sync;
     }
 
-    // create new version folder
+    // prepare path buffer
     get_project_path(project_version_path, req->project_name, req->project_name_size, latest_version + 1);
-    appender = project_version_path + strlen(project_version_path);
+    project_version_path_appender = project_version_path + strlen(project_version_path);
 
+    get_project_path(project_path, req->project_name, req->project_name_size, -1);
+    project_path_appender = project_path + strlen(project_path);
+
+
+    // create new version folder
     mkdir(project_version_path, 0700);
 
     // write .Manifest and files.tar
-    strcpy(appender, ".Manifest");
+    strcpy(project_version_path_appender, ".Manifest");
     writeFile(project_version_path, req->files_payload.payload1, req->files_payload.payload1_size);
 
-    strcpy(appender, "files.tar");
+    strcpy(project_version_path_appender, "files.tar");
     writeFile(project_version_path, req->files_payload.payload2, req->files_payload.payload2_size);
 
+    // free input buffer
+    free_in_packet();
+
     // empty out the current version folder
-    get_project_path(project_path, req->project_name, req->project_name_size, -1);
-    strcpy(rm_cmd, "rm -rf ");
-    strcat(rm_cmd, project_path);
-    strcat(rm_cmd, "Curr/*");
-    system(rm_cmd);
+    strcpy(cmd, "rm -rf ");
+    strcat(cmd, project_path);
+    strcat(cmd, "Curr/*");
+    system(cmd);
 
     // untar our tar file into Curr
-    strcat(project_path, "Curr/");
+    strcpy(project_path_appender, "Curr/");
     tar_open(&t, project_version_path, NULL, O_RDONLY, 0700, TAR_GNU);
     tar_extract_all(t, project_path);
     tar_close(t);
 
-    //move .Commit to specific version
-    strcpy(appender, ".Commit");
-    strcat(project_path, ".Commit");
+    // copy .Commit from Curr to specific version folder
+    strcpy(project_version_path_appender, ".Commit");
+    strcpy(project_path_appender, "Curr/.Commit");
+    strcpy(cmd, "cp ");
+    strcat(cmd, project_path);
+    strcat(cmd, " ");
+    strcat(cmd, project_version_path);
+    system(cmd);
 
+    // copy .Manifest from specific version folder to Curr
+    strcpy(project_version_path_appender, ".Manifest");
+    strcpy(project_path_appender, "Curr/.Manifest");
+    strcpy(cmd, "cp ");
+    strcat(cmd, project_version_path);
+    strcat(cmd, " ");
+    strcat(cmd, project_path);
+    system(cmd);
 
+    // change Currentversion file
+    version_buffer_size = sprintf(version_buffer, "%d", latest_version + 1);
+    strcpy(project_path_appender, ".Currentversion");
+    writeFile(project_path, version_buffer, version_buffer_size);
 
+    output = get_output_buffer_for_response(900, 0);
+    pthread_rwlock_unlock(lock);
+    return output;
 
 invalid_manifest:
     output = get_output_buffer_for_response(901, 0);
     free_in_packet();
     return output;
 
-    out_of_sync:
+out_of_sync:
     free_in_packet();
     output = get_output_buffer_for_response(902, 0);
     pthread_rwlock_unlock(lock);

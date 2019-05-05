@@ -342,7 +342,7 @@ char* sanitize_path(const char* input_path) {
 //  Filename with path in base64	file_Version#	hash#
 //  outside malloc curr_project, project name need to be written in that struct
 
-int readManifest(char* manifest_raw,size_t size, project* curr_project){
+int readManifest(const char* manifest_raw,size_t size, project* curr_project){
     //char* manifest_raw;
     char* kk;
     buffer *temporary;

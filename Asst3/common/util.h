@@ -144,7 +144,7 @@ char* is_valid_path(const char* input_path);
  *  =============================================
  */
 
-int readManifest(char* manifest_raw,size_t size, project* curr_project);
+int readManifest(const char* manifest_raw,size_t size, project* curr_project);
 int writeManifest(char** manifest_towrite,project *curr_project,int old_new);
 void sort_manifest(manifest_item** items, size_t len);
 int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver,size_t *changelog_size,size_t *conflicts_size );

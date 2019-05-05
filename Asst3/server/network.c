@@ -41,6 +41,10 @@ void* listener_thread(void* arg) {
     socklen_t sin_size;
     int poll_res;
 
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
     fds[0].fd = server_fd;
     fds[0].events = POLLIN;
 
@@ -48,7 +52,7 @@ void* listener_thread(void* arg) {
         if (poll_res > 0) {
             //new connection arrived
             int new_socket = accept(fds[0].fd, (struct sockaddr*)&sin, &sin_size);
-            pthread_create(&tmp, NULL, network_handler_thread, (void*)(size_t)new_socket);
+            pthread_create(&tmp, &attr, network_handler_thread, (void*)(size_t)new_socket);
             printf("New socket arrived\n");
         } else {
             //time out
@@ -56,12 +60,14 @@ void* listener_thread(void* arg) {
             if (bailout == 1) {
                 pthread_mutex_unlock(&bailout_mtx);
                 printf("Signal caught, exiting\n");
+                pthread_attr_destroy(&attr);
                 pthread_exit(NULL);
             }
             pthread_mutex_unlock(&bailout_mtx);
         }
     }
     printf("Breaked, error\n");
+    pthread_attr_destroy(&attr);
     pthread_exit(NULL);
 }
 
