@@ -670,7 +670,7 @@ int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changel
 //Input Server's Manifest
 
 int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size,project *server) {
-    size_t temp=0, m_size=0,new_size=0,c_size=0;
+    size_t temp=0, m_size=0,new_size=0,s_size=0;
     manifest->project_version++;
     manifest_item **c = manifest->manifestItem;
     manifest_item **s = server->manifestItem;
@@ -682,12 +682,17 @@ int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** chang
             new_size++;
             m_size++;
         }
-        while(cmp_compare(s[c_size]))
-        if(changelist[temp]->changecode==1){
-            new_manifest[new_size]=changelist[temp];
-            //new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
-            new_size++;
+        while(cmp_compare(s[s_size],changelist[temp])!=0){
+            s_size++;
+            //potential segmentation fault
         }
+        new_manifest[new_size]=s[s_size];
+        new_size++;
+//        if(changelist[temp]->changecode==1){
+//            new_manifest[new_size]=changelist[temp];
+//            //new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
+//            new_size++;
+//        }
     }
     manifest->manifestItem=new_manifest;
     free(c);

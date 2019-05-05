@@ -178,12 +178,17 @@ int upgrade(char* project_name){
     manifest_item **changelog;
     size_t changelog_size,str_size;
     long version;
-    project manifest;
+    project manifest,server;
     parsed_response_t response;
     asprintf(&changelog_path,"%s/.Update",project_name);
     status=readFile(changelog_path,&changelog_char,&changelog_size);
     if(status!=0){return -1;}
     status=readChangeLogFile(&changelog,&changelog_char,changelog_size,&counts,&version);
+    if(status==-1){return -1;}
+    asprintf(&changelog_path,"%s/.manifest",project_name);
+    status=readFile(changelog_path,&changelog_char,&changelog_size);
+    if(status!=0){return -1;}
+    status=readManifest(changelog_char,changelog_size,&manifest);
     if(status==-1){return -1;}
     //make_new_manifest(changelog,&counts,&deleted_files,&deleted_counts);
     for(tmp=0;tmp<counts;tmp++){
@@ -212,14 +217,16 @@ int upgrade(char* project_name){
     send_request(ipaddr,portno,output,&input);
     status=parse_response(input,&response);
     if(status!=0){return -1;}
-    writeFile("tmp.tar",response.files_payload.payload1,response.files_payload.payload1_size);
+    writeFile("tmp.tar",response.files_payload.payload2,response.files_payload.payload2_size);
     //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
     asprintf(&output_path,"%s/",project_name);
     for(tmp=0;tmp<changelog_size;tmp++){
         tar_extract_specific_file("tmp.tar",changelog[tmp]->filename->data,output_path);
     }
-
-    proecessManifest_ByChangelist_Update();
+    readManifest(response.files_payload.payload2,response.files_payload.payload2_size,&server);
+    proecessManifest_ByChangelist_Update(&manifest,changelog,counts,&server);
+    writeManifest(&temp_str,&server,0);
+    writeFile(changelog_path,temp_str,strlen(temp_str));
     return 0;
 }
 
