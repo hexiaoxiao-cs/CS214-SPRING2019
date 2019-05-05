@@ -32,3 +32,11 @@ int get_latest_project_version(const char* project_name, size_t project_name_siz
     free(file_data);
     return version;
 }
+
+int project_exist(const char* project_name, size_t project_name_size) {
+    char proj_path[PATH_MAX];
+
+    get_project_path(proj_path, project_name, project_name_size, -1);
+
+    return isDir(proj_path);
+}

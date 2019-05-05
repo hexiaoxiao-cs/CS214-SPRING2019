@@ -195,7 +195,15 @@ no_version:
 //       Write the .manifest file to the folder and curr
 
 buffer* process_logic(parsed_request_t* req) {
+    if (req->op_code != 0) {
+        if (project_exist(req->project_name, req->project_name_size) < 0) {
+            // project does not exist
+            buffer* output = get_output_buffer_for_response(999, 0);
+            finalize_buffer(output);
+            return output;
+        }
 
+    }
     switch(req->op_code){
         case 0 : return createProject(req);
         case 1 : return history(req);

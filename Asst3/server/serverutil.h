@@ -17,4 +17,14 @@
 void get_project_path(char* buffer, const char* project_name, size_t project_name_size, int version);
 int get_latest_project_version(const char* project_name, size_t project_name_size);
 
+
+/*
+ * Check if a project exist
+ *
+ * Return val:
+ *  0   => exist
+ *  -1  => does not exist
+ */
+int project_exist(const char* project_name, size_t project_name_size);
+
 #endif //WTF_SERVERUTIL_H
