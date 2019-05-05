@@ -158,28 +158,111 @@ int destroy(char* project_name){
 //    get_output_buffer_for_request(op,project_name,strlen(project_name));
 //    return 0;
 //}
-//int update(char* project_name){
-//    int op=6;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//
-//    return 0;
-//}
-//int upgrade(char* project_name){
-//    int op=7;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//    return 0;
-//}
+
+int update(char* project_name){
+    int op=6;
+    buffer *output,*input;
+    get_output_buffer_for_request(op,project_name,strlen(project_name));
+
+    return 0;
+}
+
+
+
+int upgrade(char* project_name){
+    int op=7;
+    int status=0,counts=0,tmp=0,conflicts=0;
+    buffer *output,*input;
+    TAR *t;
+    char *changelog_char,*changelog_path,*temp_str,*tmp_path,sha256[65],*output_path;
+    manifest_item **changelog;
+    size_t changelog_size,str_size;
+    long version;
+    project manifest;
+    parsed_response_t response;
+    asprintf(&changelog_path,"%s/.Update",project_name);
+    status=readFile(changelog_path,&changelog_char,&changelog_size);
+    if(status!=0){return -1;}
+    status=readChangeLogFile(&changelog,&changelog_char,changelog_size,&counts,&version);
+    if(status==-1){return -1;}
+    //make_new_manifest(changelog,&counts,&deleted_files,&deleted_counts);
+    for(tmp=0;tmp<counts;tmp++){
+        if(changelog[tmp]->changecode==2) {
+            asprintf(&tmp_path,"%s/%s",project_name,changelog[tmp]->filename->data);
+            status=readFile(tmp_path, &temp_str, &str_size);
+            if(status==0){
+                sha256_string(temp_str,strlen(temp_str),sha256);
+                if(strcmp(sha256,changelog[tmp]->newhash->data)!=0){
+                    if(conflicts==0){
+                        printf("Conflicts Found:\n");
+                        conflicts=1;
+                    }
+                    printf("%s\n",changelog[tmp]->filename->data);
+                }
+
+            }
+        }
+        //TODO: Implement Check to be added file
+    }
+    if(conflicts==1){return -1;}
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
+    asprintf(&temp_str,"%ld",version);
+    appendSequenceBuffer(output,temp_str,strlen(temp_str));
+    finalize_buffer(output);
+    send_request(ipaddr,portno,output,&input);
+    status=parse_response(input,&response);
+    if(status!=0){return -1;}
+    writeFile("tmp.tar",response.files_payload.payload1,response.files_payload.payload1_size);
+    //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
+    asprintf(&output_path,"%s/",project_name);
+    for(tmp=0;tmp<changelog_size;tmp++){
+        tar_extract_specific_file("tmp.tar",changelog[tmp]->filename->data,output_path);
+    }
+
+    proecessManifest_ByChangelist_Update();
+    return 0;
+}
+
 //server
+
 int commit(char* project_name){
     int op=8;
     buffer *output,*input;
     parsed_response_t response;
-    get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    project server,client;
+    manifest_item **changelog,**conflicts;
+    size_t changelog_size=0,conflict_size=0;
+    int status=0,temp;
+    size_t manifest_size,deleted_size=0;
+    char* manifest_path,*commit_path,*manifest,**deleted_files,*changelog_char;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    finalize_buffer(output);
     send_request(ipaddr,portno,output,&input);
     parse_response(input,&response);
     if(response.status_code!=800){return -1;}
+    if(readManifest(response.str_payload.payload,response.str_payload.payload_size,&server)!=0){return -1;}
+    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&commit_path, "%s/.Commit", project_name);
+    readFile(manifest_path,&manifest,&manifest_size);
+    readManifest(manifest,manifest_size,&client);
+    status=make_new_manifest(client.manifestItem,&(client.many_Items),&deleted_files,&deleted_size);
+    if(status==-1){
+        printf("Warning: Following files are deleted.\n");
+        for (temp = 0; temp < deleted_size; temp++) {
+            printf("%s\n", deleted_files[temp]);
+        }
+    }
+    status=compareManifest(0,client.manifestItem,server.manifestItem,&changelog,&conflicts,client.many_Items,server.many_Items,client.project_version,server.project_version,&changelog_size,&conflict_size);
+    if(status==-9){
+        printf("Conflicts Detected\nFollowing files are conflicts.\n");
+        for(temp=0;temp<conflict_size;temp++){
+            printf("%s\n",conflicts[temp]->filename->data);
+        }
+        printf("Suggest Actions: 1.Make backup of the files below.\n2. Execute checkout to rewrite local files.\n");
+        return -1;
+    }
+    writeChangeLogFile(changelog,&changelog_char,changelog_size,2,0);
+    writeFile(commit_path,changelog_char,strlen(changelog_char));
     return 0;
 }
 
@@ -198,12 +281,13 @@ int commit(char* project_name){
 //-3 ->.Commit Read Error
 //-4 ->.Commit Corrupted
 int push(char* project_name){
-    int op = 9;
+    int op = 9,counts = 0;
     buffer *output, *input;
     char *manifest_path, *commit_path, **deleted_files, *actual_path,*inside_path;
     char *file_info,*stuff,*tar_info;
-    size_t size = 0, counts = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0,tar_size=0;
+    size_t size = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0,tar_size=0;
     int status, temp = 0;
+    long rubbish=0;
     project my_project;
     TAR *tar;
     manifest_item **Changelog, **Generate;
@@ -217,7 +301,7 @@ int push(char* project_name){
     if (status != 0) { return -2; }
     status = readFile(commit_path, &file_info, &size);
     if (status != 0) { return -3; }
-    readChangeLogFile(&Changelog, &file_info, size, &counts);
+    readChangeLogFile(&Changelog, &file_info, size, &counts,&rubbish);
     if (make_new_manifest(my_project.manifestItem, &(my_project.many_Items), &deleted_files, &deleted_counts) == -1) {
         printf("Error: Please commit the following deleted files\n");
         for (temp = 0; temp < deleted_counts; temp++) {

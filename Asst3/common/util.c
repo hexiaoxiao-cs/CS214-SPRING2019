@@ -669,10 +669,11 @@ int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changel
 
 //Input Server's Manifest
 
-int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size) {
-    size_t temp=0, m_size=0,new_size=0;
+int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size,project *server) {
+    size_t temp=0, m_size=0,new_size=0,c_size=0;
     manifest->project_version++;
     manifest_item **c = manifest->manifestItem;
+    manifest_item **s = server->manifestItem;
     manifest_item **new_manifest = malloc(sizeof(manifest_item*) *(changelist_size+manifest->many_Items));
     for(temp=0;temp<changelist_size;temp++){
         while(cmp_compare(c[m_size],changelist[temp])<0 && m_size<manifest->many_Items){
@@ -681,6 +682,7 @@ int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** chang
             new_size++;
             m_size++;
         }
+        while(cmp_compare(s[c_size]))
         if(changelist[temp]->changecode==1){
             new_manifest[new_size]=changelist[temp];
             //new_manifest[new_size]->hash=new_manifest[new_size]->newhash;
@@ -698,16 +700,18 @@ int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** chang
 
 //Changelog File Format:
 //Made_By_HXX&DZZ
+//Version Number (Upgrade Remote Version Number, )
 //ChangeCode(char) Filename Filename_64 File_Version Hash_old Hash_new
 //1->MAD 2->UAD 3->Conflicts
 
-int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int type){
+int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int type, long version){
     size_t curr=0;
     char* temporary;
     buffer *o;
     o=createBuffer();
-
     appendSequenceBuffer(o,"Made_By_HXX&DZZ\n",17);
+    asprintf(&temporary,"%ld\n",version);
+    appendSequenceBuffer(o,temporary,strlen(temporary));
     for(curr=0;curr<size;curr++){
         if(type!=3){
             if((changelog[curr]->changecode==1&&type!=1)  ) { // U
@@ -734,13 +738,17 @@ int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int t
     return 0;
 }
 
-int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_t *list_size){
+int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, int *list_size, long *version){
     manifest_item **temp=(manifest_item**)malloc(sizeof(manifest_item*));
     manifest_item *item;
     char* to_trans= *input, *tfilename,*tbase64,*tsha256,*tsha256_new;
     size_t read_bytes=0,list=0;
     to_trans+=16;
     size-=16;
+    sscanf(to_trans,"%ld\n%n",version,&read_bytes);
+    to_trans+=read_bytes;
+    size-=read_bytes;
+    read_bytes=0;
     tfilename=(char*)malloc(100000);
     tbase64=(char*)malloc(100000);
     tsha256=(char*)malloc(100);
@@ -752,6 +760,7 @@ int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, size_
         item->newhash=createBuffer();
         item->hash=createBuffer();
         sscanf(to_trans, "%d %s %s %ld %s %s\n%ln",&(item->changecode),tfilename,tbase64,&(item->version_num),tsha256,tsha256_new,&read_bytes); // %n is how many bytes i've read sofar
+        to_trans+=read_bytes;
         size-=read_bytes;
         read_bytes=0;
         appendSequenceBuffer(item->filename,tfilename,strlen(tfilename));
