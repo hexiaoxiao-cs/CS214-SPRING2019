@@ -387,7 +387,10 @@ buffer* rollback(parsed_request_t* req){
 
 }
 
-buffer* checkout(parsed_req)
+buffer* checkout(parsed_request_t *req){
+
+    
+}
 
 buffer* process_logic(parsed_request_t* req) {
     if (req->op_code != 0) {
