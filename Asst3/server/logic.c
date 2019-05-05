@@ -42,7 +42,7 @@ buffer* createProject(parsed_request_t *req){
     strcat(path,"/Curr");
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     strncat(path,"/.Manifest",10);
-    fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
+    fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
@@ -52,7 +52,7 @@ buffer* createProject(parsed_request_t *req){
     strncat(path,"/0",1);
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     strncat(path,"/.Manifest",10);
-    fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
+    fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
@@ -401,11 +401,39 @@ buffer* checkout(parsed_request_t *req){
     status = readFile(project_path,&tmp,&size);
     if(status !=0 ){ goto checkout_error;}
     output=get_output_buffer_for_response(500,1);
-
+    finalize_file_payload1_for_response(output);
+    appendSequenceBuffer(output,tmp,size);
+    finalize_buffer(output);
+    return output;
+    checkout_error:
+        output=get_output_buffer_for_response(501,0);
+        finalize_buffer(output);
+        return output;
 }
-
+//UPDATE logic:
+// read current version manifest and send it to the client
 buffer* update(parsed_request_t *req){
-
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    buffer* output;
+    char project_version_path[PATH_MAX];
+    char project_path[PATH_MAX];
+    char cmd[PATH_MAX + 9],*tmp;
+    int status=0;
+    size_t size;
+    pthread_rwlock_rdlock(lock);
+    get_project_path(project_path,req->project_name,req->project_name_size,-1);
+    strcat(project_path,"/curr/.Manifest");
+    status = readFile(project_path,&tmp,&size);
+    if(status !=0 ){ goto checkout_error;}
+    output=get_output_buffer_for_response(600,0);
+    finalize_file_payload1_for_response(output);
+    appendSequenceBuffer(output,tmp,size);
+    finalize_buffer(output);
+    return output;
+    checkout_error:
+    output=get_output_buffer_for_response(601,0);
+    finalize_buffer(output);
+    return output;
 
 }
 

@@ -227,6 +227,10 @@ int checkout(char *project_name) {
     return 0;
 }
 
+// TODO: TAR STRCPY -> MEMCPY
+
+
+
 int update(char *project_name) {
     int op = 6, nstatus = 0;
     buffer *output, *input;
