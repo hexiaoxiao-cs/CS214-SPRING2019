@@ -236,6 +236,11 @@ buffer* process_logic(parsed_request_t* req) {
         case 2 : return currentversion(req);
         case 3 : return destroy(req);
         case 4 : return rollback(req);
+        case 5 : return checkout(req);
+        case 6 : return update(req);
+        case 7 : return upgrade(req);
+        case 8 : return commit(req);
+        case 9 : return push(req);
         default: return NULL;
     }
 
