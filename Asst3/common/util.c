@@ -31,7 +31,7 @@ static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 static char *decoding_table = NULL;
 static int mod_table[] = {0, 2, 1};
 
-int writeFile(const char *file_path, char *data, size_t size) {
+int writeFile(const char *file_path, const char *data, size_t size) {
     int handler = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0700);
     if (handler < 0) {
         //Unable to open specific files

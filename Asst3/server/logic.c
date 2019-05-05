@@ -155,6 +155,8 @@ buffer* history(parsed_request_t *req){
         appendBuffer(output, '\n');
     }
 
+    free_in_packet();
+
     finalize_buffer(output);
     return output;
 
@@ -208,7 +210,7 @@ no_version:
     return output;
 }
 
-buffer*
+
 
 //TODO:DZZ IMPLEMENTATION
 //Server: Receive request
@@ -218,6 +220,75 @@ buffer*
 //       copy the .Commit file to the corrosponding folder (The place with Tar)
 //       Write the .manifest file to the folder and curr
 
+
+buffer* push(parsed_request_t* req) {
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    buffer* output;
+    char project_version_path[PATH_MAX];
+    char project_path[PATH_MAX];
+    char rm_cmd[PATH_MAX + 9];
+    const char* cursor;
+    char* appender;
+    int latest_version, uploaded_version;
+    TAR* t;
+
+    if (req->files_payload.payload1_size <= 16)
+        goto invalid_manifest;
+
+    pthread_rwlock_wrlock(lock);
+
+    latest_version = get_latest_project_version(req->project_name, req->project_name_size);
+    cursor = req->files_payload.payload1 + 16;
+    sscanf(cursor, "%d", &uploaded_version);
+    if (uploaded_version != latest_version + 1) {
+        // out of sync error
+        goto out_of_sync;
+    }
+
+    // create new version folder
+    get_project_path(project_version_path, req->project_name, req->project_name_size, latest_version + 1);
+    appender = project_version_path + strlen(project_version_path);
+
+    mkdir(project_version_path, 0700);
+
+    // write .Manifest and files.tar
+    strcpy(appender, ".Manifest");
+    writeFile(project_version_path, req->files_payload.payload1, req->files_payload.payload1_size);
+
+    strcpy(appender, "files.tar");
+    writeFile(project_version_path, req->files_payload.payload2, req->files_payload.payload2_size);
+
+    // empty out the current version folder
+    get_project_path(project_path, req->project_name, req->project_name_size, -1);
+    strcpy(rm_cmd, "rm -rf ");
+    strcat(rm_cmd, project_path);
+    strcat(rm_cmd, "Curr/*");
+    system(rm_cmd);
+
+    // untar our tar file into Curr
+    strcat(project_path, "Curr/");
+    tar_open(&t, project_version_path, NULL, O_RDONLY, 0700, TAR_GNU);
+    tar_extract_all(t, project_path);
+    tar_close(t);
+
+    //move .Commit to specific version
+    strcpy(appender, ".Commit");
+    strcat(project_path, ".Commit");
+
+
+
+
+invalid_manifest:
+    output = get_output_buffer_for_response(901, 0);
+    free_in_packet();
+    return output;
+
+    out_of_sync:
+    free_in_packet();
+    output = get_output_buffer_for_response(902, 0);
+    pthread_rwlock_unlock(lock);
+    return output;
+}
 
 
 buffer* process_logic(parsed_request_t* req) {
