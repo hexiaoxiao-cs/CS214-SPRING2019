@@ -15,7 +15,7 @@
 buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;
-    char* path;
+    char* path,*path_bk=malloc(10000);
     char* proj_name;
     proj_name=(char*)malloc(req->project_name_size+1);
     strncpy(proj_name,req->project_name,req->project_name_size);
@@ -37,9 +37,29 @@ buffer* createProject(parsed_request_t *req){
         finalize_buffer(response);
         goto END;
     }
+    strcpy(path_bk,path);
+    strcat(path,"/curr");
+    status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     strncat(path,"/.manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
-
+    if(fh!=0){
+        response=get_output_buffer_for_response(003,2);
+        finalize_buffer(response);
+        goto END;
+    }
+    strcpy(path,path_bk);
+    strncat(path,"/0",1);
+    status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
+    strncat(path,"/.manifest",10);
+    fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
+    if(fh!=0){
+        response=get_output_buffer_for_response(003,2);
+        finalize_buffer(response);
+        goto END;
+    }
+    strcpy(path,path_bk);
+    strcat(path,"/currentversion");
+    fh=writeFile(path,"0",1);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
@@ -64,6 +84,7 @@ buffer* destroy(parsed_request_t *req){
     proj_name[req->project_name_size]=0;
     pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
     pthread_rwlock_wrlock(rwlock);
+    asprintf(&proj_name,"Projects/%s",proj_name);
     status=isDir(proj_name);
     if(status!=0){
         response=get_output_buffer_for_response(301,2);// does not exists the project with project name
@@ -186,6 +207,9 @@ no_version:
     finalize_buffer(output);
     return output;
 }
+
+buffer*
+
 //TODO:DZZ IMPLEMENTATION
 //Server: Receive request
 //       Validate the Client request by comparing the Project Version Number
@@ -193,6 +217,8 @@ no_version:
 //       Change the currentversion file for the project version
 //       copy the .Commit file to the corrosponding folder (The place with Tar)
 //       Write the .manifest file to the folder and curr
+
+
 
 buffer* process_logic(parsed_request_t* req) {
     if (req->op_code != 0) {
@@ -209,6 +235,7 @@ buffer* process_logic(parsed_request_t* req) {
         case 1 : return history(req);
         case 2 : return currentversion(req);
         case 3 : return destroy(req);
+        case 4 : return rollback(req);
         default: return NULL;
     }
 
