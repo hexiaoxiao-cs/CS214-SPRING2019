@@ -141,7 +141,8 @@ int current_version(char *project_name) {
     parsed_response_t response;
     size_t curr = 0;
     long version;
-    char *res, *file_64 = malloc(100000);
+    const char *res;
+    char*file_64 = malloc(100000);
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
