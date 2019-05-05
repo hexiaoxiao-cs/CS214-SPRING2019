@@ -442,11 +442,10 @@ buffer* update(parsed_request_t *req){
     size_t size;
     pthread_rwlock_rdlock(lock);
     get_project_path(project_path,req->project_name,req->project_name_size,-1);
-    strcat(project_path,"/curr/.Manifest");
+    strcat(project_path,"Curr/.Manifest");
     status = readFile(project_path,&tmp,&size);
     if(status !=0 ){ goto checkout_error;}
     output=get_output_buffer_for_response(600,0);
-    finalize_file_payload1_for_response(output);
     appendSequenceBuffer(output,tmp,size);
     free_in_packet();
     free(tmp);
