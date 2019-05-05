@@ -388,7 +388,11 @@ buffer* rollback(parsed_request_t* req){
 }
 
 buffer* checkout(parsed_request_t *req){
-
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    buffer* output;
+    char project_version_path[PATH_MAX];
+    char project_path[PATH_MAX];
+    char cmd[PATH_MAX + 9];
 
 }
 
@@ -397,10 +401,18 @@ buffer* update(parsed_request_t *req){
 
 }
 
+//TODO: DZZ
+//Upgrade:
+//1. get version number from client in the str_payload
+//2. send manifest to payload_1 and send corrosponding tar file to payload_2
+
 buffer* upgrade(parsed_request_t *req){
 
 
 }
+//TODO: DZZ
+//Commit:
+//1. send current .manifest file to payload
 
 buffer* commit(parsed_request_t *req){
 
