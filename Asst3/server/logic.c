@@ -39,9 +39,9 @@ buffer* createProject(parsed_request_t *req){
         goto END;
     }
     strcpy(path_bk,path);
-    strcat(path,"/curr");
+    strcat(path,"/Curr");
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
-    strncat(path,"/.manifest",10);
+    strncat(path,"/.Manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
@@ -51,7 +51,7 @@ buffer* createProject(parsed_request_t *req){
     strcpy(path,path_bk);
     strncat(path,"/0",1);
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
-    strncat(path,"/.manifest",10);
+    strncat(path,"/.Manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n",16);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
@@ -59,7 +59,7 @@ buffer* createProject(parsed_request_t *req){
         goto END;
     }
     strcpy(path,path_bk);
-    strcat(path,"/currentversion");
+    strcat(path,"/Currentversion");
     fh=writeFile(path,"0",1);
     if(fh!=0){
         response=get_output_buffer_for_response(003,2);
@@ -301,7 +301,7 @@ buffer* push(parsed_request_t* req) {
 
     // change Currentversion file
     version_buffer_size = sprintf(version_buffer, "%d", latest_version + 1);
-    strcpy(project_path_appender, "/currentversion");
+    strcpy(project_path_appender, "/Currentversion");
     writeFile(project_path, version_buffer, version_buffer_size);
 
     output = get_output_buffer_for_response(900, 0);
@@ -369,10 +369,10 @@ buffer* rollback(parsed_request_t* req){
         strcpy(project_path_appender,project_path);
         strcpy(cmd,project_path);
         strcat(project_version_path,"/files.tar");
-        strcat(cmd,"/curr");
+        strcat(cmd,"/Curr");
         tar_open(&t,project_version_path, NULL, O_RDONLY, 0700, TAR_GNU);
         tar_extract_all(t,cmd);
-        strcat(project_path,"/currentversion");
+        strcat(project_path,"/Currentversion");
         writeFile(project_path,req->str_payload.payload,req->str_payload.payload_size);
         goto rollback_ok;
     }
@@ -392,7 +392,15 @@ buffer* checkout(parsed_request_t *req){
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
-    char cmd[PATH_MAX + 9];
+    char cmd[PATH_MAX + 9],*tmp;
+    int status=0;
+    size_t size;
+    pthread_rwlock_rdlock(lock);
+    get_project_path(project_path,req->project_name,req->project_name_size,get_latest_project_version(req->project_name,req->project_name_size));
+    strcat(project_path,"/files.tar");
+    status = readFile(project_path,&tmp,&size);
+    if(status !=0 ){ goto checkout_error;}
+    output=get_output_buffer_for_response(500,1);
 
 }
 

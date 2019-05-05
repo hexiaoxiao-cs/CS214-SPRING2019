@@ -285,7 +285,7 @@ int upgrade(char *project_name) {
     if (status != 0) { return -1; }
     status = readChangeLogFile(&changelog, &changelog_char, changelog_size, &counts, &version);
     if (status == -1) { return -1; }
-    asprintf(&changelog_path, "%s/.manifest", project_name);
+    asprintf(&changelog_path, "%s/.Manifest", project_name);
     status = readFile(changelog_path, &changelog_char, &changelog_size);
     if (status != 0) { return -1; }
     status = readManifest(changelog_char, changelog_size, &manifest);
@@ -355,7 +355,7 @@ int commit(char *project_name) {
         return -3;
     if (response.status_code != 800) { return -1; }
     if (readManifest(response.str_payload.payload, response.str_payload.payload_size, &server) != 0) { return -1; }
-    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
     readFile(manifest_path, &manifest, &manifest_size);
     readManifest(manifest, manifest_size, &client);
@@ -409,7 +409,7 @@ int push(char *project_name) {
     manifest_item **Changelog, **Generate;
     parsed_response_t out;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);//two payload
-    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
     status = readFile(manifest_path, &file_info, &size);
     if (status != 0) { return -1; }
@@ -435,7 +435,7 @@ int push(char *project_name) {
 
     proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
     writeManifest(&file_info, &my_project, 0);
-    asprintf(&stuff, "%s/.tmp.manifest", project_name);
+    asprintf(&stuff, "%s/.tmp.Manifest", project_name);
     writeFile(stuff, file_info, strlen(file_info));
     //start to tar
     tar_open(&tar, "tmp.tar", NULL, O_WRONLY | O_CREAT, 0700, TAR_GNU);
@@ -443,7 +443,7 @@ int push(char *project_name) {
         asprintf(&actual_path, "%s/%s", project_name, my_project.manifestItem[temp]->filename->data);
         tar_append_file(tar, actual_path, my_project.manifestItem[temp]->filename->data);
     }
-    asprintf(&inside_path, ".tmp.manifest");
+    asprintf(&inside_path, ".tmp.Manifest");
     tar_append_file(tar, stuff, inside_path);
     asprintf(&actual_path, "%s/.Commit", project_name);
     asprintf(&inside_path, ".Commit");
@@ -505,7 +505,7 @@ int remove_entry(char *project_name, char *path) {
     size_t size, temp;
     project curr;
     int status = 0;
-    asprintf(&manifest_path, "%s/.manifest", project_name);
+    asprintf(&manifest_path, "%s/.Manifest", project_name);
     char *manifest_raw;
     char *base = base64_encode(path, strlen(path), &size);
     //manifest_item *new = (manifest_item*) malloc(sizeof(manifest_item));
