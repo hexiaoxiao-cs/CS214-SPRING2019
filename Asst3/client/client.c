@@ -126,14 +126,36 @@ int history(char* project_name){
     return 0;
 }
 
-//int current_version(char* project_name){
-//    int op=2;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//
-//
-//    return 0;
-//}
+int current_version(char* project_name){
+    int op=2;
+    int status,read=0;
+    buffer *output,*input;
+    parsed_response_t response;
+    size_t curr=0;
+    long version;
+    char* res,*file_64=malloc(100000);
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
+    finalize_buffer(output);
+    status=send_request(ipaddr,portno,output,&input);
+    if(status!=0){return -1;}
+    parse_response(input,&response);
+    res=response.str_payload.payload;
+    res+=16;
+    sscanf(res,"%ld\n%n",&version,&read);
+    printf("Project Version: %ld\n",version);
+    printf("File Name: \tFile Version:\t\n");
+    res+=read;
+    curr+=read;
+    read=0;
+    while(curr<response.str_payload.payload_size){
+        sscanf(res,"%s %ld %*s\n%n",file_64,&version,&read);
+        printf("%s %ld\n",base64_decode(file_64,strlen(file_64),&curr),version);
+        res+=read;
+        curr+=read;
+        read=0;
+    }
+    return 0;
+}
 
 int destroy(char* project_name){
     int op=3;
@@ -146,24 +168,71 @@ int destroy(char* project_name){
     else{return -1;}
 
 }
-//int rollback(char* project_name){
-//    int op=4;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//    return 0;
-//}
-//int checkout(char* project_name){
-//    int op=5;
-//    buffer *output,*input;
-//    get_output_buffer_for_request(op,project_name,strlen(project_name));
-//    return 0;
-//}
+int rollback(char* project_name){
+    int op=4;
+    buffer *output,*input;
+    parsed_response_t response;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
+    finalize_buffer(output);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
+    if(response.status_code==400){ return 0;}
+    else{return -1;}
+    //return 0;
+}
+int checkout(char* project_name){
+    int op=5;
+    buffer *output,*input;
+    char a,*temp;
+    TAR t;
+    parsed_response_t response;
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),0);
+    printf("WARNING!\nThis operation will overwrite all necessary files in the project folder to \"reset\" the repository to the current server version.\nProceed?(Y\\N)\n");
+    sscanf("%c",&a);
+    if(a=='N'||a=='n'){return -1;}
+    finalize_buffer(output);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
+    writeFile("tmp.tar",response.files_payload.payload2,response.files_payload.payload2_size);
+    tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
+    asprintf(&temp,"%s/",project_name);
+    tar_extract_all(&t,temp);
+    return 0;
+}
 
 int update(char* project_name){
     int op=6;
     buffer *output,*input;
-    get_output_buffer_for_request(op,project_name,strlen(project_name));
-
+    parsed_response_t response;
+    project server,client;
+    char* client_manifest_path,*client_manifest_file,*update_file;
+    size_t size_1=0,size_2=0;
+    int count_1=0,count2=0,status=0;
+    manifest_item **changelist,**conflicts;
+    asprintf(&client_manifest_path,"%s/.Manifest",project_name);
+    status=readFile(client_manifest_path,&client_manifest_file,&size_1);
+    if(status!=0){return -1;}
+    status=readManifest(client_manifest_file,size_1,&client);
+    if(status!=0){return -1;}
+    output=get_output_buffer_for_request(op,project_name,strlen(project_name),1);
+    finalize_buffer(output);
+    send_request(ipaddr,portno,output,&input);
+    parse_response(input,&response);
+    status=readManifest(response.str_payload.payload,response.str_payload.payload_size,&server);
+    if(status!=0){return -1;}
+    status=compareManifest(0,client.manifestItem,server.manifestItem,&changelist,&conflicts,client.many_Items,server.many_Items,client.project_version,server.project_version,&size_1,&size_2);
+    if(status==-9){
+        printf("Conflicts occurred!\n");
+        for(count_1=0;count_1<size_2;count_1++){
+            printf("%s\n",conflicts[count_1]->filename->data);
+        }
+        return -1;
+    }
+    else{
+        writeChangeLogFile(changelist,&update_file,size_1,1,server.project_version);
+        asprintf(&client_manifest_path,"%s/.Update",project_name);
+        writeFile(client_manifest_path,update_file,strlen(update_file));
+    }
     return 0;
 }
 
@@ -438,7 +507,7 @@ int configure(char *server_addr,char* port_no){
 }
 
 int main(int argc,char* argv[]) {
-    if(argc <2) {printf(PARSEERROR);return -1;}
+    if(argc <3) {printf(PARSEERROR);return -1;}
     if(strlen(argv[1])<3){printf(PARSEERROR);}
 
     if ((argv[1][0] + argv[1][2] * 100) != 11099) {
@@ -461,7 +530,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("checkout");
-            //if(checkout(argv[3])!=0){printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",argv[2],argv[2]);}
+            if(checkout(argv[3])!=0){printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",argv[2],argv[2]);}
             break;
         }
         case 10117: {
@@ -470,6 +539,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("update");
+            update(argv[2]);
             break;
         }
         case 10417: {
@@ -478,6 +548,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("upgrade");
+            upgrade(argv[2]);
             break;
         }
         case 10999: {
@@ -486,6 +557,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("commit");
+            commit(argv[2]);
             break;
         }
         case 11612: {
@@ -494,6 +566,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("push");
+            push(argv[2]);
             break;
         }
         case 10119: {
@@ -511,6 +584,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("destroy");
+            destroy(argv[2]);
             break;
         }
         case 10097: {
@@ -537,6 +611,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("currentversion");
+            current_version(argv[2]);
             break;
         }
         case 11604: {
@@ -554,6 +629,7 @@ int main(int argc,char* argv[]) {
                 return -1;
             }
             //printf("rollback");
+            rollback(argv[2]);
             break;
         }
         default:{
