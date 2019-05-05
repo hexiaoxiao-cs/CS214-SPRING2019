@@ -349,15 +349,16 @@ int readManifest(const char* manifest_raw,size_t size, project* curr_project){
     buffer *temporary;
     int status,tmp=0;
     int type=0,count =0 ;
-    long read=0;
+    int read=0;
     size_t tt=0;
     manifest_item *curr;
     //if(status!=0){return -1;}
     temporary=createBuffer();
     tmp=16;
-    sscanf(tmp,"%ld\n%n",&(curr_project->project_version),&read);
+    sscanf(manifest_raw + tmp,"%d\n%n",&(curr_project->project_version),&read);
     tmp+=read;
-    for(tmp=16;tmp<size;tmp++){
+    curr_project->manifestItem = (manifest_item**) malloc(1 * sizeof(manifest_item*));
+    for(;tmp<size;tmp++){
         if(manifest_raw[tmp]=='\n' || manifest_raw[tmp]==' '){
             if(type == 0 ){
                 curr=malloc(sizeof(manifest_item));
@@ -374,7 +375,6 @@ int readManifest(const char* manifest_raw,size_t size, project* curr_project){
             }
             else{
                 if(type == 1){
-                    curr=malloc(sizeof(manifest_item));
                     curr->version_num=atol(temporary->data);
                     //free(temporary);
                     //destroyBufferWithoutFree(temporary);
@@ -383,7 +383,6 @@ int readManifest(const char* manifest_raw,size_t size, project* curr_project){
                 }
                 else{
                     if(type == 2){
-                        curr=malloc(sizeof(manifest_item));
                         curr->hash=temporary;
                         //free(temporary);
                         //destroyBufferWithoutFree(temporary);
@@ -431,6 +430,16 @@ int writeManifest(char** manifest_towrite,project *curr_project,int old_new){
 }
 
 int cmp_compare(const void* a_, const void* b_) {
+    manifest_item* a = (manifest_item*)a_;
+    manifest_item* b = (manifest_item*)b_;
+    if (a->filename->size != b->filename->size) {
+        return a->filename->size - b->filename->size;
+    } else {
+        return memcmp(a->filename->data, b->filename->data, a->filename->size);
+    }
+}
+
+int cmp_compare_qsort(const void* a_, const void* b_) {
     manifest_item* a = *((manifest_item**)a_);
     manifest_item* b = *((manifest_item**)b_);
     if (a->filename->size != b->filename->size) {
@@ -441,7 +450,7 @@ int cmp_compare(const void* a_, const void* b_) {
 }
 
 void sort_manifest(manifest_item** items, size_t len) {
-    qsort(items, len, sizeof(manifest_item*), cmp_compare);
+    qsort(items, len, sizeof(manifest_item*), cmp_compare_qsort);
 }
 // is two manifest -> 0 ->Two Manifest, 1-> One Manifest
 // Client_side-> need to have both new hash and old hash,

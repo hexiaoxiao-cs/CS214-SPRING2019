@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <openssl/sha.h>
 #include <libtar.h>
+#include <limits.h>
 
 #define PARSEERROR "Argv Error\nUsage:\n./wtf [configure <IP/hostname> <port>] [checkout <project name>] [update <project name>]\n[upgrade <project name>] [commit <project name>] [push <project name>]\n[create <project name>] [destroy <project name>] [add <project name> <filename>]\n[remove <project name> <filename>] [currentversion <project name>] [history <project name>]\n[rollback <project name> <version>]\n"
 
@@ -66,16 +67,24 @@ int sha256_file(char *path, char outputBuffer[65]) {
 //make new manifest according to the array listed files
 //rehash
 //return -1 indicating make_new_manifest deleted something
-int make_new_manifest(manifest_item **array, int *counts, char ***deleted_files, size_t *deleted_counts) {
+int make_new_manifest(const char* project_name, manifest_item **array, int *counts, char ***deleted_files, size_t *deleted_counts) {
     int temp = 0;
     char *file_data;
     int isDeleted = 0;
     size_t size, deleted;
     deleted = 0;
     char sha256buf[65];
+    char file_path[PATH_MAX];
+    char *file_path_appender;
+
+    strcpy(file_path, project_name);
+    strcat(file_path, "/");
+    file_path_appender = file_path + strlen(file_path);
+
     (*deleted_files) = (char **) malloc(sizeof(char *));
     for (temp = 0; temp < *counts; temp++) {
-        status = readFile(array[temp]->filename->data, &file_data, &size);
+        strcpy(file_path_appender, array[temp]->filename->data);
+        status = readFile(file_path, &file_data, &size);
         array[temp]->newhash = createBuffer();
 
         //if not found, we will destroy the manifest item
@@ -358,7 +367,7 @@ int commit(char *project_name) {
     int status = 0, nstatus = 0, temp;
     size_t manifest_size, deleted_size = 0;
     char *manifest_path, *commit_path, *manifest, **deleted_files, *changelog_char;
-    output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);
+    output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);
     if (nstatus != 0)
@@ -371,7 +380,7 @@ int commit(char *project_name) {
     asprintf(&commit_path, "%s/.Commit", project_name);
     readFile(manifest_path, &manifest, &manifest_size);
     readManifest(manifest, manifest_size, &client);
-    status = make_new_manifest(client.manifestItem, &(client.many_Items), &deleted_files, &deleted_size);
+    status = make_new_manifest(project_name, client.manifestItem, &(client.many_Items), &deleted_files, &deleted_size);
     if (status == -1) {
         printf("Warning: Following files are deleted.\n");
         for (temp = 0; temp < deleted_size; temp++) {
@@ -430,7 +439,7 @@ int push(char *project_name) {
     status = readFile(commit_path, &file_info, &size);
     if (status != 0) { return -3; }
     readChangeLogFile(&Changelog, &file_info, size, &counts, &rubbish);
-    if (make_new_manifest(my_project.manifestItem, &(my_project.many_Items), &deleted_files, &deleted_counts) == -1) {
+    if (make_new_manifest(project_name, my_project.manifestItem, &(my_project.many_Items), &deleted_files, &deleted_counts) == -1) {
         printf("Error: Please commit the following deleted files\n");
         for (temp = 0; temp < deleted_counts; temp++) {
             printf("%s\n", deleted_files[temp]);
