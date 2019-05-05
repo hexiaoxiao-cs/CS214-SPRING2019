@@ -349,10 +349,14 @@ int readManifest(const char* manifest_raw,size_t size, project* curr_project){
     buffer *temporary;
     int status,tmp=0;
     int type=0,count =0 ;
+    long read=0;
     size_t tt=0;
     manifest_item *curr;
     //if(status!=0){return -1;}
     temporary=createBuffer();
+    tmp=16;
+    sscanf(tmp,"%ld\n%n",&(curr_project->project_version),&read);
+    tmp+=read;
     for(tmp=16;tmp<size;tmp++){
         if(manifest_raw[tmp]=='\n' || manifest_raw[tmp]==' '){
             if(type == 0 ){
