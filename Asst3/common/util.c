@@ -165,6 +165,7 @@ int readFile(char *filename, char** buffer,size_t *size){
     }
     *buffer=data;
     *size=file_size;
+    return 0;
 }
 
 

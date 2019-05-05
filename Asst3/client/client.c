@@ -315,7 +315,7 @@ int upgrade(char *project_name) {
     }
     if (conflicts == 1) { return -1; }
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
-    asprintf(&temp_str, "%ld", version);
+    asprintf(&temp_str, "%d", (int)version);
     appendSequenceBuffer(output, temp_str, strlen(temp_str));
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);

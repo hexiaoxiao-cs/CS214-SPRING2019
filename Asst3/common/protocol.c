@@ -40,6 +40,8 @@ int parse_request(buffer* in_packet, parsed_request_t* out) {
     // we trust network layer checked packet size already
     _roller_read(in_packet, &packet_size, &offset, sizeof(size_t));
     _roller_read(in_packet, &out->op_code, &offset, sizeof(uint8_t));
+    if (out->op_code < 0 || out->op_code > 9)
+        return 1;   // this is not a valid op_code
     _roller_read(in_packet, &out->project_name_size, &offset, sizeof(size_t));
     if (out->project_name_size > MAX_PACKET_SIZE) {
         // malformed packet

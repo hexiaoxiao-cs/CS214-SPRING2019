@@ -132,15 +132,21 @@ buffer* destroy(parsed_request_t *req){
  */
 buffer* history(parsed_request_t *req){
     char commit_path[PATH_MAX];
-    int version = get_latest_project_version(req->project_name, req->project_name_size);
+    int version;
     int i;
     buffer* output;
     char* file_data;
     size_t file_size;
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
 
+    pthread_rwlock_rdlock(lock);
+
+
+    version = get_latest_project_version(req->project_name, req->project_name_size);
     if (version == 0) {
         goto no_history;
     }
+
 
     output = get_output_buffer_for_response(100, 0);
 
@@ -157,13 +163,15 @@ buffer* history(parsed_request_t *req){
     }
 
     free_in_packet();
-
     finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
     return output;
 
 no_history:
+    free_in_packet();
     output = get_output_buffer_for_response(101, 0);
     finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
     return output;
 }
 
@@ -182,6 +190,10 @@ buffer* currentversion(parsed_request_t* req) {
     size_t file_size;
     int project_version;
     buffer* output;
+
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+
+    pthread_rwlock_rdlock(lock);
 
     project_version = get_latest_project_version(req->project_name, req->project_name_size);
     get_project_path(manifest_path, req->project_name, req->project_name_size, project_version);
@@ -202,12 +214,14 @@ buffer* currentversion(parsed_request_t* req) {
     appendSequenceBuffer(output, file_data, file_size);
     free(file_data);
     finalize_buffer(output);
-
+    pthread_rwlock_unlock(lock);
     return output;
 
 no_version:
     output = get_output_buffer_for_response(201, 0);
     finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
+
     return output;
 }
 
@@ -437,23 +451,107 @@ buffer* update(parsed_request_t *req){
 
 }
 
-//TODO: DZZ
-//Upgrade:
-//1. get version number from client in the str_payload
-//2. send manifest to payload_1 and send corrosponding tar file to payload_2
-
 buffer* upgrade(parsed_request_t *req){
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    char *file_data;
+    size_t file_size;
+    buffer* output;
+    char* requested_version_buffer = (char*) malloc(req->str_payload.payload_size + 1);
+    int latest_version, requested_version;
+    char project_version_path[PATH_MAX];
+    char *project_version_path_appender;
+
+    memcpy(requested_version_buffer, req->str_payload.payload, req->str_payload.payload_size);
+
+    requested_version_buffer[req->str_payload.payload_size] = 0;
+
+    pthread_rwlock_rdlock(lock);
+
+    latest_version = get_latest_project_version(req->project_name, req->project_name_size);
+    sscanf(requested_version_buffer, "%d", &requested_version);
+
+    if (requested_version > latest_version || requested_version < 0)
+        goto invalid_version;
+
+    if (requested_version == 0)
+        goto version_zero;
+
+    // requested version is in range
+    get_project_path(project_version_path, req->project_name, req->project_name_size, requested_version);
+    project_version_path_appender = project_version_path + strlen(project_version_path);
+
+    free_in_packet();
+
+    output = get_output_buffer_for_response(700, 1);
+
+    // add .Manifest to payload1
+    strcpy(project_version_path_appender, ".Manifest");
+    if (readFile(project_version_path, &file_data, &file_size) < 0) {
+        TRACE(("Possible folder structure corruption, exiting..."));
+        exit(0);
+    }
+
+    appendSequenceBuffer(output, file_data, file_size);
+    free(file_data);
+
+    finalize_file_payload1_for_response(output);
 
 
+    // add tar file to payload2
+    strcpy(project_version_path_appender, "files.tar");
+    if (readFile(project_version_path, &file_data, &file_size) < 0) {
+        TRACE(("Possible folder structure corruption, exiting..."));
+        exit(0);
+    }
+    appendSequenceBuffer(output, file_data, file_size);
+    free(file_data);
+    finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
+    return output;
+
+version_zero:
+    output = get_output_buffer_for_response(701, 0);
+    finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
+    return output;
+
+invalid_version:
+    output = get_output_buffer_for_response(702, 0);
+    finalize_buffer(output);
+    pthread_rwlock_unlock(lock);
+    return output;
 }
-//TODO: DZZ
-//Commit:
-//1. send current .manifest file to payload
 
 buffer* commit(parsed_request_t *req){
+    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+    char project_path[PATH_MAX];
+    char *file_data;
+    size_t file_size;
+    buffer* output;
+
+    pthread_rwlock_rdlock(lock);
+
+    get_project_path(project_path, req->project_name, req->project_name_size, -1);
+    strcat(project_path, "Curr/.Manifest");
+
+    free_in_packet();
+
+    if (readFile(project_path, &file_data, &file_size) != 0) {
+        TRACE(("Possible folder structure corruption, exiting..."));
+        exit(0);
+    }
 
 
+    output = get_output_buffer_for_response(800, 0);
+    appendSequenceBuffer(output, file_data, file_size);
+    free(file_data);
+    finalize_buffer(output);
+
+    pthread_rwlock_unlock(lock);
+    return output;
 }
+
+
 
 buffer* process_logic(parsed_request_t* req) {
     if (req->op_code != 0) {
