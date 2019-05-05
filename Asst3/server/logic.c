@@ -15,15 +15,16 @@
 buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;
-    char* path,*path_bk=malloc(10000);
+    char path[PATH_MAX],*path_bk=malloc(10000);
     char* proj_name;
-    proj_name=(char*)malloc(req->project_name_size+1);
-    strncpy(proj_name,req->project_name,req->project_name_size);
-    proj_name[req->project_name_size]=0;
-    pthread_rwlock_t *rwlock = get_rwlock_for_project(proj_name);
+//    proj_name=(char*)malloc(req->project_name_size+1);
+//    strncpy(proj_name,req->project_name,req->project_name_size);
+//    proj_name[req->project_name_size]=0;
+    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
     pthread_rwlock_wrlock(rwlock);
     mkdir("Projects",S_IRUSR|S_IWUSR|S_IXUSR);
-    path=(char*)malloc(sizeof(char)*(req->project_name_size+11+9));
+    get_project_path(path,req->project_name,req->project_name_size,-1);
+    //path=(char*)malloc(sizeof(char)*(req->project_name_size+11+9));
     strcat(path,"Projects/");
     strncat(path,req->project_name,req->project_name_size);
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
@@ -209,6 +210,14 @@ no_version:
     finalize_buffer(output);
     return output;
 }
+
+//TODO:DZZ IMPLEMENTATION
+//Server: Receive request
+//       Validate the Client request by comparing the Project Version Number
+//       Save tar file to local new folder and decompress it to the curr folder
+//       Change the currentversion file for the project version
+//       copy the .Commit file to the corrosponding folder (The place with Tar)
+//       Write the .manifest file to the folder and curr
 
 
 
