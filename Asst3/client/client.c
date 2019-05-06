@@ -253,8 +253,8 @@ int update(char *project_name) {
     buffer *output, *input;
     parsed_response_t response;
     project server, client;
-    char *client_manifest_path, *client_manifest_file, *update_file;
-    size_t size_1 = 0, size_2 = 0;
+    char *client_manifest_path, *client_manifest_file, *update_file,**deleted_files;
+    size_t size_1 = 0, size_2 = 0,deleted_counts;
     int count_1 = 0, count2 = 0, status = 0;
     manifest_item **changelist, **conflicts;
     asprintf(&client_manifest_path, "%s/.Manifest", project_name);
@@ -262,7 +262,8 @@ int update(char *project_name) {
     if (status != 0) { return -1; }
     status = readManifest(client_manifest_file, size_1, &client);
     if (status != 0) { return -1; }
-    output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);
+    make_new_manifest(project_name,client.manifestItem,&(client.many_Items),&deleted_files,&deleted_counts);
+    output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);
     if (nstatus != 0)
