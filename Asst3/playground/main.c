@@ -10,6 +10,7 @@
 
 #include <util.h>
 #include <network.h>
+#include <protocol.h>
 
 int main(int argc, char* argv[]) {
     TAR* t;
