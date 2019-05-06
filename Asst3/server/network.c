@@ -10,6 +10,8 @@
 
 #include <util.h>
 
+#include <errno.h>
+
 static int server_fd;
 
 void* network_handler_thread(void* arg);
@@ -28,8 +30,14 @@ int start_server(const char* hostname, unsigned int port) {
     binder.sin_family = AF_INET;
     binder.sin_port = htons(port);
     binder.sin_addr.s_addr = inet_addr(hostname);
-    bind(server_fd, (struct sockaddr*)&binder, sizeof(binder));
-    listen(server_fd, 100000);
+    if (bind(server_fd, (struct sockaddr*)&binder, sizeof(binder)) < 0) {
+        printf("%s\n", strerror(errno));
+        return -1;
+    }
+    if (listen(server_fd, 100000) < 0) {
+        printf("%s\n", strerror(errno));
+        return -1;
+    }
     pthread_create(&listener_thread_id, NULL, listener_thread, NULL);
     return 0;
 }
@@ -53,7 +61,6 @@ void* listener_thread(void* arg) {
             //new connection arrived
             int new_socket = accept(fds[0].fd, (struct sockaddr*)&sin, &sin_size);
             pthread_create(&tmp, &attr, network_handler_thread, (void*)(size_t)new_socket);
-            printf("New socket arrived\n");
         } else {
             //time out
             pthread_mutex_lock(&bailout_mtx);

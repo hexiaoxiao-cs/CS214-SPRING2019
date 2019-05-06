@@ -771,6 +771,13 @@ int main(int argc, char *argv[]) {
 }
 
 /*
- * TODO LIST
- * 3.
+ * TODO LIST: 1. readme modification (tar 4G & Introduction)
+ * 2. testcases.txt
+ * 3. testplan & code
+ * 4. Makefile
+ * 5. WTFtest
+ * 6. PATCH UPDATE
+ * 7. test multiple files
+ * 8. reexecute
+ * 9.
  */

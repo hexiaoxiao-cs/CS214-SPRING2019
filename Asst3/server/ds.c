@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <string.h>
 
-pthread_t listener_thread_id;
+pthread_t listener_thread_id = -1;
 int bailout = 0;
 pthread_mutex_t bailout_mtx = PTHREAD_MUTEX_INITIALIZER; //bailout mutex
 

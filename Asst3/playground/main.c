@@ -8,9 +8,8 @@
 
 int main(int argc, char* argv[]) {
     TAR* t;
-    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
-    //tar_append_file(t, "Makefile", "a/Makefile");
-    tar_extract_all(t, "tmp/");
+    tar_open(&t, "play.tar", NULL, O_RDONLY, 0700, TAR_GNU);
+    tar_extract_all(t, "./");
     tar_close(t);
     return 0;
 }
