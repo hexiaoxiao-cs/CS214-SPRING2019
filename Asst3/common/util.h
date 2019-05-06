@@ -147,7 +147,10 @@ char* is_valid_path(const char* input_path);
 int readManifest(const char* manifest_raw,size_t size, project* curr_project);
 int writeManifest(char** manifest_towrite,project *curr_project,int old_new);
 void sort_manifest(manifest_item** items, size_t len);
-int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_item** server_side, manifest_item*** changelog,manifest_item*** conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver,size_t *changelog_size,size_t *conflicts_size );
+int
+compareManifest(int isTwoManifest, manifest_item **client_side, manifest_item **server_side, manifest_item ***changelog,
+                manifest_item ***conflicts, size_t size_client, size_t size_server, int client_ver, int server_ver,
+                size_t *changelog_size, size_t *conflicts_size, int is_commit);
 int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changelist, size_t changelist_size);
 int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size,project *server);
 int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, int *list_size, long *version);

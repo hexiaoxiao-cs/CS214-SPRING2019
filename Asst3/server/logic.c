@@ -153,6 +153,7 @@ buffer* history(parsed_request_t *req){
 
     for (i = 1;i <= version;i++) {
         get_project_path(commit_path, req->project_name, req->project_name_size, i);
+        strcat(commit_path, ".Commit");
         if (readFile(commit_path, &file_data, &file_size) < 0) {
             TRACE(("Possible directory structure corruption, exiting... \n"));
             exit(0);

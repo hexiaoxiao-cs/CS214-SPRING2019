@@ -176,7 +176,7 @@ int current_version(char *project_name) {
     res += read;
     curr += read;
     read = 0;
-    while (curr < response.str_payload.payload_size) {
+    while (curr < response.str_payload.payload_size - 16) {
         sscanf(res, "%s %ld %*s\n%n", file_64, &version, &read);
         printf("%s %ld\n", base64_decode(file_64, strlen(file_64), &curr), version);
         res += read;
@@ -275,7 +275,7 @@ int update(char *project_name) {
     status = readManifest(response.str_payload.payload, response.str_payload.payload_size, &server);
     if (status != 0) { return -1; }
     status = compareManifest(0, client.manifestItem, server.manifestItem, &changelist, &conflicts, client.many_Items,
-                             server.many_Items, client.project_version, server.project_version, &size_1, &size_2);
+                             server.many_Items, client.project_version, server.project_version, &size_1, &size_2, 0);
     if (status == -9) {
         printf("Conflicts occurred!\n");
         for (count_1 = 0; count_1 < size_2; count_1++) {
@@ -367,7 +367,7 @@ int commit(char *project_name) {
     size_t changelog_size = 0, conflict_size = 0;
     int status = 0, nstatus = 0, temp;
     size_t manifest_size, deleted_size = 0;
-    char *manifest_path, *commit_path, *manifest, **deleted_files, *changelog_char;
+    char *manifest_path, *commit_path,*server_path, *manifest, **deleted_files, *changelog_char;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);
@@ -379,6 +379,8 @@ int commit(char *project_name) {
     if (readManifest(response.str_payload.payload, response.str_payload.payload_size, &server) != 0) { return -1; }
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
+    asprintf(&server_path, "%s/.Server", project_name);
+    writeFile(server_path,response.str_payload.payload,response.str_payload.payload_size);
     readFile(manifest_path, &manifest, &manifest_size);
     readManifest(manifest, manifest_size, &client);
     status = make_new_manifest(project_name, client.manifestItem, &(client.many_Items), &deleted_files, &deleted_size);
@@ -387,10 +389,11 @@ int commit(char *project_name) {
         for (temp = 0; temp < deleted_size; temp++) {
             printf("%s\n", deleted_files[temp]);
         }
+        writeManifest(&changelog_char,&client,0);
     }
     status = compareManifest(0, client.manifestItem, server.manifestItem, &changelog, &conflicts, client.many_Items,
                              server.many_Items, client.project_version, server.project_version, &changelog_size,
-                             &conflict_size);
+                             &conflict_size, 1);
     if (status == -9) {
         printf("Conflicts Detected\nFollowing files are conflicts.\n");
         for (temp = 0; temp < conflict_size; temp++) {
@@ -399,7 +402,7 @@ int commit(char *project_name) {
         printf("Suggest Actions: 1.Make backup of the files below.\n2. Execute checkout to rewrite local files.\n");
         return -1;
     }
-    writeChangeLogFile(changelog, &changelog_char, changelog_size, 2, 0);
+    writeChangeLogFile(changelog, &changelog_char, changelog_size, 2, server.project_version);
     writeFile(commit_path, changelog_char, strlen(changelog_char));
     return 0;
 }
@@ -421,21 +424,26 @@ int commit(char *project_name) {
 int push(char *project_name) {
     int op = 9, counts = 0;
     buffer *output, *input;
-    char *manifest_path, *commit_path, **deleted_files, *actual_path, *inside_path;
+    char *manifest_path, *commit_path,*server_path, **deleted_files, *actual_path, *inside_path;
     char *file_info, *stuff, *tar_info;
     size_t size = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0, tar_size = 0,conflict_size=0;
-    int status, temp = 0;
+    int status, temp = 0,cnm=0;
     long rubbish = 0;
-    project my_project;
+    project my_project,server;
     TAR *tar;
     manifest_item **Changelog, **Generate,**conflicts;
     parsed_response_t out;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);//two payload
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
+    asprintf(&server_path, "%s/.Server", project_name);
     status = readFile(manifest_path, &file_info, &size);
     if (status != 0) { return -1; }
     status = readManifest(file_info, size, &my_project);
+    if (status != 0) { return -2; }
+    status = readFile(server_path,&file_info,&size);
+    if (status != 0) { return -2; }
+    status=readManifest(file_info,size,&server);
     if (status != 0) { return -2; }
     status = readFile(commit_path, &file_info, &size);
     if (status != 0) { return -3; }
@@ -449,14 +457,13 @@ int push(char *project_name) {
         writeFile(manifest_path, file_info, strlen(file_info));
         return -4;
     }
-    compareManifest(1, my_project.manifestItem, NULL, &Generate, &conflicts, my_project.many_Items, 1, 0, 1, &new_size, &conflict_size);
+    compareManifest(0, my_project.manifestItem, server.manifestItem, &Generate, &conflicts, my_project.many_Items, server.many_Items,my_project.project_version, server.project_version, &new_size,
+                    &conflict_size, 1);
     if (new_size != counts) {
         printf("Error: There are uncommitted changes!\nPlease Commit then Push!\n");
         return -1;
-
     }
     //TODO:Implement check whether two lists are identical (HASH)
-
     proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
     writeManifest(&file_info, &my_project, 0);
     asprintf(&stuff, "%s/.tmp.Manifest", project_name);
