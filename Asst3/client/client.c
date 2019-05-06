@@ -761,7 +761,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10117: {
-            if (strcmp("update", argv[1]) != 0) {
+            if (strcmp("update", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -772,7 +772,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10417: {
-            if (strcmp("upgrade", argv[1]) != 0) {
+            if (strcmp("upgrade", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -783,7 +783,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10999: {
-            if (strcmp("commit", argv[1]) != 0) {
+            if (strcmp("commit", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -794,7 +794,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 11612: {
-            if (strcmp("push", argv[1]) != 0) {
+            if (strcmp("push", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -805,7 +805,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 11600: {
-            if (strcmp("destroy", argv[1]) != 0) {
+            if (strcmp("destroy", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -816,7 +816,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10097: {
-            if (strcmp("add", argv[1]) != 0) {
+            if (strcmp("add", argv[1]) != 0 || argc != 4) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -828,7 +828,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 11014: {
-            if (strcmp("remove", argv[1]) != 0 ) {
+            if (strcmp("remove", argv[1]) != 0 || argc != 4 ) {
                 printf(PARSEERROR);
                 return -1;
             }

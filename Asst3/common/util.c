@@ -718,6 +718,13 @@ int proecessManifest_ByChangelist_Push(project *manifest, manifest_item **change
             }
         }
     }
+
+    while(m_size<manifest->many_Items){
+        new_manifest[new_size] = c[m_size];
+        new_manifest[new_size]->hash = new_manifest[new_size]->newhash;
+        new_size++;
+        m_size++;
+    }
     manifest->manifestItem = new_manifest;
     free(c);
     free(changelist);
