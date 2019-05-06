@@ -22,7 +22,7 @@ int portno;
 int status;
 
 //using openSSL hashing library
-//TODO:ADD and REMOVE DUPLICATE ITEMS
+
 void sha256_string(const char *data, size_t len, char outputBuffer[65]) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     int i;
@@ -576,7 +576,11 @@ int remove_entry(char *project_name, char *path) {
     int status = 0;
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     char *manifest_raw;
+    asprintf(&path,"%s/%s",project_name,path);
+    path=is_valid_path(path,project_name);
+    if(path==NULL){ printf("File path not valid.\nPlease make sure that the file path is valid under the project_name folder\nExample:\nProject_Name\\abc\\def -> abc\\def\n");return -2;}
     char *base = base64_encode(path, strlen(path), &size);
+
     //manifest_item *new = (manifest_item*) malloc(sizeof(manifest_item));
     status = readFile(manifest_path, &manifest_raw, &size);
     if (status != 0) { return -1; } // -1 -> Manifest Reading Error
