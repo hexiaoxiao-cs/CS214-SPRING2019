@@ -340,8 +340,6 @@ char *is_valid_path(const char *input_path, const char *project_name) {
     return sanitize_path(input_path, project_name);
 }
 
-//TODO: sanitize_path add project name input, remove project name from relative
-
 char *sanitize_path(const char *input_path, const char *project_name) {
     char cwd[PATH_MAX];
     char real_path[PATH_MAX];
@@ -761,8 +759,6 @@ int proecessManifest_ByChangelist_Update(project *manifest, manifest_item **chan
     manifest->many_Items = new_size;
     return 0;
 }
-// TODO: Need to give project directory (DZZ)
-
 
 //Changelog File Format:
 //Made_By_HXX&DZZ

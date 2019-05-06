@@ -16,8 +16,6 @@
 
 #include <netdb.h>
 
-//TODO: maybe create a interface like 'process_packet' counter part 'send_packet' at protocol layer?
-
 int send_request(const char* hostname, uint16_t port, buffer* in, buffer** out) {
     struct sockaddr_in connector;
     struct hostent* he;

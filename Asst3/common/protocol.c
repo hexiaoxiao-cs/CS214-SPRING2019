@@ -12,10 +12,6 @@ void _roller_read(buffer* in_packet, void* output, size_t* offset, size_t size) 
 #if defined(SERVER_COMPILING)
 #include <logic.h>
 
-//TODO:
-// limit status code range
-// limit op_code range
-
 __thread buffer* in_packet_global;
 
 

@@ -10,8 +10,6 @@
 
 #include <limits.h>
 
-// TODO: create Project resee
-
 buffer* createProject(parsed_request_t *req){
     int status,fh;
     buffer *response;
@@ -235,16 +233,6 @@ no_version:
 
     return output;
 }
-
-//TODO:DZZ IMPLEMENTATION
-//Server: Receive request
-//       Validate the Client request by comparing the Project Version Number
-//       Save tar file to local new folder and decompress it to the curr folder
-//       Change the currentversion file for the project version
-//       copy the .Commit file to the corrosponding folder (The place with Tar)
-//       Write the .manifest file to the folder and curr
-
-
 
 /*
  * handler for push request
@@ -707,8 +695,3 @@ buffer* process_logic(parsed_request_t* req) {
     pthread_rwlock_unlock(lock);
     return stuff;
 }
-
-/*
- * TODO: 1. Upgrade & Checkout retest
- *       2. Push retest
- */

@@ -130,5 +130,3 @@ int _poll_and_read(int fd, buffer* buf, size_t stop_watermark) {
     return 1;
 
 }
-
-//TODO: 1. changed timeout to 4G

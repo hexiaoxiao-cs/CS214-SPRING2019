@@ -17,14 +17,15 @@ endforeach()
 add_executable(WTFserver ${libtar_} common/protocol.c common/util.c common/netutil.c server/main.c server/network.c server/ds.c server/logic.c server/serverutil.c server/serverutil.h)
 add_executable(WTF ${libtar_} common/protocol.c common/util.c common/netutil.c client/client.c client/network.c)
 
-add_executable(playground ${libtar_} playground/main.c)
-target_link_libraries(playground  -lcrypto)
+add_executable(WTFtest ${libtar_} playground/main.c common/protocol.c common/util.c common/netutil.c client/network.c)
+target_link_libraries(WTFtest  -lcrypto)
 
 target_link_libraries(WTFserver PRIVATE -lpthread)
 target_link_libraries(WTF PRIVATE -lcrypto)
 
 target_include_directories(WTFserver PRIVATE server)
 target_include_directories(WTF PRIVATE client)
+target_include_directories(WTFtest PRIVATE client)
 
 target_compile_definitions(WTFserver PRIVATE SERVER_COMPILING)
 target_compile_definitions(WTF PRIVATE CLIENT_COMPILING)

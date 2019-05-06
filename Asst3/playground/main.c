@@ -6,6 +6,11 @@
 
 #include <fcntl.h>
 
+#include <pthread.h>
+
+#include <util.h>
+#include <network.h>
+
 int main(int argc, char* argv[]) {
     TAR* t;
     tar_open(&t, "play.tar", NULL, O_RDONLY, 0700, TAR_GNU);

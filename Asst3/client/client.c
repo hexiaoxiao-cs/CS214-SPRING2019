@@ -361,7 +361,6 @@ int upgrade(char *project_name) {
 
             }
         }
-        //TODO: Implement Check to be added file
     }
     if (conflicts == 1) { return -1; }
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
@@ -504,7 +503,6 @@ int push(char *project_name) {
         printf("Error: There are uncommitted changes!\nPlease Commit then Push!\n");
         return -1;
     }
-    //TODO:Implement check whether two lists are identical (HASH)
     proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
     writeManifest(&file_info, &my_project, 0);
     asprintf(&stuff, "%s/.tmp.Manifest", project_name);
@@ -793,12 +791,11 @@ int main(int argc, char *argv[]) {
 
 /*
  * TODO LIST: 1. readme modification (tar 4G & Introduction)
- * 2. testcases.txt
- * 3. testplan & code
- * 4. Makefile
- * 5. WTFtest
- * 6. PATCH UPDATE
- * 7. test multiple files
- * 8. reexecute
- * 9. Test add/remove subdirectory
+ *            2. testcases.txt
+ *            3. testplan & code
+ *            6. PATCH UPDATE
+ *            8. reentrant (does not follow the procedure)
+ *            9. Implement Check to be added file
+ *            10. Implement check whether two lists are identical (HASH)
+ *            11. changed timeout to 5 minutes
  */
