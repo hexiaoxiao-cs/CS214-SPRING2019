@@ -422,12 +422,12 @@ int push(char *project_name) {
     buffer *output, *input;
     char *manifest_path, *commit_path, **deleted_files, *actual_path, *inside_path;
     char *file_info, *stuff, *tar_info;
-    size_t size = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0, tar_size = 0;
+    size_t size = 0, deleted_counts = 0, new_size = 0, t1 = 0, t2 = 0, tar_size = 0,conflict_size=0;
     int status, temp = 0;
     long rubbish = 0;
     project my_project;
     TAR *tar;
-    manifest_item **Changelog, **Generate;
+    manifest_item **Changelog, **Generate,**conflicts;
     parsed_response_t out;
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 1);//two payload
     asprintf(&manifest_path, "%s/.Manifest", project_name);
@@ -448,9 +448,11 @@ int push(char *project_name) {
         writeFile(manifest_path, file_info, strlen(file_info));
         return -4;
     }
-    compareManifest(0, my_project.manifestItem, NULL, &Generate, NULL, my_project.many_Items, 1, 0, 1, &new_size, NULL);
+    compareManifest(1, my_project.manifestItem, NULL, &Generate, &conflicts, my_project.many_Items, 1, 0, 1, &new_size, &conflict_size);
     if (new_size != counts) {
         printf("Error: There are uncommitted changes!\nPlease Commit then Push!\n");
+        return -1;
+
     }
     //TODO:Implement check whether two lists are identical (HASH)
 
@@ -459,12 +461,12 @@ int push(char *project_name) {
     asprintf(&stuff, "%s/.tmp.Manifest", project_name);
     writeFile(stuff, file_info, strlen(file_info));
     //start to tar
-    tar_open(&tar, "tmp.tar", NULL, O_WRONLY | O_CREAT, 0700, TAR_GNU);
+    tar_open(&tar, "tmp.tar", NULL, O_WRONLY | O_CREAT | O_TRUNC, 0700, TAR_GNU);
     for (temp = 0; temp < my_project.many_Items; temp++) {
         asprintf(&actual_path, "%s/%s", project_name, my_project.manifestItem[temp]->filename->data);
         tar_append_file(tar, actual_path, my_project.manifestItem[temp]->filename->data);
     }
-    asprintf(&inside_path, ".tmp.Manifest");
+    asprintf(&inside_path, ".Manifest");
     tar_append_file(tar, stuff, inside_path);
     asprintf(&actual_path, "%s/.Commit", project_name);
     asprintf(&inside_path, ".Commit");

@@ -13,7 +13,7 @@ void get_project_path(char* buffer, const char* project_name, size_t project_nam
     if (version >= 0)
         sprintf(buffer, "Projects/%.*s/%d/", (int)project_name_size, project_name, version);
     else
-        sprintf(buffer, "Projects/%s/", project_name);
+        sprintf(buffer, "Projects/%.*s/", (int)project_name_size, project_name);
 }
 
 int get_latest_project_version(const char* project_name, size_t project_name_size) {
