@@ -319,6 +319,8 @@ char *is_valid_path(const char *input_path) {
     return sanitize_path(input_path);
 }
 
+//TODO: sanitize_path add project name input, remove project name from relative
+
 char *sanitize_path(const char *input_path) {
     char cwd[PATH_MAX];
     char real_path[PATH_MAX];

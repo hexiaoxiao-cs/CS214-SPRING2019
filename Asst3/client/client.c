@@ -523,7 +523,7 @@ int add(char *project_name, char *to_add_path) {
     appendSequenceBuffer(new->filename, to_add_path, strlen(to_add_path));
     new->filename_64 = createBuffer();
     size = 0;
-    base64_encoded = base64_encode(to_add_path, strlen(to_add_path), &size);
+    base64_encoded = base64_encode(regulized_path, strlen(regulized_path), &size);
     appendSequenceBuffer(new->filename_64, base64_encoded, size);
     curr.manifestItem[curr.many_Items] = new;
     curr.many_Items++;
