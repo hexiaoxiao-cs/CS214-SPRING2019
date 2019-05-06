@@ -310,23 +310,25 @@ int tar_extract_specific_file(const char *tar_file, const char *stored_filename,
     return -2;
 }
 
-char *is_valid_path(const char *input_path) {
+char *is_valid_path(const char *input_path, const char *project_name) {
     char *sanitized_path;
     int op_ret;
     if ((op_ret = open(input_path, O_RDONLY)) < 0)
         return NULL;
     close(op_ret);
-    return sanitize_path(input_path);
+    return sanitize_path(input_path, project_name);
 }
 
 //TODO: sanitize_path add project name input, remove project name from relative
 
-char *sanitize_path(const char *input_path) {
+char *sanitize_path(const char *input_path, const char *project_name) {
     char cwd[PATH_MAX];
     char real_path[PATH_MAX];
     char *cursor;
     char *output;
     getcwd(cwd, PATH_MAX);
+    strcat(cwd, "/");
+    strcat(cwd, project_name);
     realpath(input_path, real_path);
     cursor = strstr(real_path, cwd);
     if (!cursor) {

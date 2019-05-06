@@ -511,7 +511,7 @@ int add(char *project_name, char *to_add_path) {
     readManifest(manifest_raw, size, &curr);
     curr.manifestItem = (manifest_item **) realloc(curr.manifestItem, sizeof(manifest_item *) * (curr.many_Items + 1));
     asprintf(&regulized_path, "%s/%s", project_name, to_add_path);
-    regulized_path = is_valid_path(regulized_path);
+    regulized_path = is_valid_path(regulized_path, project_name);
     if (regulized_path == NULL) { return -2; }
     status = open(regulized_path, O_RDONLY);
     if (status < 0) { return -2; }

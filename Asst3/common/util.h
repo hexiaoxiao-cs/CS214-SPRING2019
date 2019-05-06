@@ -118,7 +118,7 @@ int     readFile(char *filename, char** buffer,size_t *size);
  *      '../${cwd}/abc/' -> 'abc'
  *      '../${cwd}/def/ggg/ccc' -> 'def/ggg/ccc'
  */
-char* sanitize_path(const char* input_path);
+char *sanitize_path(const char *input_path, const char *project_name);
 
 /*
  *  This function utilizes sanitize_path to make sure the input_path is a valid path
@@ -133,7 +133,7 @@ char* sanitize_path(const char* input_path);
  *
  *  return value: see sanitize_path
  */
-char* is_valid_path(const char* input_path);
+char *is_valid_path(const char *input_path, const char *project_name);
 
 
 /*
