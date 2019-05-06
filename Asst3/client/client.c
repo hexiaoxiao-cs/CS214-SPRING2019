@@ -338,12 +338,13 @@ int upgrade(char *project_name) {
     status = readFile(changelog_path, &changelog_char, &changelog_size);
     if (status != 0) { printf("Read .Update Error\n");return -1; }
     status = readChangeLogFile(&changelog, &changelog_char, changelog_size, &counts, &version);
-    if (status == -1) { printf("Parse .Update Error\n");return -1; }
+    if (status == -1) { printf("Parse .Update Error\n");goto Error_Processing; }
+    if(counts==0){printf("Nothing to Update!\n");goto Error_Processing;}
     asprintf(&changelog_path, "%s/.Manifest", project_name);
     status = readFile(changelog_path, &changelog_char, &changelog_size);
-    if (status != 0) { printf("Read .Manifest Error\n");return -1; }
+    if (status != 0) { printf("Read .Manifest Error\n");goto Error_Processing; }
     status = readManifest(changelog_char, changelog_size, &manifest);
-    if (status == -1) { printf("Parse .Manifest Error\n");return -1; }
+    if (status == -1) { printf("Parse .Manifest Error\n");goto Error_Processing; }
     //make_new_manifest(changelog,&counts,&deleted_files,&deleted_counts);
     for (tmp = 0; tmp < counts; tmp++) {
         if (changelog[tmp]->changecode == 2) {
@@ -362,7 +363,7 @@ int upgrade(char *project_name) {
             }
         }
     }
-    if (conflicts == 1) { return -1; }
+    if (conflicts == 1) { goto Error_Processing; }
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     asprintf(&temp_str, "%d", (int)version);
     appendSequenceBuffer(output, temp_str, strlen(temp_str));
@@ -376,7 +377,7 @@ int upgrade(char *project_name) {
     if (status != 0) { printf("Error Parsing Respond\n");return -3; }
     if (response.status_code != 700) {
         printf("Respond Not Success\n");
-        return -1;
+        goto Error_Processing;
     }
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
@@ -388,7 +389,13 @@ int upgrade(char *project_name) {
     proecessManifest_ByChangelist_Update(&manifest, changelog, counts, &server);
     writeManifest(&temp_str, &server, 0);
     writeFile(changelog_path, temp_str, strlen(temp_str));
+    asprintf(&changelog_path,"rm %s/.Update",project_name);
+    system(changelog_path);
     return 0;
+    Error_Processing:
+        asprintf(&changelog_path,"rm %s/.Update",project_name);
+        system(changelog_path);
+        return -1;
 }
 
 //server
@@ -504,6 +511,12 @@ int push(char *project_name) {
         return -1;
     }
     proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
+    if(counts==0){
+        printf("There nothing to commit.\n");
+        asprintf(&inside_path,"rm %s/.Commit",project_name);
+        system(inside_path);
+        return -1;
+    }
     writeManifest(&file_info, &my_project, 0);
     asprintf(&stuff, "%s/.tmp.Manifest", project_name);
     writeFile(stuff, file_info, strlen(file_info));
@@ -525,12 +538,16 @@ int push(char *project_name) {
     finalize_buffer(output);
     if (send_request(ipaddr, portno, output, &input) == 1) { printf("Error Send Request\n");return -5; }
     if (parse_response(input, &out) < 0) {
+        asprintf(&inside_path,"rm %s/.Commit",project_name);
+        system(inside_path);
         printf("Error Parse Response\n");
         return -3;
     }
     if (out.status_code == 900) {
         asprintf(&stuff,"%s/.Manifest",project_name);
         writeFile(stuff,file_info,strlen(file_info));
+        asprintf(&inside_path,"rm %s/.Commit",project_name);
+        system(inside_path);
         return 0; }
     else { printf("Responsed Not Success\n");return -9; }
     //return 0;
