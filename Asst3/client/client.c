@@ -22,7 +22,7 @@ int portno;
 int status;
 
 //using openSSL hashing library
-
+//TODO:ADD and REMOVE DUPLICATE ITEMS
 void sha256_string(const char *data, size_t len, char outputBuffer[65]) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     int i;
@@ -244,7 +244,6 @@ int checkout(char *project_name) {
     return 0;
 }
 
-// TODO: TAR STRCPY -> MEMCPY
 
 
 
@@ -611,7 +610,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("configure");
-            configure(argv[2], argv[3]);
+            if(configure(argv[2], argv[3])!=0){
+                printf("Error Configuring\nPossible Reasons:\n1. Program do not have write permission to current directory\n");
+            }
             break;
         }
         case 10199: {
@@ -640,7 +641,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("update");
-            update(argv[2]);
+            if(update(argv[2])!=0){printf("Error update project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
             break;
         }
         case 10417: {
@@ -649,7 +650,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("upgrade");
-            upgrade(argv[2]);
+            if(upgrade(argv[2])!=0){printf("Error upgrade project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
             break;
         }
         case 10999: {
@@ -658,7 +659,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("commit");
-            commit(argv[2]);
+            if(commit(argv[2])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
             break;
         }
         case 11612: {
@@ -667,7 +668,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("push");
-            push(argv[2]);
+            if(push(argv[2])!=0){printf("Error push project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
             break;
         }
         case 11600: {
@@ -676,7 +677,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("destroy");
-            destroy(argv[2]);
+            if(destroy(argv[2])!=0){printf("Error destroy project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
             break;
         }
         case 10097: {
@@ -696,7 +697,7 @@ int main(int argc, char *argv[]) {
                 printf(PARSEERROR);
                 return -1;
             }
-            remove_entry(argv[2], argv[3]);
+            if(remove_entry(argv[2], argv[3])!=0){printf("Error remove file %s in project %s\nPossible Reasons:\n1. Project not existed\n2.File not tracked\n",argv[3],argv[2]);};
             //printf("remove");
             break;
         }
@@ -706,7 +707,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("currentversion");
-            current_version(argv[2]);
+            if(current_version(argv[2])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
             break;
         }
         case 11604: {
@@ -727,7 +728,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("rollback");
-            rollback(argv[2],argv[3]);
+            if(rollback(argv[2],argv[3])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Trying to rollback version that does not exist on server\n",argv[2],argv[2]);}
             break;
         }
         default: {
@@ -741,7 +742,5 @@ int main(int argc, char *argv[]) {
 
 /*
  * TODO LIST
- * 1. client error output
- * 2. client create -> initialize local directory structure
  * 3.
  */
