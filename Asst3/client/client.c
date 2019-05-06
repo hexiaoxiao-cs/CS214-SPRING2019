@@ -113,6 +113,62 @@ int make_new_manifest(const char* project_name, manifest_item **array, int *coun
     return 0;
 }
 
+int handle_error(parsed_response_t *res) {
+    if (res->status_code % 100 != 0) {
+        printf("Response not success, reason: ");
+        switch (res->status_code) {
+            case 999:
+                printf("Such project does not exist in the server");
+                break;
+            case 001:
+                printf("An project named that already existed");
+                break;
+            case 002:
+                printf("An mkdir error occured during createProject");
+                break;
+            case 003:
+                printf("Could not perform disk operation during createProject");
+                break;
+            case 301:
+                printf("Project does not exist");   // this should never happen
+                break;
+            case 101:
+                printf("No history information available");
+                break;
+            case 201:
+                printf("No version information available [maybe this is a new project?]");
+                break;
+            case 901:
+                printf("Invalid manifest received by the server");
+                break;
+            case 902:
+                printf("Client is out of sync, please update/upgrade first");
+                break;
+            case 401:
+                printf("Received invalid version number");
+                break;
+            case 501:
+                printf("Unable to read tarfile in the server");
+                break;
+            case 502:
+                printf("Invalid version number received");
+                break;
+            case 601:
+                printf("Error reading Curr/.Manifest file");
+                break;
+            case 701:
+                printf("Version number 0 received in Upgrade");
+                break;
+            case 702:
+                printf("Invalid version number received");
+                break;
+        }
+        printf("\n");
+        return 1;
+    }
+    return 0;
+}
+
 int create(char *project_name) {
     int op = 0;
     buffer *output, *input;
@@ -129,6 +185,8 @@ int create(char *project_name) {
         printf("Error Parsing request\n");
         return -3;
     }
+    if (handle_error(&response))
+        return -4;
     if (response.status_code == 000) {
         asprintf(&path,"%s",project_name);
         mkdir(path,0700);
@@ -136,8 +194,9 @@ int create(char *project_name) {
         asprintf(&contents,"Made_By_HXX&DZZ\n0\n");
         writeFile(path,contents,18);
         return 0; }
-    else { printf("Response Not Success\n");return -1; }
+
 }
+
 
 int history(char *project_name) {
     int op = 1;
@@ -151,7 +210,8 @@ int history(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code != 100) { printf("Response Not Success.\n");return -1; }
+    if (handle_error(&response))
+        return -4;
     printf("Status Code: 1->U, 2->M, 3->A, 4->D\n");
     printf("Status Code|File Name|File Name_Base64|File Version|Old Hash|New Hash\n");
     printf("%.*s", response.str_payload.payload_size, response.str_payload.payload);
@@ -175,11 +235,8 @@ int current_version(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code != 200) {
-        printf("Received invalid status_code\n");
-        if (response.status_code == 999) { printf("Project Name Server Not Found!\n"); }
-        return -1;
-    }
+    if (handle_error(&response))
+        return -4;
     res = response.str_payload.payload;
     res += 16;
     sscanf(res, "%ld\n%n", &version, &read);
@@ -209,8 +266,9 @@ int destroy(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code == 300) { return 0; }
-    else { printf("Respond Not Success\n");return -1; }
+    if (handle_error(&response))
+        return -4;
+    return 0;
 
 }
 
@@ -231,9 +289,9 @@ int rollback(char *project_name, char* version) {
         printf("Error Parse Response\n");
         return -3;
     }
-    if (response.status_code == 400) { return 0; }
-    else { printf("Response Not Success\n");return -1; }
-    //return 0;
+    if (handle_error(&response))
+        return -4;
+    return 0;
 }
 
 int checkout(char *project_name) {
@@ -256,10 +314,8 @@ int checkout(char *project_name) {
         printf("Error Parse Request\n");
         return -3;
     }
-    if (response.status_code != 500) {
-        printf("Response Not Success\n");
-        return -1;
-    }
+    if (handle_error(&response))
+        return -4;
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     tar_open(&t, "tmp.tar", NULL, O_RDONLY, 0700, TAR_GNU);
     asprintf(&temp, "%s/", project_name);
@@ -293,8 +349,8 @@ int update(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code != 600)
-        return -1;
+    if (handle_error(&response))
+        return -4;
     status = readManifest(response.str_payload.payload, response.str_payload.payload_size, &server);
     if (status != 0) { return -1; }
     status = compareManifest(0, client.manifestItem, server.manifestItem, &changelist, &conflicts, client.many_Items,
@@ -375,10 +431,10 @@ int upgrade(char *project_name) {
     }
     status = parse_response(input, &response);
     if (status != 0) { printf("Error Parsing Respond\n");return -3; }
-    if (response.status_code != 700) {
-        printf("Respond Not Success\n");
+
+    if (handle_error(&response))
         goto Error_Processing;
-    }
+
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
     asprintf(&output_path, "%s/", project_name);
@@ -421,7 +477,8 @@ int commit(char *project_name) {
         printf("Error Parse Response\n");
         return -3;
     }
-    if (response.status_code != 800) {  printf("Response Not Success\n");return -1; }
+    if (handle_error(&response))
+        return -4;
     if (readManifest(response.str_payload.payload, response.str_payload.payload_size, &server) != 0) { printf("Error Reading Server .Manifest\n");return -1; }
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
@@ -543,13 +600,15 @@ int push(char *project_name) {
         printf("Error Parse Response\n");
         return -3;
     }
+    if (handle_error(&out))
+        return -9;
     if (out.status_code == 900) {
         asprintf(&stuff,"%s/.Manifest",project_name);
         writeFile(stuff,file_info,strlen(file_info));
         asprintf(&inside_path,"rm %s/.Commit",project_name);
         system(inside_path);
-        return 0; }
-    else { printf("Responsed Not Success\n");return -9; }
+        return 0;
+    }
     //return 0;
 }
 
@@ -685,14 +744,14 @@ int main(int argc, char *argv[]) {
             if (strcmp("create", argv[1]) == 0 && argc == 3) {
                 //printf("create");
                 if (create(argv[2]) != 0) {
-                    printf("Error Create project with name %s\nPossible Reasons:\n1. Project %s already existed in sever.\n2. Error communicating with server.\n",
-                           argv[2], argv[2]);
+//                    printf("Error Create project with name %s\nPossible Reasons:\n1. Project %s already existed in sever.\n2. Error communicating with server.\n",
+//                           argv[2], argv[2]);
                 }
             } else if (strcmp("checkout", argv[1]) == 0 || argc == 3) {
                 //printf("checkout");
                 if (checkout(argv[2]) != 0) {
-                    printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
-                           argv[2], argv[2]);
+//                    printf("Error checkout project with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
+//                           argv[2], argv[2]);
                 }
             } else {
                 printf(PARSEERROR);
@@ -707,7 +766,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("update");
-            if(update(argv[2])!=0){printf("Error update project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
+            if(update(argv[2])!=0){
+                //printf("Error update project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 10417: {
@@ -716,7 +777,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("upgrade");
-            if(upgrade(argv[2])!=0){printf("Error upgrade project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
+            if(upgrade(argv[2])!=0){
+                //printf("Error upgrade project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 10999: {
@@ -725,7 +788,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("commit");
-            if(commit(argv[2])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
+            if(commit(argv[2])!=0){
+                //printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 11612: {
@@ -734,7 +799,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("push");
-            if(push(argv[2])!=0){printf("Error push project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);}
+            if(push(argv[2])!=0){
+                //printf("Error push project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 11600: {
@@ -743,7 +810,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("destroy");
-            if(destroy(argv[2])!=0){printf("Error destroy project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
+            if(destroy(argv[2])!=0){
+                //printf("Error destroy project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 10097: {
@@ -773,7 +842,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("currentversion");
-            if(current_version(argv[2])!=0){printf("Error currentversion project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
+            if(current_version(argv[2])!=0){
+                //printf("Error currentversion project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);
+            }
             break;
         }
         case 11604: {
@@ -783,8 +854,8 @@ int main(int argc, char *argv[]) {
             }
             //printf("history");
             if (history(argv[2]) != 0) {
-                printf("Error get project history with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
-                       argv[2], argv[2]);
+//                printf("Error get project history with name %s\nPossible Reasons:\n1. Project %s does not exist in sever.\n2. Error communicating with server.\n",
+//                       argv[2], argv[2]);
             }
             break;
         }
@@ -794,7 +865,9 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("rollback");
-            if(rollback(argv[2],argv[3])!=0){printf("Error rollback project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Trying to rollback version that does not exist on server\n",argv[2],argv[2]);}
+            if(rollback(argv[2],argv[3])!=0){
+                //printf("Error rollback project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Trying to rollback version that does not exist on server\n",argv[2],argv[2]);
+            }
             break;
         }
         default: {

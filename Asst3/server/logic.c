@@ -432,7 +432,7 @@ buffer* checkout(parsed_request_t *req){
     finalize_buffer(output);
     return output;
     checkout_error:
-        free(output);
+        destroyBuffer(output);
         TRACE(("Received Checkout, Error reading 1.tar file\n"));
         output=get_output_buffer_for_response(501,0);
         finalize_buffer(output);
@@ -588,7 +588,15 @@ buffer* process_logic(parsed_request_t* req) {
     switch(req->op_code){
         case 0 :
             pthread_rwlock_wrlock(lock);
-            stuff= createProject(req);
+            if (project_exist(req->project_name, req->project_name_size) == 0) {
+                // project does not exist
+                TRACE(("Project existed during create\n"));
+                buffer* output = get_output_buffer_for_response(001, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }
+             else
+                 stuff = createProject(req);
             break;
         case 1 :
             pthread_rwlock_rdlock(lock);

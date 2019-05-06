@@ -29,3 +29,4 @@ target_include_directories(WTFtest PRIVATE client)
 
 target_compile_definitions(WTFserver PRIVATE SERVER_COMPILING)
 target_compile_definitions(WTF PRIVATE CLIENT_COMPILING)
+target_compile_definitions(WTFtest PRIVATE CLIENT_COMPILING)
