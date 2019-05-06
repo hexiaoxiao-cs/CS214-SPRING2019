@@ -505,6 +505,7 @@ int add(char *project_name, char *to_add_path) {
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     char *manifest_raw;
     char *base64_encoded;
+    int tmp=0;
     manifest_item *new;
     status = readFile(manifest_path, &manifest_raw, &size);
     if (status != 0) { return -1; } // -1 -> Manifest Reading Error
@@ -525,6 +526,12 @@ int add(char *project_name, char *to_add_path) {
     size = 0;
     base64_encoded = base64_encode(regulized_path, strlen(regulized_path), &size);
     appendSequenceBuffer(new->filename_64, base64_encoded, size);
+    for(tmp=0;tmp<curr.many_Items;tmp++){
+        if(cmp_compare(curr.manifestItem[tmp],new)==0){
+            printf("Error:\nFile is already being tracked!\n");
+            return -1;
+        }
+    }
     curr.manifestItem[curr.many_Items] = new;
     curr.many_Items++;
     sort_manifest(curr.manifestItem, curr.many_Items);

@@ -155,7 +155,7 @@ int proecessManifest_ByChangelist_Push(project* manifest,manifest_item** changel
 int proecessManifest_ByChangelist_Update(project* manifest,manifest_item** changelist, size_t changelist_size,project *server);
 int readChangeLogFile(manifest_item ***changelog,char **input,size_t size, int *list_size, long *version);
 int writeChangeLogFile(manifest_item **changelog,char** output,size_t size,int type, long version);
-
+int cmp_compare(const void *a_, const void *b_);
 
 /*
  *  =============================================
