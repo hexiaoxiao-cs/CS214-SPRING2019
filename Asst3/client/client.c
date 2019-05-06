@@ -737,7 +737,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("currentversion");
-            if(current_version(argv[2])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
+            if(current_version(argv[2])!=0){printf("Error currentversion project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n",argv[2],argv[2]);}
             break;
         }
         case 11604: {
@@ -758,7 +758,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             //printf("rollback");
-            if(rollback(argv[2],argv[3])!=0){printf("Error commit project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Trying to rollback version that does not exist on server\n",argv[2],argv[2]);}
+            if(rollback(argv[2],argv[3])!=0){printf("Error rollback project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Trying to rollback version that does not exist on server\n",argv[2],argv[2]);}
             break;
         }
         default: {

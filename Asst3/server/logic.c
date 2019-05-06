@@ -606,6 +606,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_rdlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff=output;
@@ -616,6 +617,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_rdlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -627,6 +629,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_wrlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -638,6 +641,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_wrlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -648,6 +652,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_rdlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -668,6 +673,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_rdlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -678,6 +684,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_rdlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
@@ -688,6 +695,7 @@ buffer* process_logic(parsed_request_t* req) {
             pthread_rwlock_wrlock(lock);
             if (project_exist(req->project_name, req->project_name_size) < 0) {
                 // project does not exist
+                TRACE(("Received a invalid project_name\n"));
                 buffer* output = get_output_buffer_for_response(999, 0);
                 finalize_buffer(output);
                 stuff= output;
