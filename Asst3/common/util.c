@@ -587,8 +587,7 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
         if (size_client > curr_client) { // client does not go to the end
             //client has something that server does not have
             for (; curr_client < size_client; curr_client++) {
-                if (cmp_compare(client_side[curr_client], server_side[curr_server]) <
-                    0) {// a file in the client side but not in server side
+// a file in the client side but not in server side
                     if (client_ver == server_ver) {
                         *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
                         (*changelog)[counts] = client_side[curr_client];
@@ -602,7 +601,12 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
                         //curr_client++; // server to the next item
                         counts++;
                     }
-                }
+//                        *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+//                        (*changelog)[counts] = client_side[curr_client];
+//                        (*changelog)[counts]->changecode = 1; // Something needed to be upload in the server side
+//                        //curr_client++; // server to the next item
+//                        counts++;
+
             }
         } else {// server does not go to the end
             for (; curr_server < size_server; curr_server++) {
@@ -620,6 +624,12 @@ int compareManifest(int isTwoManifest, manifest_item** client_side, manifest_ite
                     counts_conflicts++;
                     has_conflicts = 1;
                 } // Manifest File Corrupted Or Conflicts!!!! Need to Do Something!!!!
+
+//                *changelog = (manifest_item **) realloc(changelog, sizeof(manifest_item *) * (counts + 1));
+//                (*changelog)[counts] = server_side[curr_server];
+//                (*changelog)[counts]->changecode = 3; // Something needed to be deleted in the server side
+//                //curr_client++; // server to the next item
+//                counts++;
             }
         }
     }
