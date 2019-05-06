@@ -759,7 +759,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 11014: {
-            if (strcmp("remove", argv[1]) != 0) {
+            if (strcmp("remove", argv[1]) != 0 ) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -768,7 +768,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 11499: {
-            if (strcmp("currentversion", argv[1]) != 0) {
+            if (strcmp("currentversion", argv[1]) != 0 || argc != 3) {
                 printf(PARSEERROR);
                 return -1;
             }
@@ -789,7 +789,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case 10914: {
-            if (strcmp("rollback", argv[1]) != 0) {
+            if (strcmp("rollback", argv[1]) != 0 || argc != 4) {
                 printf(PARSEERROR);
                 return -1;
             }
