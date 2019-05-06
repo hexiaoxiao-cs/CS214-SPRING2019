@@ -119,10 +119,14 @@ int create(char *project_name) {
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
-    if (status != 0)
+    if (status != 0) {
+        printf("Error sending request\n");
         return -2;
-    if (parse_response(input, &response) < 0)
+    }
+    if (parse_response(input, &response) < 0) {
+        printf("Error Parsing request\n");
         return -3;
+    }
     if (response.status_code == 000) {
         asprintf(&path,"%s",project_name);
         mkdir(path,0700);
@@ -130,7 +134,7 @@ int create(char *project_name) {
         asprintf(&contents,"Made_By_HXX&DZZ\n0\n");
         writeFile(path,contents,18);
         return 0; }
-    else { return -1; }
+    else { printf("Response Not Success\n");return -1; }
 }
 
 int history(char *project_name) {
@@ -145,7 +149,7 @@ int history(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code != 100) { return -1; }
+    if (response.status_code != 100) { printf("Response Not Success.\n");return -1; }
     printf("%.*s", response.str_payload.payload_size, response.str_payload.payload);
     return 0;
 }
@@ -197,7 +201,7 @@ int destroy(char *project_name) {
     if (parse_response(input, &response) < 0)
         return -3;
     if (response.status_code == 300) { return 0; }
-    else { return -1; }
+    else { printf("Respond Not Success\n");return -1; }
 
 }
 
@@ -209,12 +213,17 @@ int rollback(char *project_name, char* version) {
     appendSequenceBuffer(output,version,strlen(version));
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
-    if (status != 0)
+    if (status != 0){
+        printf("Error Send Request\n");
         return -2;
-    if (parse_response(input, &response) < 0)
+
+    }
+    if (parse_response(input, &response) < 0) {
+        printf("Error Parse Response\n");
         return -3;
+    }
     if (response.status_code == 400) { return 0; }
-    else { return -1; }
+    else { printf("Response Not Success\n");return -1; }
     //return 0;
 }
 
@@ -230,12 +239,18 @@ int checkout(char *project_name) {
     if (a == 'N' || a == 'n') { return -1; }
     finalize_buffer(output);
     status = send_request(ipaddr, portno, output, &input);
-    if (status != 0)
+    if (status != 0) {
+        printf("Error Sending Request\n");
         return -2;
-    if (parse_response(input, &response) < 0)
+    }
+    if (parse_response(input, &response) < 0) {
+        printf("Error Parse Request\n");
         return -3;
-    if (response.status_code != 500)
+    }
+    if (response.status_code != 500) {
+        printf("Response Not Success\n");
         return -1;
+    }
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT | O_TRUNC, 0700, TAR_GNU);
     asprintf(&temp, "%s/", project_name);
@@ -303,14 +318,14 @@ int upgrade(char *project_name) {
     parsed_response_t response;
     asprintf(&changelog_path, "%s/.Update", project_name);
     status = readFile(changelog_path, &changelog_char, &changelog_size);
-    if (status != 0) { return -1; }
+    if (status != 0) { printf("Read .Update Error\n");return -1; }
     status = readChangeLogFile(&changelog, &changelog_char, changelog_size, &counts, &version);
-    if (status == -1) { return -1; }
+    if (status == -1) { printf("Parse .Update Error\n");return -1; }
     asprintf(&changelog_path, "%s/.Manifest", project_name);
     status = readFile(changelog_path, &changelog_char, &changelog_size);
-    if (status != 0) { return -1; }
+    if (status != 0) { printf("Read .Manifest Error\n");return -1; }
     status = readManifest(changelog_char, changelog_size, &manifest);
-    if (status == -1) { return -1; }
+    if (status == -1) { printf("Parse .Manifest Error\n");return -1; }
     //make_new_manifest(changelog,&counts,&deleted_files,&deleted_counts);
     for (tmp = 0; tmp < counts; tmp++) {
         if (changelog[tmp]->changecode == 2) {
@@ -336,12 +351,16 @@ int upgrade(char *project_name) {
     appendSequenceBuffer(output, temp_str, strlen(temp_str));
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);
-    if (nstatus != 0)
+    if (nstatus != 0) {
+        printf("Error Sending Request\n");
         return -2;
+    }
     status = parse_response(input, &response);
-    if (status != 0) { return -3; }
-    if (response.status_code != 700)
+    if (status != 0) { printf("Error Parsing Respond\n");return -3; }
+    if (response.status_code != 700) {
+        printf("Respond Not Success\n");
         return -1;
+    }
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
     asprintf(&output_path, "%s/", project_name);
@@ -370,12 +389,16 @@ int commit(char *project_name) {
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
     nstatus = send_request(ipaddr, portno, output, &input);
-    if (nstatus != 0)
+    if (nstatus != 0) {
+        printf("Error Sending Request\n");
         return -2;
-    if (parse_response(input, &response) < 0)
+    }
+    if (parse_response(input, &response) < 0) {
+        printf("Error Parse Response\n");
         return -3;
-    if (response.status_code != 800) { return -1; }
-    if (readManifest(response.str_payload.payload, response.str_payload.payload_size, &server) != 0) { return -1; }
+    }
+    if (response.status_code != 800) {  printf("Response Not Success\n");return -1; }
+    if (readManifest(response.str_payload.payload, response.str_payload.payload_size, &server) != 0) { printf("Error Reading Server .Manifest\n");return -1; }
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     asprintf(&commit_path, "%s/.Commit", project_name);
     asprintf(&server_path, "%s/.Server", project_name);
@@ -437,16 +460,17 @@ int push(char *project_name) {
     asprintf(&commit_path, "%s/.Commit", project_name);
     asprintf(&server_path, "%s/.Server", project_name);
     status = readFile(manifest_path, &file_info, &size);
-    if (status != 0) { return -1; }
+    if (status != 0) { printf("Error Reading .Manifest\n");return -1; }
     status = readManifest(file_info, size, &my_project);
-    if (status != 0) { return -2; }
+    if (status != 0) { printf("Error Parsing .Manifest\n");return -2; }
     status = readFile(server_path,&file_info,&size);
-    if (status != 0) { return -2; }
+    if (status != 0) { printf("Error Reading Previous cached server's .Manifest\n");return -2; }
     status=readManifest(file_info,size,&server);
-    if (status != 0) { return -2; }
+    if (status != 0) { printf("Error Parsing .Manifest\n");return -2; }
     status = readFile(commit_path, &file_info, &size);
-    if (status != 0) { return -3; }
-    readChangeLogFile(&Changelog, &file_info, size, &counts, &rubbish);
+    if (status != 0) { printf("Error Reading .Commit\n");return -3; }
+    status=readChangeLogFile(&Changelog, &file_info, size, &counts, &rubbish);
+    if(status!=0){printf("Error Parsing .Commit\n"); return -4;}
     if (make_new_manifest(project_name, my_project.manifestItem, &(my_project.many_Items), &deleted_files, &deleted_counts) == -1) {
         printf("Error: Please commit the following deleted files\n");
         for (temp = 0; temp < deleted_counts; temp++) {
@@ -484,11 +508,13 @@ int push(char *project_name) {
     readFile("tmp.tar", &tar_info, &tar_size);
     appendSequenceBuffer(output, tar_info, tar_size);
     finalize_buffer(output);
-    if (send_request(ipaddr, portno, output, &input) == 1) { return -5; }
-    if (parse_response(input, &out) < 0)
+    if (send_request(ipaddr, portno, output, &input) == 1) { printf("Error Send Request\n");return -5; }
+    if (parse_response(input, &out) < 0) {
+        printf("Error Parse Response\n");
         return -3;
+    }
     if (out.status_code == 900) { return 0; }
-    else { return -9; }
+    else { printf("Responsed Not Success\n");return -9; }
     //return 0;
 }
 
@@ -508,17 +534,17 @@ int add(char *project_name, char *to_add_path) {
     int tmp=0;
     manifest_item *new;
     status = readFile(manifest_path, &manifest_raw, &size);
-    if (status != 0) { return -1; } // -1 -> Manifest Reading Error
+    if (status != 0) { printf("Error Reading .Manifest file\n");return -1; } // -1 -> Manifest Reading Error
     readManifest(manifest_raw, size, &curr);
     curr.manifestItem = (manifest_item **) realloc(curr.manifestItem, sizeof(manifest_item *) * (curr.many_Items + 1));
     asprintf(&regulized_path, "%s/%s", project_name, to_add_path);
     regulized_path = is_valid_path(regulized_path, project_name);
-    if (regulized_path == NULL) { return -2; }
+    if (regulized_path == NULL) { printf("File path not valid.\nPlease make sure that the file path is valid under the project_name folder\nExample:\nProject_Name\\abc\\def -> abc\\def\n");return -2; }
     strcpy(open_path, project_name);
     strcat(open_path, "/");
     strcat(open_path, regulized_path);
     status = open(open_path, O_RDONLY);
-    if (status < 0) { return -2; }
+    if (status < 0) { printf("File path not valid.\n Cannot open the file %s\n",open_path);return -2; }
     new = (manifest_item *) malloc(sizeof(manifest_item));
     new->version_num = 0;
     new->hash = createBuffer();
@@ -558,6 +584,7 @@ int remove_entry(char *project_name, char *path) {
     for (temp = 0; temp < curr.many_Items; temp++) {
         if (strcmp(curr.manifestItem[temp]->filename_64->data, base) == 0) { break; }
     }
+    if(temp==curr.many_Items){printf("Error remove\nFile not been tracked\n");return -2;}
     if (temp == curr.many_Items - 1) {
         curr.many_Items--;
     } else {
