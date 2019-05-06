@@ -20,8 +20,8 @@ buffer* createProject(parsed_request_t *req){
 //    proj_name=(char*)malloc(req->project_name_size+1);
 //    strncpy(proj_name,req->project_name,req->project_name_size);
 //    proj_name[req->project_name_size]=0;
-    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
-    pthread_rwlock_wrlock(rwlock);
+//    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
+//    pthread_rwlock_wrlock(rwlock);
     mkdir("Projects",S_IRUSR|S_IWUSR|S_IXUSR);
     get_project_path(path,req->project_name,req->project_name_size,-1);
     //path=(char*)malloc(sizeof(char)*(req->project_name_size+11+9));
@@ -29,11 +29,13 @@ buffer* createProject(parsed_request_t *req){
     //strncat(path,req->project_name,req->project_name_size);
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     if(status==EEXIST){
+        TRACE(("Received createProject, Error because of existed project\n"));
         response=get_output_buffer_for_response(001,2);
         finalize_buffer(response);
         goto END;
     }
     if(status!=0){
+        TRACE(("Received createProject, Error because of mkdir error\n"));
         response=get_output_buffer_for_response(002,2);
         finalize_buffer(response);
         goto END;
@@ -44,6 +46,7 @@ buffer* createProject(parsed_request_t *req){
     strncat(path,"/.Manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
+        TRACE(("Received createProject, Error because of write .Manifest file to Curr folder error\n"));
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
         goto END;
@@ -54,6 +57,7 @@ buffer* createProject(parsed_request_t *req){
     strncat(path,"/.Manifest",10);
     fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
+        TRACE(("Received createProject, Error because of write .Manifest file to 0 folder error\n"));
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
         goto END;
@@ -62,6 +66,7 @@ buffer* createProject(parsed_request_t *req){
     strcat(path,"/Currentversion");
     fh=writeFile(path,"0",1);
     if(fh!=0){
+        TRACE(("Received createProject, Error because of write Currentversion error\n"));
         response=get_output_buffer_for_response(003,2);
         finalize_buffer(response);
         goto END;
@@ -72,7 +77,7 @@ buffer* createProject(parsed_request_t *req){
     END:
     free_in_packet();
     free(path_bk);
-    pthread_rwlock_unlock(rwlock);
+//    pthread_rwlock_unlock(rwlock);
     return response;
 }
 
@@ -81,14 +86,16 @@ buffer* destroy(parsed_request_t *req){
     buffer *response;
     char* path;
     char* proj_name;
+
     proj_name=(char*)malloc(req->project_name_size+1);
     strncpy(proj_name,req->project_name,req->project_name_size);
     proj_name[req->project_name_size]=0;
-    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
-    pthread_rwlock_wrlock(rwlock);
+//    pthread_rwlock_t *rwlock = get_rwlock_for_project(req->project_name,req->project_name_size);
+//    pthread_rwlock_wrlock(rwlock);
     asprintf(&proj_name,"Projects/%s",proj_name);
     status=isDir(proj_name);
     if(status!=0){
+        TRACE(("Received Destroy, Error finding the Directory(Maybe DIRNOTEXIST)\n"));
         response=get_output_buffer_for_response(301,2);// does not exists the project with project name
         finalize_buffer(response);
         goto destroy_end;
@@ -99,7 +106,7 @@ buffer* destroy(parsed_request_t *req){
     finalize_buffer(response);
     destroy_end:
     free_in_packet();
-    pthread_rwlock_unlock(rwlock);
+//    pthread_rwlock_unlock(rwlock);
     return response;
 }
 
@@ -138,9 +145,9 @@ buffer* history(parsed_request_t *req){
     buffer* output;
     char* file_data;
     size_t file_size;
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
 
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
 
 
     version = get_latest_project_version(req->project_name, req->project_name_size);
@@ -166,14 +173,15 @@ buffer* history(parsed_request_t *req){
 
     free_in_packet();
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 
 no_history:
     free_in_packet();
+    TRACE(("Received HISTORY, No History\n"));
     output = get_output_buffer_for_response(101, 0);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 }
 
@@ -193,9 +201,9 @@ buffer* currentversion(parsed_request_t* req) {
     int project_version;
     buffer* output;
 
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
 
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
 
     project_version = get_latest_project_version(req->project_name, req->project_name_size);
     get_project_path(manifest_path, req->project_name, req->project_name_size, project_version);
@@ -216,13 +224,14 @@ buffer* currentversion(parsed_request_t* req) {
     appendSequenceBuffer(output, file_data, file_size);
     free(file_data);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 
 no_version:
     output = get_output_buffer_for_response(201, 0);
+    TRACE(("Received Currentversion, No_Version"));
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
 
     return output;
 }
@@ -247,7 +256,7 @@ no_version:
  *
  */
 buffer* push(parsed_request_t* req) {
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
@@ -262,7 +271,7 @@ buffer* push(parsed_request_t* req) {
     if (req->files_payload.payload1_size <= 16)
         goto invalid_manifest;
 
-    pthread_rwlock_wrlock(lock);
+//    pthread_rwlock_wrlock(lock);
 
     latest_version = get_latest_project_version(req->project_name, req->project_name_size);
     cursor = req->files_payload.payload1 + 16;
@@ -321,18 +330,20 @@ buffer* push(parsed_request_t* req) {
     writeFile(project_path, version_buffer, version_buffer_size);
 
     output = get_output_buffer_for_response(900, 0);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 
 invalid_manifest:
+    TRACE(("Received Push, Invalid_manifest Error\n"));
     output = get_output_buffer_for_response(901, 0);
     free_in_packet();
     return output;
 
 out_of_sync:
+    TRACE(("Received Push, Out_of_sync Error\n"));
     free_in_packet();
     output = get_output_buffer_for_response(902, 0);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 }
 
@@ -340,7 +351,7 @@ out_of_sync:
 //potential error: tar is broken then we lost data!!
 
 buffer* rollback(parsed_request_t* req){
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
@@ -361,8 +372,8 @@ buffer* rollback(parsed_request_t* req){
 
     get_project_path(project_path,req->project_name,req->project_name_size,-1);
 
-    pthread_rwlock_wrlock(lock);
-    if(version>latest_version){
+//    pthread_rwlock_wrlock(lock);
+    if(version>latest_version || version == 0){
         goto rollback_error;
     }
     if(version==latest_version){
@@ -394,20 +405,21 @@ buffer* rollback(parsed_request_t* req){
         goto rollback_ok;
     }
     rollback_error:
+        TRACE(("Received Rollback, 0 or Received Version Number bigger than current version number\n"));
         output=get_output_buffer_for_response(401,0);
-        pthread_rwlock_unlock(lock);
+//        pthread_rwlock_unlock(lock);
         free_in_packet();
         return output;
     rollback_ok:
         output=get_output_buffer_for_response(400,0);
-        pthread_rwlock_unlock(lock);
+//        pthread_rwlock_unlock(lock);
         free_in_packet();
         return output;
 
 }
 
 buffer* checkout(parsed_request_t *req){
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
@@ -415,7 +427,7 @@ buffer* checkout(parsed_request_t *req){
     int status=0;
     int latest_version;
     size_t size;
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
     latest_version = get_latest_project_version(req->project_name, req->project_name_size);
     if (latest_version == 0)
         goto version_zero;
@@ -431,10 +443,12 @@ buffer* checkout(parsed_request_t *req){
     finalize_buffer(output);
     return output;
     checkout_error:
+        TRACE(("Received Checkout, Error reading 1.tar file\n"));
         output=get_output_buffer_for_response(501,0);
         finalize_buffer(output);
         return output;
 version_zero:
+        TRACE(("Received Checkout, Checkout version is 0\n"));
     output = get_output_buffer_for_response(502, 0);
 finalize_buffer(output);
     return output;
@@ -442,37 +456,38 @@ finalize_buffer(output);
 //UPDATE logic:
 // read current version manifest and send it to the client
 buffer* update(parsed_request_t *req){
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
     char cmd[PATH_MAX + 9],*tmp;
     int status=0;
     size_t size;
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
     get_project_path(project_path,req->project_name,req->project_name_size,-1);
     strcat(project_path,"Curr/.Manifest");
     status = readFile(project_path,&tmp,&size);
-    if(status !=0 ){ goto checkout_error;}
+    if(status !=0 ){ goto update_error;}
     output=get_output_buffer_for_response(600,0);
     appendSequenceBuffer(output,tmp,size);
     free_in_packet();
     free(tmp);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
-    checkout_error:
+    update_error:
+        TRACE(("Received Update, Error reading Curr/.Manifest file\n"));
         output=get_output_buffer_for_response(601,0);
         finalize_buffer(output);
         free_in_packet();
         free(tmp);
-        pthread_rwlock_unlock(lock);
+//        pthread_rwlock_unlock(lock);
         return output;
 
 }
 
 buffer* upgrade(parsed_request_t *req){
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     char *file_data;
     size_t file_size;
     buffer* output;
@@ -485,7 +500,7 @@ buffer* upgrade(parsed_request_t *req){
 
     requested_version_buffer[req->str_payload.payload_size] = 0;
 
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
 
     latest_version = get_latest_project_version(req->project_name, req->project_name_size);
     sscanf(requested_version_buffer, "%d", &requested_version);
@@ -526,30 +541,32 @@ buffer* upgrade(parsed_request_t *req){
     appendSequenceBuffer(output, file_data, file_size);
     free(file_data);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 
 version_zero:
+    TRACE(("Received Upgrade, Version is 0\n"));
     output = get_output_buffer_for_response(701, 0);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 
 invalid_version:
+    TRACE(("Received Upgrade, Invalid_version\n"));
     output = get_output_buffer_for_response(702, 0);
     finalize_buffer(output);
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 }
 
 buffer* commit(parsed_request_t *req){
-    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
+//    pthread_rwlock_t* lock = get_rwlock_for_project(req->project_name, req->project_name_size);
     char project_path[PATH_MAX];
     char *file_data;
     size_t file_size;
     buffer* output;
 
-    pthread_rwlock_rdlock(lock);
+//    pthread_rwlock_rdlock(lock);
 
     get_project_path(project_path, req->project_name, req->project_name_size, -1);
     strcat(project_path, "Curr/.Manifest");
@@ -567,34 +584,118 @@ buffer* commit(parsed_request_t *req){
     free(file_data);
     finalize_buffer(output);
 
-    pthread_rwlock_unlock(lock);
+//    pthread_rwlock_unlock(lock);
     return output;
 }
 
 
 
 buffer* process_logic(parsed_request_t* req) {
+    pthread_rwlock_t *lock;
+    buffer *stuff;
     if (req->op_code != 0) {
-        if (project_exist(req->project_name, req->project_name_size) < 0) {
-            // project does not exist
-            buffer* output = get_output_buffer_for_response(999, 0);
-            finalize_buffer(output);
-            return output;
-        }
 
     }
+    lock=get_rwlock_for_project(req->project_name,req->project_name_size);
     switch(req->op_code){
-        case 0 : return createProject(req);
-        case 1 : return history(req);
-        case 2 : return currentversion(req);
-        case 3 : return destroy(req);
-        case 4 : return rollback(req);
-        case 5 : return checkout(req);
-        case 6 : return update(req);
-        case 7 : return upgrade(req);
-        case 8 : return commit(req);
-        case 9 : return push(req);
+        case 0 :
+            pthread_rwlock_wrlock(lock);
+            stuff= createProject(req);
+            break;
+        case 1 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff=output;
+            }
+            else{ stuff=history(req);}
+            break;
+        case 2 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else{
+            stuff=currentversion(req);
+            }
+            break;
+        case 3 :
+            pthread_rwlock_wrlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else {
+                stuff = destroy(req);
+            }
+            break;
+        case 4 :
+            pthread_rwlock_wrlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }
+            else{stuff=rollback(req);}
+            break;
+        case 5 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }
+            else{stuff= checkout(req);}
+            break;
+        case 6 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else{
+            stuff= update(req);}
+            break;
+        case 7 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else{
+            stuff= upgrade(req);}
+            break;
+        case 8 :
+            pthread_rwlock_rdlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else
+            {stuff= commit(req);}
+            break;
+        case 9 :
+            pthread_rwlock_wrlock(lock);
+            if (project_exist(req->project_name, req->project_name_size) < 0) {
+                // project does not exist
+                buffer* output = get_output_buffer_for_response(999, 0);
+                finalize_buffer(output);
+                stuff= output;
+            }else{
+            stuff= push(req);}
+            break;
         default: return NULL;
     }
-
+    pthread_rwlock_unlock(lock);
+    return stuff;
 }
