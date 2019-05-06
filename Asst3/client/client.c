@@ -95,6 +95,7 @@ int make_new_manifest(const char* project_name, manifest_item **array, int *coun
             if (temp != *counts - 1) {
                 free(array[temp]);
                 array[temp] = array[*counts - 1];
+                temp--;
                 (*counts)--;
             } else {
                 free(array[temp]);
@@ -107,6 +108,7 @@ int make_new_manifest(const char* project_name, manifest_item **array, int *coun
         appendSequenceBuffer(array[temp]->newhash, sha256buf, 65);
     }
     *deleted_counts = deleted;
+    sort_manifest(array,*counts);
     if (isDeleted == 1) { return -1; }
     return 0;
 }
