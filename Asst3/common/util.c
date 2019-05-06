@@ -168,6 +168,27 @@ int readFile(char *filename, char **buffer, size_t *size) {
     return 0;
 }
 
+int fastReadFile(char *filename, buffer *buffer) {
+    int fno = open(filename, O_RDONLY);
+    if (fno < 0) { return -1; }
+    //readAll
+    ssize_t ret;
+    size_t file_size = (size_t) lseek(fno, 0, SEEK_END);
+    lseek(fno, 0, SEEK_SET);
+    expandBuffer(buffer, file_size - availableBuffer(buffer));
+    while (availableBuffer(buffer) > 0) {
+        ret = read(fno, lastposBuffer(buffer), availableBuffer(buffer));
+        if (ret < 0) { return -1; }
+        else if (ret == 0) {
+            break;
+        }
+        else {
+            buffer->size += ret;
+        }
+    }
+    return 0;
+}
+
 
 void dbg_printf(const char *fmt, ...) {
     va_list args;
@@ -193,7 +214,7 @@ void destroyBufferWithoutFree(buffer *space) {
 }
 
 void expandBuffer(buffer *space, size_t size) {
-    if (size <= 0)
+    if (size < 0)
         return;
     space->total_size = space->total_size + size;
     void *tmp = realloc(space->data, space->total_size + 1);

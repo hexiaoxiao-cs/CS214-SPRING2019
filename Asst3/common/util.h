@@ -69,6 +69,7 @@ void    appendBuffer(buffer *space, char c);
 int     isDir(const char *name);
 int     writeFile(const char *file_path, const char *data, size_t size);
 int     readFile(char *filename, char** buffer,size_t *size);
+int     fastReadFile(char *filename, buffer *buffer);
 /*
  * Utility to sanitize input path (relative)
  *

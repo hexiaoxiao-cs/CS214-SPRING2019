@@ -252,7 +252,7 @@ int checkout(char *project_name) {
         return -1;
     }
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
-    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT | O_TRUNC, 0700, TAR_GNU);
+    tar_open(&t, "tmp.tar", NULL, O_RDONLY, 0700, TAR_GNU);
     asprintf(&temp, "%s/", project_name);
     tar_extract_all(t, temp);
     tar_close(t);
@@ -505,8 +505,7 @@ int push(char *project_name) {
     tar_close(tar);
     appendSequenceBuffer(output, file_info, strlen(file_info));
     finalize_file_payload1_for_request(output);
-    readFile("tmp.tar", &tar_info, &tar_size);
-    appendSequenceBuffer(output, tar_info, tar_size);
+    fastReadFile("tmp.tar", output);
     finalize_buffer(output);
     if (send_request(ipaddr, portno, output, &input) == 1) { printf("Error Send Request\n");return -5; }
     if (parse_response(input, &out) < 0) {

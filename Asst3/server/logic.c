@@ -423,7 +423,7 @@ buffer* checkout(parsed_request_t *req){
     buffer* output;
     char project_version_path[PATH_MAX];
     char project_path[PATH_MAX];
-    char cmd[PATH_MAX + 9],*tmp;
+    char cmd[PATH_MAX + 9];
     int status=0;
     int latest_version;
     size_t size;
@@ -433,16 +433,18 @@ buffer* checkout(parsed_request_t *req){
         goto version_zero;
     get_project_path(project_path,req->project_name,req->project_name_size,latest_version);
     strcat(project_path,"/files.tar");
-    status = readFile(project_path,&tmp,&size);
-    if(status !=0 ){ goto checkout_error;}
+    //status = readFile(project_path,&tmp,&size);
     output=get_output_buffer_for_response(500,1);
     finalize_file_payload1_for_response(output);
-    appendSequenceBuffer(output,tmp,size);
+    status = fastReadFile(project_path, output);
+    if(status !=0 ){
+        goto checkout_error;
+    }
     free_in_packet();
-    free(tmp);
     finalize_buffer(output);
     return output;
     checkout_error:
+        free(output);
         TRACE(("Received Checkout, Error reading 1.tar file\n"));
         output=get_output_buffer_for_response(501,0);
         finalize_buffer(output);
@@ -534,12 +536,10 @@ buffer* upgrade(parsed_request_t *req){
 
     // add tar file to payload2
     strcpy(project_version_path_appender, "files.tar");
-    if (readFile(project_version_path, &file_data, &file_size) < 0) {
+    if (fastReadFile(project_version_path, output) < 0) {
         TRACE(("Possible folder structure corruption, exiting..."));
         exit(0);
     }
-    appendSequenceBuffer(output, file_data, file_size);
-    free(file_data);
     finalize_buffer(output);
 //    pthread_rwlock_unlock(lock);
     return output;
@@ -701,5 +701,6 @@ buffer* process_logic(parsed_request_t* req) {
 }
 
 /*
- * TODO:
+ * TODO: 1. Upgrade & Checkout retest
+ *       2. Push retest
  */

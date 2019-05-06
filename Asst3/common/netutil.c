@@ -26,7 +26,7 @@ int _poll_and_write(int fd, buffer* buf) {
     fds[0].events = POLLOUT;
 
     while (1) {
-        poll_res = poll(fds, 1, 3000);
+        poll_res = poll(fds, 1, 5000);
         if (poll_res > 0) {
             if (fds[0].revents & (POLLERR | POLLHUP)) {
                 // either disconnected or have error on socket
@@ -85,7 +85,7 @@ int _poll_and_read(int fd, buffer* buf, size_t stop_watermark) {
     // poll for size first
     // POLL_IN only
     while (1) {
-        poll_res = poll(fds, 1, 3000);
+        poll_res = poll(fds, 1, 5000);
         if (poll_res > 0) {
             if (fds[0].revents & (POLLERR | POLLHUP)) {
                 // either disconnected or have error on socket
@@ -130,3 +130,5 @@ int _poll_and_read(int fd, buffer* buf, size_t stop_watermark) {
     return 1;
 
 }
+
+//TODO: 1. changed timeout to 4G
