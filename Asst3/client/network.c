@@ -14,10 +14,13 @@
 #include <netutil.h>
 #include <protocol.h>
 
+#include <netdb.h>
+
 //TODO: maybe create a interface like 'process_packet' counter part 'send_packet' at protocol layer?
 
 int send_request(const char* hostname, uint16_t port, buffer* in, buffer** out) {
     struct sockaddr_in connector;
+    struct hostent* he;
     buffer* response_buffer;
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -26,7 +29,14 @@ int send_request(const char* hostname, uint16_t port, buffer* in, buffer** out) 
     memset(&connector, 0, sizeof(connector));
     connector.sin_family = AF_INET;
     connector.sin_port = htons(port);
-    connector.sin_addr.s_addr = inet_addr(hostname);
+
+    he = gethostbyname(hostname);
+    if (he == NULL) {
+        printf("Unable to lookup hostname\n");
+        return 1;
+    }
+
+    memcpy(&connector.sin_addr, he->h_addr_list[0], he->h_length);
 
     if (connect(fd, (struct sockaddr*)&connector, sizeof(connector)) == -1) {
         printf("Connect error\n");
