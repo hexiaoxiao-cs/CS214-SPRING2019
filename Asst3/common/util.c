@@ -669,7 +669,8 @@ int proecessManifest_ByChangelist_Push(project *manifest, manifest_item **change
                 new_manifest[new_size]->hash = new_manifest[new_size]->newhash;
                 new_size++;
                 m_size++;
-            }
+            } else
+                break;
         }
         if (cmp_compare(c[m_size], changelist[temp]) == 0) {
             if (changelist[temp]->changecode == 1) {

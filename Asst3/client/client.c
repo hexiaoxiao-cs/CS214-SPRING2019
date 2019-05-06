@@ -237,7 +237,7 @@ int checkout(char *project_name) {
     if (response.status_code != 500)
         return -1;
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
-    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
+    tar_open(&t, "tmp.tar", NULL, O_RDONLY | O_CREAT | O_TRUNC, 0700, TAR_GNU);
     asprintf(&temp, "%s/", project_name);
     tar_extract_all(t, temp);
     tar_close(t);
@@ -501,6 +501,7 @@ int add(char *project_name, char *to_add_path) {
     size_t size;
     project curr;
     char *regulized_path;
+    char open_path[PATH_MAX];
     int status = 0;
     asprintf(&manifest_path, "%s/.Manifest", project_name);
     char *manifest_raw;
@@ -514,14 +515,17 @@ int add(char *project_name, char *to_add_path) {
     asprintf(&regulized_path, "%s/%s", project_name, to_add_path);
     regulized_path = is_valid_path(regulized_path, project_name);
     if (regulized_path == NULL) { return -2; }
-    status = open(regulized_path, O_RDONLY);
+    strcpy(open_path, project_name);
+    strcat(open_path, "/");
+    strcat(open_path, regulized_path);
+    status = open(open_path, O_RDONLY);
     if (status < 0) { return -2; }
     new = (manifest_item *) malloc(sizeof(manifest_item));
     new->version_num = 0;
     new->hash = createBuffer();
     appendSequenceBuffer(new->hash, "0", 1);
     new->filename = createBuffer();
-    appendSequenceBuffer(new->filename, to_add_path, strlen(to_add_path));
+    appendSequenceBuffer(new->filename, regulized_path, strlen(regulized_path));
     new->filename_64 = createBuffer();
     size = 0;
     base64_encoded = base64_encode(regulized_path, strlen(regulized_path), &size);
