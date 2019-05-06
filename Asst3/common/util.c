@@ -554,7 +554,7 @@ compareManifest(int isTwoManifest, manifest_item **client_side, manifest_item **
                     if (cmp_compare(client_side[curr_client], server_side[curr_server]) ==
                         0) { // a file in both client and server side
                         if (client_ver == server_ver &&
-                            strcmp(client_side[curr_client]->newhash->data, server_side[curr_client]->hash->data) !=
+                            strcmp(client_side[curr_client]->newhash->data, server_side[curr_server]->hash->data) !=
                             0) { // they have the same version number and not same hash (new hash from client and old has from server)
                             *changelog = (manifest_item **) realloc(*changelog, sizeof(manifest_item *) * (counts + 1));
                             (*changelog)[counts] = client_side[curr_client];
@@ -564,7 +564,7 @@ compareManifest(int isTwoManifest, manifest_item **client_side, manifest_item **
                             curr_server++; // curr-server to the nect item
                             counts++;
                         } else {
-                            if (client_side != server_side &&
+                            if (client_ver != server_ver &&
                                 strcmp(client_side[curr_client]->newhash->data, client_side[curr_client]->hash->data) ==
                                 0) {// different version number but the file in client does not changed (Only) REMOTE CHANGED
                                 *changelog = (manifest_item **) realloc(*changelog,
@@ -576,6 +576,7 @@ compareManifest(int isTwoManifest, manifest_item **client_side, manifest_item **
                                 curr_server++; // curr-server to the nect item
                                 counts++;
                             } else {
+                                if(strcmp(client_side[curr_client]->newhash->data,server_side[curr_server]->hash->data)==0){curr_client++;curr_server++;continue;}
                                 *conflicts = (manifest_item **) realloc(*conflicts, sizeof(manifest_item *) *
                                                                                     (counts_conflicts + 1));
                                 (*conflicts)[counts_conflicts] = server_side[curr_server];
@@ -784,6 +785,7 @@ int writeChangeLogFile(manifest_item **changelog, char **output, size_t size, in
                          changelog[curr]->filename->data,
                          changelog[curr]->filename_64->data, changelog[curr]->version_num, changelog[curr]->hash->data,
                          changelog[curr]->newhash->data);
+                appendSequenceBuffer(o, temporary, strlen(temporary));
             } else {
                 if ((changelog[curr]->changecode == 2 && type != 2) || changelog[curr]->changecode == 4 ||
                     changelog[curr]->changecode == 3) {//M A D
@@ -791,15 +793,17 @@ int writeChangeLogFile(manifest_item **changelog, char **output, size_t size, in
                              changelog[curr]->filename->data,
                              changelog[curr]->filename_64->data, changelog[curr]->version_num,
                              changelog[curr]->hash->data);
+                    appendSequenceBuffer(o, temporary, strlen(temporary));
                 }
             }
         } else {
             if (changelog[curr]->changecode == 5 || changelog[curr]->changecode == 6) { // U
                 asprintf(&temporary, "Conflicts:%s\n", changelog[curr]->filename->data);
+                appendSequenceBuffer(o, temporary, strlen(temporary));
             }
 
         }
-        appendSequenceBuffer(o, temporary, strlen(temporary));
+
     }
     *output = o->data;
     return 0;

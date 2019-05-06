@@ -150,6 +150,8 @@ int history(char *project_name) {
     if (parse_response(input, &response) < 0)
         return -3;
     if (response.status_code != 100) { printf("Response Not Success.\n");return -1; }
+    printf("Status Code: 1->U, 2->M, 3->A, 4->D\n");
+    printf("Status Code|File Name|File Name_Base64|File Version|Old Hash|New Hash\n");
     printf("%.*s", response.str_payload.payload_size, response.str_payload.payload);
     return 0;
 }
@@ -159,9 +161,10 @@ int current_version(char *project_name) {
     int status, read = 0;
     buffer *output, *input;
     parsed_response_t response;
-    size_t curr = 0;
+    size_t curr = 0,cnm=0;
     long version;
     const char *res;
+    char* caonimabi;
     char*file_64 = malloc(100000);
     output = get_output_buffer_for_request(op, project_name, strlen(project_name), 0);
     finalize_buffer(output);
@@ -170,8 +173,11 @@ int current_version(char *project_name) {
         return -2;
     if (parse_response(input, &response) < 0)
         return -3;
-    if (response.status_code != 200)
+    if (response.status_code != 200) {
+        printf("Received invalid status_code\n");
+        if (response.status_code == 999) { printf("Project Name Server Not Found!\n"); }
         return -1;
+    }
     res = response.str_payload.payload;
     res += 16;
     sscanf(res, "%ld\n%n", &version, &read);
@@ -182,7 +188,8 @@ int current_version(char *project_name) {
     read = 0;
     while (curr < response.str_payload.payload_size - 16) {
         sscanf(res, "%s %ld %*s\n%n", file_64, &version, &read);
-        printf("%s %ld\n", base64_decode(file_64, strlen(file_64), &curr), version);
+        caonimabi=base64_decode(file_64, strlen(file_64), &cnm);
+        printf("%.*s %ld\n",cnm,caonimabi , version);
         res += read;
         curr += read;
         read = 0;
@@ -289,7 +296,9 @@ int update(char *project_name) {
     status = readManifest(response.str_payload.payload, response.str_payload.payload_size, &server);
     if (status != 0) { return -1; }
     status = compareManifest(0, client.manifestItem, server.manifestItem, &changelist, &conflicts, client.many_Items,
-                             server.many_Items, client.project_version, server.project_version, &size_1, &size_2, 0);
+                             server.many_Items, client.project_version, server.project_version, &size_1, &size_2, 1);
+
+
     if (status == -9) {
         printf("Conflicts occurred!\n");
         for (count_1 = 0; count_1 < size_2; count_1++) {
@@ -297,6 +306,13 @@ int update(char *project_name) {
         }
         return -1;
     } else {
+        for(count2=0;count2<size_1;count2++){
+            if(changelist[count2]->changecode==1){
+                //        conflicts
+                printf("Conflicts: %s\n",changelist[count2]->filename->data);
+
+            }
+        }
         writeChangeLogFile(changelist, &update_file, size_1, 1, server.project_version);
         asprintf(&client_manifest_path, "%s/.Update", project_name);
         writeFile(client_manifest_path, update_file, strlen(update_file));
@@ -364,7 +380,7 @@ int upgrade(char *project_name) {
     writeFile("tmp.tar", response.files_payload.payload2, response.files_payload.payload2_size);
     //tar_open(&t,"tmp.tar",NULL, O_RDONLY | O_CREAT, 0700, TAR_GNU);
     asprintf(&output_path, "%s/", project_name);
-    for (tmp = 0; tmp < changelog_size; tmp++) {
+    for (tmp = 0; tmp < counts; tmp++) {
         tar_extract_specific_file("tmp.tar", changelog[tmp]->filename->data, output_path);
     }
     readManifest(response.files_payload.payload1, response.files_payload.payload1_size, &server);
@@ -512,7 +528,10 @@ int push(char *project_name) {
         printf("Error Parse Response\n");
         return -3;
     }
-    if (out.status_code == 900) { return 0; }
+    if (out.status_code == 900) {
+        asprintf(&stuff,"%s/.Manifest",project_name);
+        writeFile(stuff,file_info,strlen(file_info));
+        return 0; }
     else { printf("Responsed Not Success\n");return -9; }
     //return 0;
 }
@@ -779,5 +798,5 @@ int main(int argc, char *argv[]) {
  * 6. PATCH UPDATE
  * 7. test multiple files
  * 8. reexecute
- * 9.
+ * 9. Test add/remove subdirectory
  */
