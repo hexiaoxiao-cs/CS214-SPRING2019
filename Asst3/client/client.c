@@ -773,7 +773,7 @@ int main(int argc, char *argv[]) {
             }
             //printf("update");
             if(update(argv[2])!=0){
-                printf("Error update project %s\nPossible Reasons:\n1. Project %s does not exists in server.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
+                printf("Error update project %s\nPossible Reasons:\n1. Project %s does not exists in server or local.\n2. Error communicating with server.\n3. Conflicts stated above.\n",argv[2],argv[2]);
             }
             break;
         }

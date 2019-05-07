@@ -20,4 +20,6 @@ Destroy the project.
 We will use WTFtest to perform push, checkout, create (executed in sequence) with 50 concurrence connection.
 
 3. Abnormal operation
-Please read the section 2 in testcases.txt
+We will test all operation when a project does not exists in both server and client.
+We will test all operation when a project does exists in server but not in client.
+For the rest abnormal operation, please read the section 2 in testcases.txt

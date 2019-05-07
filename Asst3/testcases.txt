@@ -180,4 +180,16 @@ testcases:
 	
 		Error: Please commit the following deleted files
 		dzz
+	
+	Inputs: (Update one project that is not locally existed but in server) (Project located in server named server)
+
+		./WTF update server
+
+	Expected Output:
+		
+		Error update project ls
+		Possible Reasons:
+		1. Project ls does not exists in server or local.
+		2. Error communicating with server.
+		3. Conflicts stated above.
 		
