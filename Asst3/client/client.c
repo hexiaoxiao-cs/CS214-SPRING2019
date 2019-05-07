@@ -493,6 +493,7 @@ int commit(char *project_name) {
             printf("%s\n", deleted_files[temp]);
         }
         writeManifest(&changelog_char,&client,0);
+        writeFile(manifest_path,changelog_char,strlen(changelog_char));
     }
     status = compareManifest(0, client.manifestItem, server.manifestItem, &changelog, &conflicts, client.many_Items,
                              server.many_Items, client.project_version, server.project_version, &changelog_size,
@@ -567,6 +568,8 @@ int push(char *project_name) {
         printf("Error: There are uncommitted changes!\nPlease Commit then Push!\n");
         return -1;
     }
+
+
     proecessManifest_ByChangelist_Push(&my_project, Changelog, counts);
     if(counts==0){
         printf("There nothing to commit.\n");
