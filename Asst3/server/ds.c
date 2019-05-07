@@ -42,6 +42,8 @@ pthread_rwlock_t* get_rwlock_for_project(const char* project_name, size_t projec
         pthread_rwlockattr_init(&attr);
         pthread_rwlockattr_setkind_np(&attr,PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
         if(pthread_rwlock_init(e.data,&attr)!=0){return NULL;} // get RWLock Failed
+        e.key = malloc(project_name_size + 1);
+        strcpy(e.key, project_name);
         hsearch(e,ENTER);
         pthread_mutex_unlock(&hashmap_mtx);
         return e.data;

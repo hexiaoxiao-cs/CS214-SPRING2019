@@ -151,7 +151,7 @@ int handle_error(parsed_response_t *res) {
                 printf("Unable to read tarfile in the server");
                 break;
             case 502:
-                printf("Invalid version number received");
+                printf("No version is available from the server");
                 break;
             case 601:
                 printf("Error reading Curr/.Manifest file");
@@ -714,6 +714,7 @@ int configure(char *server_addr, char *port_no) {
     return 0;
 }
 
+#ifndef TEST_COMPILING
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf(PARSEERROR);
@@ -878,6 +879,7 @@ int main(int argc, char *argv[]) {
     //TRACE(("size of a size_t: %d \n", sizeof(size_t)));
     return 0;
 }
+#endif
 
 /*
  * TODO LIST: 1. readme modification (tar 4G & Introduction)
