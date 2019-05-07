@@ -182,7 +182,7 @@ int create(char *project_name) {
         return -2;
     }
     if (parse_response(input, &response) != 0) {
-        printf("Error Parsing request\n");
+        printf("Error Parsing request, maybe project already existed in server?\n");
         return -3;
     }
     if (handle_error(&response))
@@ -485,7 +485,8 @@ int commit(char *project_name) {
     asprintf(&commit_path, "%s/.Commit", project_name);
     asprintf(&server_path, "%s/.Server", project_name);
     writeFile(server_path,response.str_payload.payload,response.str_payload.payload_size);
-    readFile(manifest_path, &manifest, &manifest_size);
+    status=readFile(manifest_path, &manifest, &manifest_size);
+    if(status!=0){printf("Error open .Manifest file locally.\n");return -1;}
     readManifest(manifest, manifest_size, &client);
     status = make_new_manifest(project_name, client.manifestItem, &(client.many_Items), &deleted_files, &deleted_size);
     if (status == -1) {
