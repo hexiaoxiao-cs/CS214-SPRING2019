@@ -181,7 +181,7 @@ int create(char *project_name) {
         printf("Error sending request\n");
         return -2;
     }
-    if (parse_response(input, &response) < 0) {
+    if (parse_response(input, &response) != 0) {
         printf("Error Parsing request\n");
         return -3;
     }
@@ -208,7 +208,7 @@ int history(char *project_name) {
     status = send_request(ipaddr, portno, output, &input);
     if (status != 0)
         return -2;
-    if (parse_response(input, &response) < 0)
+    if (parse_response(input, &response) != 0)
         return -3;
     if (handle_error(&response))
         return -4;
@@ -233,7 +233,7 @@ int current_version(char *project_name) {
     status = send_request(ipaddr, portno, output, &input);
     if (status != 0)
         return -2;
-    if (parse_response(input, &response) < 0)
+    if (parse_response(input, &response) != 0)
         return -3;
     if (handle_error(&response))
         return -4;
@@ -264,7 +264,7 @@ int destroy(char *project_name) {
     status = send_request(ipaddr, portno, output, &input);
     if (status != 0)
         return -2;
-    if (parse_response(input, &response) < 0)
+    if (parse_response(input, &response) != 0)
         return -3;
     if (handle_error(&response))
         return -4;
@@ -285,7 +285,7 @@ int rollback(char *project_name, char* version) {
         return -2;
 
     }
-    if (parse_response(input, &response) < 0) {
+    if (parse_response(input, &response) != 0) {
         printf("Error Parse Response\n");
         return -3;
     }
@@ -310,7 +310,7 @@ int checkout(char *project_name) {
         printf("Error Sending Request\n");
         return -2;
     }
-    if (parse_response(input, &response) < 0) {
+    if (parse_response(input, &response) != 0) {
         printf("Error Parse Request\n");
         return -3;
     }
@@ -347,7 +347,7 @@ int update(char *project_name) {
     nstatus = send_request(ipaddr, portno, output, &input);
     if (nstatus != 0)
         return -2;
-    if (parse_response(input, &response) < 0)
+    if (parse_response(input, &response) != 0)
         return -3;
     if (handle_error(&response))
         return -4;
@@ -474,7 +474,7 @@ int commit(char *project_name) {
         printf("Error Sending Request\n");
         return -2;
     }
-    if (parse_response(input, &response) < 0) {
+    if (parse_response(input, &response) != 0) {
         printf("Error Parse Response\n");
         return -3;
     }
@@ -598,7 +598,7 @@ int push(char *project_name) {
     fastReadFile("tmp.tar", output);
     finalize_buffer(output);
     if (send_request(ipaddr, portno, output, &input) == 1) { printf("Error Send Request\n");return -5; }
-    if (parse_response(input, &out) < 0) {
+    if (parse_response(input, &out) != 0) {
         asprintf(&inside_path,"rm %s/.Commit",project_name);
         system(inside_path);
         printf("Error Parse Response\n");

@@ -28,13 +28,13 @@ buffer* createProject(parsed_request_t *req){
     status=mkdir(path,S_IRUSR|S_IWUSR|S_IXUSR);
     if(status==EEXIST){
         TRACE(("Received createProject, Error because of existed project\n"));
-        response=get_output_buffer_for_response(001,2);
+        response=get_output_buffer_for_response(001,0);
         finalize_buffer(response);
         goto END;
     }
     if(status!=0){
         TRACE(("Received createProject, Error because of mkdir error\n"));
-        response=get_output_buffer_for_response(002,2);
+        response=get_output_buffer_for_response(002,0);
         finalize_buffer(response);
         goto END;
     }
@@ -45,7 +45,7 @@ buffer* createProject(parsed_request_t *req){
     fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
         TRACE(("Received createProject, Error because of write .Manifest file to Curr folder error\n"));
-        response=get_output_buffer_for_response(003,2);
+        response=get_output_buffer_for_response(003,0);
         finalize_buffer(response);
         goto END;
     }
@@ -56,7 +56,7 @@ buffer* createProject(parsed_request_t *req){
     fh=writeFile(path,"Made_By_HXX&DZZ\n0\n",18);
     if(fh!=0){
         TRACE(("Received createProject, Error because of write .Manifest file to 0 folder error\n"));
-        response=get_output_buffer_for_response(003,2);
+        response=get_output_buffer_for_response(003,0);
         finalize_buffer(response);
         goto END;
     }
@@ -65,11 +65,11 @@ buffer* createProject(parsed_request_t *req){
     fh=writeFile(path,"0",1);
     if(fh!=0){
         TRACE(("Received createProject, Error because of write Currentversion error\n"));
-        response=get_output_buffer_for_response(003,2);
+        response=get_output_buffer_for_response(003,0);
         finalize_buffer(response);
         goto END;
     }
-    response=get_output_buffer_for_response(000,2);
+    response=get_output_buffer_for_response(000,0);
     appendSequenceBuffer(response,"Made_By_HXX&DZZ\n",16);
     finalize_buffer(response);
     END:
