@@ -562,9 +562,9 @@ compareManifest(int isTwoManifest, manifest_item **client_side, manifest_item **
                             curr_server++; // curr-server to the nect item
                             counts++;
                         } else {
-                            if (client_ver != server_ver &&
+                            if (client_ver != server_ver && client_side[curr_client]->version_num!=server_side[curr_server]->version_num&&
                                 strcmp(client_side[curr_client]->newhash->data, client_side[curr_client]->hash->data) ==
-                                0) {// different version number but the file in client does not changed (Only) REMOTE CHANGED
+                                0 ) {// different version number but the file in client does not changed (Only) REMOTE CHANGED
                                 *changelog = (manifest_item **) realloc(*changelog,
                                                                         sizeof(manifest_item *) * (counts + 1));
                                 (*changelog)[counts] = server_side[curr_client];
@@ -742,15 +742,20 @@ int proecessManifest_ByChangelist_Update(project *manifest, manifest_item **chan
     manifest_item **s = server->manifestItem;
     manifest_item **new_manifest = malloc(sizeof(manifest_item *) * (changelist_size + manifest->many_Items));
     for (temp = 0; temp < changelist_size; temp++) {
-        while (cmp_compare(c[m_size], changelist[temp]) < 0 && m_size < manifest->many_Items) {
+        while (  m_size < manifest->many_Items) {
+            if(cmp_compare(c[m_size], changelist[temp]) < 0){
             new_manifest[new_size] = c[m_size];
             new_manifest[new_size]->hash = new_manifest[new_size]->newhash;
             new_size++;
-            m_size++;
+            m_size++;}
+            else{break;}
         }
-        while (cmp_compare(s[s_size], changelist[temp]) != 0) {
-            s_size++;
-            //potential segmentation fault
+
+        while (s_size<server->many_Items) {
+            if(cmp_compare(s[s_size], changelist[temp]) != 0){
+            s_size++;}
+            else{break;}
+
         }
         new_manifest[new_size] = s[s_size];
         new_size++;

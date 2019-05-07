@@ -328,7 +328,7 @@ int checkout(char *project_name) {
 
 
 int update(char *project_name) {
-    int op = 6, nstatus = 0;
+    int op = 6, nstatus = 0,flag=0;
     buffer *output, *input;
     parsed_response_t response;
     project server, client;
@@ -368,13 +368,14 @@ int update(char *project_name) {
             if(changelist[count2]->changecode==1){
                 //        conflicts
                 printf("Conflicts: %s\n",changelist[count2]->filename->data);
-
+                flag=1;
             }
         }
-        writeChangeLogFile(changelist, &update_file, size_1, 1, server.project_version);
-        asprintf(&client_manifest_path, "%s/.Update", project_name);
-        writeFile(client_manifest_path, update_file, strlen(update_file));
+        if(flag==1){return -1;}
     }
+    writeChangeLogFile(changelist, &update_file, size_1, 1, server.project_version);
+    asprintf(&client_manifest_path, "%s/.Update", project_name);
+    writeFile(client_manifest_path, update_file, strlen(update_file));
     return 0;
 }
 
