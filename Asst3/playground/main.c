@@ -236,6 +236,7 @@ int main(int argc, char* argv[]) {
     pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
 
     if (!(argc == 3 || argc == 4)) {
+        printf("Usage: WTFtest IP port [-v]\n -v for verbose");
         return 0;
     }
 

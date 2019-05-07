@@ -1,0 +1,23 @@
+testplan.txt
+We will test the following:
+1. Ordinary test:
+configure the client, open the server on 5555.
+create a project, add a file, commit and push.
+
+use another computer, or in another folder, configure the client and checkout the same project.
+
+make any modification in the project and commit and push. 
+
+go to the first client and execute update and upgrade.
+
+Check currentversion and history. 
+
+Destroy the project.
+
+(Additional test is recorded in the testcases.txt file)
+
+2. Server Stress Test
+We will use WTFtest to perform push, checkout, create (executed in sequence) with 50 concurrence connection.
+
+3. Abnormal operation
+Please read the section 2 in testcases.txt

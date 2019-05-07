@@ -1,0 +1,183 @@
+testcases:
+1. Normal Operation
+	Inputs:
+	
+		./WTF create hxx
+	
+	Expected outputs: 
+	
+	Inputs:
+	
+		mkdir hxx/abc
+		touch hxx/1.txt
+		touch hxx/2.txt
+		touch hxx/abc/123.txt
+		dd if=/dev/urandom of=./hxx/abc/file.2M  bs=1048576 count=2
+		dd if=/dev/urandom of=./hxx/abc/file.5M  bs=1048576 count=5
+		dd if=/dev/urandom of=./hxx/abc/file.10M  bs=1048576 count=10
+		./WTF add hxx ./././././././////////1.txt
+	
+	Expected outputs: 
+	
+	Inputs:
+	
+		./WTF add hxx ./abc/123.txt
+		./WTF add hxx ./abc/file.2M
+		./WTF add hxx ./abc/file.5M
+		./WTF add hxx ./abc/file.10M
+	
+	Expected outputs: 
+	
+	Inputs:
+	
+		./WTF commit hxx
+		./WTF push hxx
+		
+	Expected outputs:
+	
+	Inputs:
+	
+		./WTF currentversion hxx
+	
+	Expected outputs:
+	
+		Project Version: 1
+		File Name:      File Version:
+		1.txt 1
+		abc/123.txt 1
+		abc/file.2M 1
+		abc/file.5M 1
+		abc/file.10M 1
+	
+	Inputs:
+	
+		./WTF history hxx
+	
+	Expected Output:
+	
+		Status Code: 1->U, 2->M, 3->A, 4->D
+		Status Code|File Name|File Name_Base64|File Version|Old Hash|New Hash
+		Made_By_HXX&DZZ
+		0
+		1 1.txt MS50eHQ= 0 0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+		1 abc/123.txt YWJjLzEyMy50eHQ= 0 0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+		1 abc/file.2M YWJjL2ZpbGUuMk0= 0 0 2df671ae72462118bba7cad82bb9f772ef10614782e1a39970dfb6c32f1e9b13
+		1 abc/file.5M YWJjL2ZpbGUuNU0= 0 0 1b9f1534c6bc1929632011eee13acc1817badd1f590e0c4dc8463a65de818b0a
+		1 abc/file.10M YWJjL2ZpbGUuMTBN 0 0 66bd5d3ae27e33e093d17e56a72949e66abd5645cce1f64a3b7c47b187de4d56
+
+	Inputs:
+	
+		./WTF remove hxx 1.txt
+		./WTF commit hxx
+		./WTF push hxx
+		./WTF currentversion hxx
+	
+	Expected Output:
+	
+		Project Version: 2
+		File Name:      File Version:
+		abc/123.txt 1
+		abc/file.2M 1
+		abc/file.5M 1
+		abc/file.10M 1
+
+	Inputs:
+	
+		./WTF history
+	
+	Expected Output:(notice the UMAD codes strictly follows the Asst3.pdf)
+	
+		Status Code: 1->U, 2->M, 3->A, 4->D
+		Status Code|File Name|File Name_Base64|File Version|Old Hash|New Hash
+		Made_By_HXX&DZZ
+		0
+		1 1.txt MS50eHQ= 0 0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+		1 abc/123.txt YWJjLzEyMy50eHQ= 0 0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+		1 abc/file.2M YWJjL2ZpbGUuMk0= 0 0 2df671ae72462118bba7cad82bb9f772ef10614782e1a39970dfb6c32f1e9b13
+		1 abc/file.5M YWJjL2ZpbGUuNU0= 0 0 1b9f1534c6bc1929632011eee13acc1817badd1f590e0c4dc8463a65de818b0a
+		1 abc/file.10M YWJjL2ZpbGUuMTBN 0 0 66bd5d3ae27e33e093d17e56a72949e66abd5645cce1f64a3b7c47b187de4d56
+		
+		
+		Made_By_HXX&DZZ
+		1
+		3 1.txt MS50eHQ= 1 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0
+
+	Inputs:
+	
+		rm hxx/abc/123.txt
+		./WTF commit hxx
+		./WTF push hxx
+		./WTF currentversion hxx
+	
+	Expected Output:
+	
+		Warning: Following files are deleted.
+		abc/123.txt
+	
+		Project Version: 3
+		File Name:      File Version:
+		abc/file.2M 1
+		abc/file.5M 1
+		abc/file.10M 1
+	
+	Inputs:
+		./WTF update hxx
+		./WTF upgrade hxx
+	
+	Expected Output:
+	
+		Nothing to Update!
+	
+	Inputs: (Push some changes in the same repo but on other machines)
+	
+		./WTF update hxx
+		./WTF upgrade hxx
+	
+	Expected Output:
+	
+	Inputs:
+	
+		./WTF destroy hxx
+	
+	Expected Output:
+	
+	
+	
+2. Abnormal Operation
+	
+	Inputs:(Creating Project twice)
+	
+		./WTF create hxx
+		./WTF create hxx
+		
+	Expected outputs: 
+	
+		Response not success, reason: An project named that already existed
+	
+	Inputs: (Invalid Path/Out of Scope)
+		./WTF add hxx ../123.txt
+	
+	Expected outputs: 
+	
+		File path not valid.
+		Please make sure that the file path is valid under the project_name folder
+		Example:
+		Project_Name\abc\def -> abc\def
+		Error Add file hjsd into Project hxx
+		Possible Reason:
+		1. Project hxx not existed locally.
+		2. File not exist.
+	
+	Inputs: (Commit then modify then push)
+	
+		touch hxx/dzz
+		./WTF add hxx dzz
+		./WTF commit hxx
+		rm hxx/dzz
+		./WTF push hxx
+	
+	Expected Output:
+	
+		Error: Please commit the following deleted files
+		dzz
+		
