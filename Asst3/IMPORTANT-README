@@ -7,6 +7,7 @@ Per Francisco's instruction, we downloaded libtar-1.2.11 source code from the fo
 And made our patches on top of the tag/v1.2.11 inside the libtar git tree.
     Main changes:
         * fixes various memory leaks bugs
+        * added support for big files that are over 4G
         * made the code ready to compile under iLab machine (config.h and listhash source codes are generated based on the
         original ./configure tool using iLab machine.
 

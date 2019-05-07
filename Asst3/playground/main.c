@@ -20,7 +20,7 @@
 
 #include <time.h>
 
-#define CONCURRENCY 500
+#define CONCURRENCY 50
 
 #define T1 clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1);
 #define T2 clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time2);

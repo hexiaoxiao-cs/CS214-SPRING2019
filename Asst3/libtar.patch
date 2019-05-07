@@ -1,73 +1,129 @@
-Only in ../CS214-SPRING2019/Asst3/libtar/: .DS_Store
-File ./.git is a directory while file ../CS214-SPRING2019/Asst3/libtar/.git is a regular file
-Only in ./compat: fnmatch.c
-Only in ./compat: gethostbyname_r.c
-Only in ./compat: gethostname.c
-Only in ./compat: getservbyname_r.c
-Only in ./compat: glob.c
-Only in ./compat: inet_aton.c
-Only in ./compat: snprintf.c
-Only in ./compat: strdup.c
-Only in ./compat: strlcat.c
-Only in ./compat: strrstr.c
-Only in ./compat: strsep.c
-Only in ../CS214-SPRING2019/Asst3/libtar/: config.h
-diff -r ./lib/decode.c ../CS214-SPRING2019/Asst3/libtar/lib/decode.c
+Only in .: .DS_Store
+File ./.git is a regular file while file /Users/dzz007/Desktop/libtar/.git is a directory
+diff -r ./ChangeLog /Users/dzz007/Desktop/libtar/ChangeLog
+1,7d0
+< libtar 1.2.11_dzz - 5/4/19
+< -------------
+< 
+< - fixes various memory leaks
+< 
+< ------------------------------------------------------------------------------
+< 
+Only in .: LICENSE
+Only in /Users/dzz007/Desktop/libtar/compat: fnmatch.c
+Only in /Users/dzz007/Desktop/libtar/compat: gethostbyname_r.c
+Only in /Users/dzz007/Desktop/libtar/compat: gethostname.c
+Only in /Users/dzz007/Desktop/libtar/compat: getservbyname_r.c
+Only in /Users/dzz007/Desktop/libtar/compat: glob.c
+Only in /Users/dzz007/Desktop/libtar/compat: inet_aton.c
+Only in /Users/dzz007/Desktop/libtar/compat: snprintf.c
+Only in /Users/dzz007/Desktop/libtar/compat: strdup.c
+Only in /Users/dzz007/Desktop/libtar/compat: strlcat.c
+Only in /Users/dzz007/Desktop/libtar/compat: strrstr.c
+Only in /Users/dzz007/Desktop/libtar/compat: strsep.c
+Only in .: config.h
+diff -r ./lib/append.c /Users/dzz007/Desktop/libtar/lib/append.c
+215,216c215
+< 	size_t i;
+< 	ssize_t j;
+---
+> 	int i, j;
+diff -r ./lib/decode.c /Users/dzz007/Desktop/libtar/lib/decode.c
 29c29
-< 	char filename[MAXPATHLEN];
+<     static __thread char filename[MAXPATHLEN];
 ---
->     static __thread char filename[MAXPATHLEN];
+> 	char filename[MAXPATHLEN];
 38c38
-< 		return strdup(filename);
+< 		return filename;
 ---
-> 		return filename;
+> 		return strdup(filename);
 42c42
-< 	return strdup(filename);
+< 	return filename;
 ---
-> 	return filename;
-diff -r ./lib/encode.c ../CS214-SPRING2019/Asst3/libtar/lib/encode.c
-32,33c32,35
-< 	if (t->options & TAR_GNU)
-< 		strncpy(t->th_buf.magic, "ustar  ", 8);
+> 	return strdup(filename);
+diff -r ./lib/encode.c /Users/dzz007/Desktop/libtar/lib/encode.c
+32,35c32,33
+< 	if (t->options & TAR_GNU) {
+<         strncpy(t->th_buf.magic, "ustar ", 6);
+<         strncpy(t->th_buf.version, " ", 2);
+<     }
 ---
-> 	if (t->options & TAR_GNU) {
->         strncpy(t->th_buf.magic, "ustar ", 6);
->         strncpy(t->th_buf.version, " ", 2);
->     }
-124a127,136
-> 	    /*
-> 	     *  MEMORY LEAK FIXED:
-> 	     *  There would be a memory leak in gnu_longlink if we use set_link for two times consecutively and both times we have a GNU longlink
-> 	     *  Need to free the previous one before duplicating a new one
-> 	     *  The last copy of the gnu_longlink will be freed at tar_close
-> 	     */
-> 	    if (t->th_buf.gnu_longlink) {
-> 	        free(t->th_buf.gnu_longlink);   // free previous link before duplicating a new one
-> 	    }
-> 
-136c148
-< 		t->th_buf.gnu_longlink = NULL;
+> 	if (t->options & TAR_GNU)
+> 		strncpy(t->th_buf.magic, "ustar  ", 8);
+127,136d124
+< 	    /*
+< 	     *  MEMORY LEAK FIXED:
+< 	     *  There would be a memory leak in gnu_longlink if we use set_link for two times consecutively and both times we have a GNU longlink
+< 	     *  Need to free the previous one before duplicating a new one
+< 	     *  The last copy of the gnu_longlink will be freed at tar_close
+< 	     */
+< 	    if (t->th_buf.gnu_longlink) {
+< 	        free(t->th_buf.gnu_longlink);   // free previous link before duplicating a new one
+< 	    }
+< 
+148c136
+< 		t->th_buf.gnu_longlink = NULL;          // reset this to NULL to notify th_write we are not using long link
 ---
-> 		t->th_buf.gnu_longlink = NULL;          // reset this to NULL to notify th_write we are not using long link
-diff -r ./lib/handle.c ../CS214-SPRING2019/Asst3/libtar/lib/handle.c
-123a124,136
-> 
-> 	/*
-> 	 * MEMORY LEAK FIXED:
-> 	 *
-> 	 * Even though th_set_path and th_set_link(AFTER PATCH) free the previous pointer before allocate a new one
-> 	 * The last pointer never got freed, so when we are freeing t, we also need to free those.
-> 	 */
-> 
-> 	if (t->th_buf.gnu_longlink)
-> 	    free(t->th_buf.gnu_longlink);
-> 	if (t->th_buf.gnu_longname)
-> 	    free(t->th_buf.gnu_longname);
-> 
-diff -r ./lib/libtar.h ../CS214-SPRING2019/Asst3/libtar/lib/libtar.h
-21a22,23
-> #include <string.h>
-> 
-Only in ../CS214-SPRING2019/Asst3/libtar/listhash: libtar_hash.c
-Only in ../CS214-SPRING2019/Asst3/libtar/listhash: libtar_list.c
-Only in ../CS214-SPRING2019/Asst3/libtar/listhash: libtar_listhash.h
+> 		t->th_buf.gnu_longlink = NULL;
+diff -r ./lib/extract.c /Users/dzz007/Desktop/libtar/lib/extract.c
+165,166c165
+< 	size_t i;
+< 	ssize_t k;
+---
+> 	int i, k;
+228c227
+< 	for (i = 0;i < size; i += T_BLOCKSIZE)
+---
+> 	for (i = size; i > 0; i -= T_BLOCKSIZE)
+240c239
+< 			  ((size - i > T_BLOCKSIZE) ? T_BLOCKSIZE : size - i)) == -1)
+---
+> 			  ((i > T_BLOCKSIZE) ? T_BLOCKSIZE : i)) == -1)
+diff -r ./lib/handle.c /Users/dzz007/Desktop/libtar/lib/handle.c
+124,136d123
+< 
+< 	/*
+< 	 * MEMORY LEAK FIXED:
+< 	 *
+< 	 * Even though th_set_path and th_set_link(AFTER PATCH) free the previous pointer before allocate a new one
+< 	 * The last pointer never got freed, so when we are freeing t, we also need to free those.
+< 	 */
+< 
+< 	if (t->th_buf.gnu_longlink)
+< 	    free(t->th_buf.gnu_longlink);
+< 	if (t->th_buf.gnu_longname)
+< 	    free(t->th_buf.gnu_longname);
+< 
+diff -r ./lib/libtar.h /Users/dzz007/Desktop/libtar/lib/libtar.h
+22,23d21
+< #include <string.h>
+< 
+272c270
+< size_t oct_to_int(char *oct);
+---
+> int oct_to_int(char *oct);
+279c277
+< void int_to_oct_nonull(size_t num, char *oct, size_t octlen);
+---
+> void int_to_oct_nonull(int num, char *oct, size_t octlen);
+diff -r ./lib/util.c /Users/dzz007/Desktop/libtar/lib/util.c
+131c131
+< size_t
+---
+> int
+134c134
+< 	size_t i;
+---
+> 	int i;
+136c136
+< 	sscanf(oct, "%lo", &i);
+---
+> 	sscanf(oct, "%o", &i);
+144c144
+< int_to_oct_nonull(size_t num, char *oct, size_t octlen)
+---
+> int_to_oct_nonull(int num, char *oct, size_t octlen)
+Only in .: libtar.patch
+Only in ./listhash: libtar_hash.c
+Only in ./listhash: libtar_list.c
+Only in ./listhash: libtar_listhash.h

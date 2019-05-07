@@ -884,10 +884,6 @@ int main(int argc, char *argv[]) {
 /*
  * TODO LIST: 1. readme modification (tar 4G & Introduction)
  *            2. testcases.txt
- *            3. testplan & code
- *            6. PATCH UPDATE
- *            8. reentrant (does not follow the procedure)
- *            9. Implement Check to be added file
+ *            3. testplan
  *            10. Implement check whether two lists are identical (HASH)
- *            11. changed timeout to 5 minutes
  */
