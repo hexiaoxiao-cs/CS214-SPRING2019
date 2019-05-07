@@ -51,6 +51,5 @@ clean:
 	rm -rf WTF WTFserver
 
 %.o: %.c
-	mkdir -p objs
 	@echo [Compiling]: $<
-	$(CC) $(CFLAGS) $(EXTRA_FLAGS) $(INCLUDE) -o objs/$@ -c $<
+	$(CC) $(CFLAGS) $(EXTRA_FLAGS) $(INCLUDE) -o $@ -c $<
