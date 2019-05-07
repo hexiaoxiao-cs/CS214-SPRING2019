@@ -15,8 +15,10 @@ $(wtf_objs): INCLUDE := -Iclient
 $(wtf_server_objs): INCLUDE := -Iserver
 $(wtf_test_objs): INCLUDE := -Iclient
 
-all: WTFserver WTF test
 
+all: WTFserver WTF test
+	echo "All files have been compiled and ready for test in directory bin"
+	echo "Please goto that directory and start a server to test"
 
 common/protocol_server.o:
 	$(CC) $(CFLAGS) -Iserver -DSERVER_COMPILING -o common/protocol_server.o -c common/protocol.c
@@ -31,18 +33,24 @@ client/client_test.o:
 	$(CC) $(CFLAGS) -Iclient -DTEST_COMPILING -o client/client_test.o -c client/client.c
 
 WTFserver: $(libtar_objs) $(wtf_server_objs) $(server_protocol_objs)
-	$(CC) $(libtar_objs) $(wtf_server_objs) $(server_protocol_objs) -o WTFserver -lpthread
+	mkdir -p bin
+	$(CC) $(libtar_objs) $(wtf_server_objs) $(server_protocol_objs) -o bin/WTFserver -lpthread
 
 WTF: $(libtar_objs) $(wtf_objs) $(client_protocol_objs) $(client_obj)
-	$(CC) $(libtar_objs) $(wtf_objs) $(client_protocol_objs) $(client_obj) -o WTF -lcrypto
+	mkdir -p bin
+	$(CC) $(libtar_objs) $(wtf_objs) $(client_protocol_objs) $(client_obj) -o bin/WTF -lcrypto
 
 test: $(libtar_objs) $(wtf_test_objs) $(client_test_obj) $(client_protocol_objs)
-	$(CC) $(libtar_objs) $(wtf_test_objs) $(client_test_obj) $(client_protocol_objs) -o WTFtest -lcrypto -lpthread
+	mkdir -p bin
+	$(CC) $(libtar_objs) $(wtf_test_objs) $(client_test_obj) $(client_protocol_objs) -o bin/WTFtest -lcrypto -lpthread
+	cp tm_test_payload bin/tm_test_payload
+	cp tt_test_payload bin/tt_test_payload
 
 clean: 
 	find . -name "*.o" | xargs rm -rf
 	rm -rf WTF WTFserver
 
 %.o: %.c
+	mkdir -p objs
 	@echo [Compiling]: $<
-	$(CC) $(CFLAGS) $(EXTRA_FLAGS) $(INCLUDE) -o $@ -c $<
+	$(CC) $(CFLAGS) $(EXTRA_FLAGS) $(INCLUDE) -o objs/$@ -c $<
